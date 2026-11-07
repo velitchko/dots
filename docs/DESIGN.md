@@ -1,17 +1,17 @@
 # Design decisions
 
-Why the dots are built the way they are. For *how* to use them see the [README](../README.md); for the repo map and pitfalls see [AGENTS.md](../AGENTS.md); for colours see [THEME.md](THEME.md).
+This is the reasoning behind the setup. For day-to-day use, see the [README](../README.md); for the repository map and sharp edges, see [AGENTS.md](../AGENTS.md); for color handling, see [THEME.md](THEME.md).
 
 ## Safety first
 
-- **Nothing depends on Quickshell.** Every island keybind has a fallback (fuzzel, cliphist, hyprlock, dunst), and `lib/safety.lua` registers rescue binds (`SUPER+Return` kitty, `SUPER+SHIFT+Return` plain bash) before any other module loads.
-- **Never break remote access.** The installer doesn't touch SSH, the firewall, networking or the login shell (`--set-shell` only on request). WayVNC, if used, is bound to `127.0.0.1` and reached through an SSH tunnel.
+- **Quickshell is optional at runtime.** Every island binding has a fallback (fuzzel, cliphist, hyprlock, Dunst), and `lib/safety.lua` registers rescue bindings (`SUPER+Return` for kitty, `SUPER+SHIFT+Return` for plain bash) before the rest of the configuration loads.
+- **Never break access.** The installer doesn't touch SSH, the firewall, networking, or the login shell (`--set-shell` only on request).
 - **Bash stays the recovery shell.** fish is the interactive shell; bash is always one keybind away.
 - **`SUPER+Q` closes windows, never opens a terminal**, so a reflex can't spawn shells.
 
 ## Deployment = symlinks
 
-Each entry in `profiles/minimal.links` is a symlink from `~` into the repo, so edits land in git and drift shows in `git status`. Anything already at a target is **moved** (never deleted) into a timestamped backup with a `MANIFEST`, which is what `--rollback` and `uninstall.sh` replay. A `--dry-run` previews every change.
+Each entry in `profiles/minimal.links` is a symlink from `~` into the repository. Edits land in git, and drift is visible in `git status`. If a target already exists, deployment **moves** it to a timestamped backup with a `MANIFEST`; `--rollback` and `uninstall.sh` use that manifest to restore it. Run `--dry-run` first when in doubt.
 
 ## Packages
 
@@ -25,7 +25,7 @@ Each entry in `profiles/minimal.links` is a symlink from `~` into the repo, so e
 
 ## The island
 
-One morphing surface instead of a bar: resting perspectives (Overview, Time, Music, Metrics, Minimal) and panels that grow out of it. Logic lives in `services/` singletons, visuals in `ui/` and `components/`. The surface stays a small strip while resting, because a large transparent layer is expensive without a GPU. The island owns notifications while it runs; dunst D-Bus-activates whenever it doesn't, so there's always exactly one notification server.
+The desktop uses one morphing surface rather than a conventional bar. It has resting perspectives (Overview, Time, Music, Metrics, Minimal) and panels that expand from it. Logic belongs in `services/` singletons; visuals belong in `ui/` and `components/`. The surface stays small at rest because a large transparent layer is costly without a GPU. The island owns notifications while it is running; Dunst activates through D-Bus when it is not, so there is one notification server at a time.
 
 ## Lock and login
 
@@ -33,12 +33,12 @@ The lock screen is a separate Quickshell config (`kessel-lock`) that runs only w
 
 ## Theme
 
-One pipeline (`theme.sh`): fixed bases (pitch black / eggshell) with accents from the wallpaper via matugen, written into every app that supports it. Generated files are never edited by hand. Details in [THEME.md](THEME.md).
+One pipeline (`theme.sh`): fixed bases (pitch black / eggshell) with accents from the wallpaper via matugen, written into every app that supports it. Generated files are not edited by hand. Details in [THEME.md](THEME.md).
 
 ## Services
 
-`services/` is a placeholder. Nothing there is deployed or enabled by the installer. Any future unit is its own opt-in step with a reviewed unit file, a dry run and an explicit `systemctl enable`. Units that open network ports, hold credentials or store data need a separate safety review (localhost binding, secret storage, shutdown behaviour).
+`services/` is a placeholder. Nothing there is deployed or enabled by the installer. Any future unit is its own opt-in step with a reviewed unit file, a dry run and an explicit `systemctl enable`. Units that open network ports, hold credentials, or store data need a separate safety review (localhost binding, secret storage, shutdown behavior).
 
 ## Licensing
 
-GPL-3.0-or-later. Projects in [INSPIRATIONS.md](../INSPIRATIONS.md) are inspiration only: no code or assets copied, and AGPL code is never imported.
+GPL-3.0-or-later. See [INSPIRATIONS.md](../INSPIRATIONS.md) for the projects that informed the design.

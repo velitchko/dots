@@ -1,13 +1,13 @@
 # dots
 
-Arch Linux + **Hyprland** (Lua config) + **Quickshell** desktop, built around a morphing **dynamic island**, with colours that follow your wallpaper (matugen) on a pitch-black or eggshell base. GPL-3.0-or-later.
+My Arch Linux desktop: **Hyprland** (Lua configuration), **Quickshell**, and a small dynamic island instead of a conventional bar. Wallpaper colors flow through the desktop via matugen; the base stays either pitch black or eggshell. GPL-3.0-or-later.
 
 > **Personal dotfiles. Use at your own risk.** This is the setup I run day to day, shared as-is. It is tuned to my habits and hardware, changes without notice, and comes with no support or guarantees. Read the scripts before running them, start with `--dry-run`, and keep a backup.
 
-- **Terminal:** kitty running fish + Starship (end-4-style prompt).
-- **Launchers:** the island launcher (`SUPER+R`: apps, calculator, URLs, offline translation) and fuzzel (`SUPER+SHIFT+Space`), which always works, even without Quickshell.
-- **Keys:** end-4/dots-hyprland muscle memory. Press `SUPER+/` for the full list.
-- **Safety first:** everything is a symlink into this repo, every install is reversible, and nothing depends on Quickshell to keep working.
+- **Terminal:** kitty, fish, and Starship.
+- **Launchers:** the island launcher (`SUPER+R`: apps, calculator, URLs, offline translation) plus fuzzel (`SUPER+SHIFT+Space`) as the dependable fallback.
+- **Keys:** mostly end-4/dots-hyprland muscle memory. Press `SUPER+/` for the generated list.
+- **Safety:** configs are symlinked from this repo, deployment is reversible, and the desktop remains usable if Quickshell is down.
 
 New here? Start with **Install** below. Want to change something? Read [`AGENTS.md`](AGENTS.md) (repo map and pitfalls) and [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
@@ -38,20 +38,16 @@ dots/
 
 ## The island
 
-A dynamic island built from scratch on Quickshell (`.config/quickshell/kessel`). It **rests** on workspaces · music · clock · weather · CPU/RAM/network · battery, with live chips for recording, timers, Do Not Disturb and notifications. **Perspectives:** scroll over the island to rotate between them:
-**Overview** (the default: workspaces, clock, weather, system),
-**Time** (clock, full date, current weather, the next three days, any running timer),
-**Music** (spinning cover, scrolling title · artist, a live cava visualizer that rests as a dot row when paused, time left, play/pause, and a progress line along the bottom edge; only while a player is open),
-**Metrics** (CPU/RAM/↓/↑ sparklines, uptime) and
-**Minimal** (time and date only).
-Music switches in by itself when playback starts and back out after 8 s paused. Panels opened from another panel get a **← back** button (where the gear sits; also `Alt+←` or the mouse back button). Morphing uses spring physics (`springStiffness` / `springDamping` in `Theme.qml`).
+The island lives in `.config/quickshell/kessel`. At rest it shows the useful basics: workspaces, time, weather, media, system state, and laptop status where that exists. Small indicators cover recording, timers, Do Not Disturb, and notifications.
+
+Scroll over it to switch perspective: **Overview**, **Time**, **Music**, **Metrics**, or **Minimal**. Music appears when playback starts and yields the space again after eight seconds paused. Panels opened from another panel get a back button; `Alt+Left` and the mouse-back button do the same thing. The motion is deliberately simple spring animation, configured in `Theme.qml`.
 
 Two round buttons float beside it: **⚙ left** opens quick settings, and **🔔 right** opens notifications (with a count badge; it shows a crossed-out bell while Do Not Disturb is on). It **morphs** into:
 
 | Opens with | Panel |
 | --- | --- |
 | hover | Glance: avatar, time/date, weather, music controller, system |
-| `SUPER+A` (or click it) | Quick settings: you (`~/.face`), Wi‑Fi, Bluetooth, output + mic sliders with device pickers, brightness, battery + power modes, wallpaper strip, Do Not Disturb, stay-awake, light/dark, notes, colour picker, screenshot, region/screen recording, timer, session |
+| `SUPER+A` (or click it) | Quick settings: you (`~/.face`), Wi‑Fi, Bluetooth, output + mic sliders with device pickers, brightness, battery + power modes, wallpaper strip, Do Not Disturb, stay-awake, light/dark, notes, color picker, screenshot, region/screen recording, timer, session |
 | `SUPER+N` | Notifications (click = focus the app, × = dismiss) + calendar + weather forecast |
 | `SUPER+Space` | Launcher (fuzzel if the island is down) |
 | `SUPER+V` | Clipboard history with image thumbnails |
@@ -61,16 +57,16 @@ Two round buttons float beside it: **⚙ left** opens quick settings, and **🔔
 | `CTRL+ALT+Delete` | Session: lock · standby · log out · restart · shut down (destructive ones need a second press) |
 | `SUPER+ALT+T` | Timer + stopwatch |
 
-Hardware-dependent sections (battery, power profiles, brightness, Wi‑Fi, Bluetooth) appear only when the hardware and its service exist, so the same config runs on a desktop, a laptop or a VM. **Notifications:** while the island runs, it is the notification server. dunst stays installed and D-Bus activates automatically whenever the island is stopped or has crashed.
+Hardware-specific controls—battery, power profiles, brightness, Wi‑Fi, Bluetooth—only appear when the corresponding hardware and service are available. The same configuration therefore works on a desktop, laptop, or VM. While the island runs it owns notifications; if it stops, Dunst takes over through D-Bus activation.
 
 ## Theme: light / dark from the wallpaper
 
 `~/.config/hypr/scripts/theme.sh` (also `CTRL+SUPER+SHIFT+D`, the quick-settings tile, the wallpaper picker):
 
 - **Dark** = pitch black (`#000000`). **Light** = eggshell (`#F0EAD6`). Only the *accents* come from the wallpaper (matugen, cached per image).
-- It writes `~/.local/state/kessel/theme/{colors.json,kitty.conf,fuzzel.ini,hyprland.lua}`. kitty reloads live, and fish + the Starship prompt follow kitty's palette. Hyprland borders, fuzzel, the island and GTK's colour scheme follow too.
+- It writes `~/.local/state/kessel/theme/{colors.json,kitty.conf,fuzzel.ini,hyprland.lua}`. kitty reloads live, and fish + the Starship prompt follow kitty's palette. Hyprland borders, fuzzel, the island, and GTK's color scheme follow too.
 - Wallpapers: drop images in `~/Pictures/Wallpapers`. **awww** draws them with an animated transition and remembers the last one (hyprpaper is the fallback); the island caches small thumbnails in `~/.cache/kessel/thumbs`.
-- Switching is smooth: island colours animate, and the whole screen crossfades from a snapshot while apps repaint.
+- Switching is smooth: island colors animate, and the whole screen crossfades from a snapshot while apps repaint.
 
 ## Lock screen & login screen
 
@@ -78,11 +74,11 @@ Hardware-dependent sections (battery, power profiles, brightness, Wi‑Fi, Bluet
 - **If a locker ever dies** (Hyprland shows "the lockscreen app died"), recover from SSH or another TTY: `hyprctl --instance 0 eval 'hl.clear_crashed_lockscreen()'`, or start hyprlock (`allow_session_lock_restore` is on). Tested.
 - **Login (SDDM)**: `sddm-theme/kessel` is the same design for the Qt6 greeter, with a session picker and user switching. `~/Scripts/sddm-theme.sh test` previews it in a window; `install` / `uninstall` (sudo) copy the theme, current wallpaper and `~/.face`, and select it via `/etc/sddm.conf.d/10-kessel.conf`.
 - **Cursor**: Bibata-Modern-Classic, as in end-4 (AUR `bibata-cursor-theme-bin`, installed with `--with-aur`).
-- **Theme reach**: matugen colours flow into the island, Hyprland borders, kitty (16 colours), fish, Starship, fuzzel, Qt (qt6ct, Dolphin), KDE colour scheme, GTK 3/4 + libadwaita (`gtk.css`, e.g. OmniGlyph), btop, yazi, the lock screen and SDDM (on install).
+- **Theme reach**: matugen colors flow into the island, Hyprland borders, kitty (16 colors), fish, Starship, fuzzel, Qt (qt6ct, Dolphin), KDE color scheme, GTK 3/4 + libadwaita (`gtk.css`, e.g. OmniGlyph), btop, yazi, the lock screen, and SDDM (on install).
 
 ## Performance note (no GPU)
 
-Without a GPU render node (typical for VMs), `general.lua` turns off blur and shadows automatically, because Hyprland draws in software there. The island also keeps its surface a small strip while resting. Together these cut Hyprland's CPU use from ~110% to ~9% in software rendering. Machines with a GPU keep blur and shadows.
+On a VM or other system without a GPU render node, `general.lua` disables blur and shadows automatically. The island also stays small when idle. This keeps software rendering sane; on the development VM it reduced Hyprland CPU use from roughly 110% to 9%. Systems with a usable GPU keep the effects.
 
 ## Displays
 
@@ -100,13 +96,13 @@ Without a GPU render node (typical for VMs), `general.lua` turns off blur and sh
 | Preview | images and PDFs open inside the editor (kitty graphics); CSV/TSV as an aligned table |
 | Git | signs + blame in the gutter, `<space>gg` lazygit, `<space>gh` file history, `<space>gH` repo history, `<space>gD` diff view |
 | pi ([pi.dev](https://pi.dev)) | `<space>ai` ask pi about the file / selection (it edits, Neovim reloads), `<space>aP` full pi session in a split. Needs `pi` installed and set up by you |
-| Colours | follow the desktop theme live (`~/.local/state/kessel/theme/nvim.json`) |
+| Colors | follow the desktop theme live (`~/.local/state/kessel/theme/nvim.json`) |
 
 Press `<space>` and wait: which-key lists everything.
 
 ## Install (fresh machine)
 
-A new Arch install with Hyprland and a display manager (SDDM) is all that's assumed.
+Start from a fresh Arch installation with Hyprland and a display manager (SDDM). Read the commands before running them; the first one is intentionally a dry run.
 
 ```sh
 sudo pacman -S --needed git
@@ -149,11 +145,11 @@ Type in the launcher (`SUPER+R`): `>de good morning` (EN→DE), `>bg …` (EN→
 
 ### How config deployment works
 
-Each entry in `profiles/minimal.links` becomes a **symlink** from `~` into this repo. Edits made through `~/.config/...` therefore land in git, and `git status` shows them.
+Each entry in `profiles/minimal.links` becomes a **symlink** from `~` into this repo. Editing through `~/.config/...` therefore edits the repository, and `git status` shows the change.
 
 - If something already exists at a link target, it is **moved** (never deleted) to `~/.local/state/dot-files/backups/<timestamp>/`, with a diff preview printed first.
 - Every run that changes something writes `backups/<timestamp>/MANIFEST`, which is what `--rollback` replays.
-- gsettings font and colour values are recorded too, so rollback restores the previous values.
+- gsettings font and color values are recorded too, so rollback restores the previous values.
 
 ## ~/Scripts
 
@@ -185,7 +181,7 @@ KESSEL_STRICT=1 Hyprland --verify-config -c ~/.config/hypr/hyprland.lua
 
 ## Keybindings
 
-There is a single source of truth: `.config/hypr/keybinds.lua`. From that registry, `lib/binder.lua`:
+`.config/hypr/keybinds.lua` is the single source of truth. `lib/binder.lua` then:
 
 - creates the real binds,
 - writes the in-session view (**SUPER + /**, opened in fuzzel),
@@ -216,25 +212,18 @@ The essentials (end-4 layout; full list in `docs/SHORTCUTS.md` or **SUPER + /**)
 | `SUPER + P` · `SUPER + N` · `SUPER + SHIFT + N` | Play-pause · next · previous |
 | `CTRL + SUPER + V` / `SUPER + ALT + M` | Mute output / mute mic |
 | `SUPER + V` · `SUPER + .` | Clipboard · emoji picker |
-| `SUPER + SHIFT + S` · `SUPER + SHIFT + C` · `SUPER + SHIFT + R` | Screenshot region · colour picker · record region |
+| `SUPER + SHIFT + S` · `SUPER + SHIFT + C` · `SUPER + SHIFT + R` | Screenshot region · color picker · record region |
 | `SUPER + =` / `SUPER + −` | Zoom in / out |
 | `SUPER + L` / `SUPER + SHIFT + L` | Lock / standby |
 | `CTRL + SUPER + R` | Reload Hyprland + restart the island |
 | `SUPER + /` | All shortcuts |
 
-## Operational verification
+## Check the installation
 
 ```sh
-./install.sh --check        # config verifies, links OK, sshd active, WayVNC loopback-only,
+./install.sh --check        # config verifies, links OK, sshd active,
                             # live binds present, no Hyprland config errors
-ss -ltnp | grep 5900        # must show 127.0.0.1:5900 only
 qs -c kessel ipc call island status
-```
-
-Remote desktop (optional): WayVNC listens **only** on `127.0.0.1:5900`. Reach it through an SSH tunnel:
-
-```sh
-ssh -L 5900:127.0.0.1:5900 <user>@<host>   # then point a VNC client at localhost:5900
 ```
 
 ## Recovery
@@ -269,4 +258,4 @@ Bug reports and pull requests: see [`CONTRIBUTING.md`](CONTRIBUTING.md). Agents 
 
 ## Licensing
 
-GPL-3.0-or-later (see `LICENSE`). The projects in [`INSPIRATIONS.md`](INSPIRATIONS.md) were used as **inspiration only**, and no code or assets were copied from them. OmniGlyph (GPL-3.0-only) is an external AUR dependency and is not vendored.
+GPL-3.0-or-later (see `LICENSE`). OmniGlyph (GPL-3.0-only) is an external AUR dependency and is not vendored.

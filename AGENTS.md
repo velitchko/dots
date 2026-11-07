@@ -19,22 +19,22 @@ Personal Arch Linux + **Hyprland (Lua config, 0.57+)** + **Quickshell** desktop 
 | `.config/hypr/scripts/` | Shell helpers used by binds/island: `island.sh` (start/stop/restart), `island-or.sh` (island IPC with fallback), `theme.sh` (**all theming**), `lock.sh`, `translate.sh`, screenshot/clipboard/… |
 | `.config/quickshell/kessel/` | The island. `shell.qml` → `ui/Island.qml`. `services/` = singletons without UI (state, D-Bus, PipeWire, processes). `ui/` = views, `ui/panels/` = expanded panels, `ui/perspectives/` = resting views. `components/` = reusable widgets. `Theme.qml`, `Icons.qml`, `Config.qml` |
 | `.config/quickshell/kessel-lock/` | Separate Quickshell config for the lock screen (runs only while locked) |
-| `.config/nvim/` | LazyVim. `lazyvim.json` = enabled extras; `lua/plugins/*.lua` = our additions; `lua/kessel/theme.lua` = colours from theme.sh. `lazy-lock.json` pins plugin versions (commit it after `:Lazy update`) |
+| `.config/nvim/` | LazyVim. `lazyvim.json` = enabled extras; `lua/plugins/*.lua` = our additions; `lua/kessel/theme.lua` = colors from theme.sh. `lazy-lock.json` pins plugin versions (commit it after `:Lazy update`) |
 | `sddm-theme/kessel/` | Qt6 SDDM theme (installed by `scripts/sddm-theme.sh`, needs sudo) |
 | `scripts/` | `~/Scripts`: install/update/uninstall/backup, `gen-shortcuts.sh`, `sddm-theme.sh` |
 | `services/` | **Future** systemd units. Nothing here is deployed or enabled |
 | `docs/` | `DESIGN.md` (decisions + why), `SHORTCUTS.md` (generated), `THEME.md`, `backlog/` |
-| `INSPIRATIONS.md` | Credited projects (inspiration only, no code copied) |
+| `INSPIRATIONS.md` | Projects that informed the design |
 
 ## Ground rules
 
 1. **Never `git push`.** Commit locally in small, verified steps; end commit messages with your attribution trailer if you're an agent.
-2. **Never break access.** Don't touch SSH, firewall, networking, the loopback-only WayVNC binding (`127.0.0.1:5900`), or the login shell (only `install.sh --set-shell` changes it, on request).
+2. **Never break access.** Don't touch SSH, firewall, networking, or the login shell (only `install.sh --set-shell` changes it, on request).
 3. **No services.** The installer never enables system/user services. Anything in `services/` is a future, explicit opt-in.
 4. **Back up before replacing.** Use the installer's link mechanism (it moves old files to `~/.local/state/dot-files/backups/<ts>/` and records a rollback manifest). Don't `cp`/`rm` over live config by hand.
 5. **No secrets** in the repo, logs or output.
 6. **Official repos first.** AUR only in `pkglist-aur.txt`. No Flatpak/Snap. If a package has an undeclared runtime dependency, add it to `pkglist.txt` with a comment (example: `gtk4-layer-shell` for OmniGlyph).
-7. **Licensing:** the projects in `INSPIRATIONS.md` are inspiration only. Don't copy code; Brain_Shell is AGPL and must never be imported.
+7. **Licensing:** respect upstream licenses. Brain_Shell is AGPL and must not be imported.
 8. **Don't edit generated files.** They live in `~/.local/state/kessel/theme/`, `~/.config/{btop,yazi,qt6ct}`, `~/.config/gtk-{3,4}.0/gtk.css`, `kdeglobals`. Change `theme.sh` instead.
 
 ## How to validate (always, before committing)
@@ -82,7 +82,7 @@ KESSEL_LOCK_PREVIEW=1 qs -n -c kessel-lock -d     # lock screen WITHOUT locking;
 **Shell**
 - **`pkill -f <pattern>` can match your own shell** (its command line contains the pattern). Use `pgrep -x`, PIDs, or `/proc/<pid>/cmdline` checks.
 - Starting island/lock from SSH needs `HYPRLAND_INSTANCE_SIGNATURE`, `WAYLAND_DISPLAY` and `XDG_RUNTIME_DIR`. `island.sh`, `lock.sh` and `theme.sh` derive them.
-- matugen ≥ 4 needs `--prefer` without a TTY. Its JSON is `.colors.<role>.<mode>.color`; its `base16` block isn't usable for terminal colours.
+- matugen ≥ 4 needs `--prefer` without a TTY. Its JSON is `.colors.<role>.<mode>.color`; its `base16` block isn't usable for terminal colors.
 
 **Lock screen safety**
 - Test with `KESSEL_LOCK_PREVIEW=1` (it never creates a session lock).

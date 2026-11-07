@@ -1,10 +1,10 @@
 # services/
 
-Future home for independently managed systemd units:
+Reserved for independently managed systemd units:
 
 - `user/`   → `~/.config/systemd/user/`
 - `system/` → `/etc/systemd/system/`
 
-**Nothing here is deployed, enabled, or started by `install.sh`.** Every service
-is a separate, explicit future opt-in stage. See `docs/DESIGN.md` (Services)
-for the rules any unit added here must follow.
+**`install.sh` does not deploy, enable, or start anything here.** Each service is
+an explicit future opt-in. See [the services design note](../docs/DESIGN.md#services)
+for the requirements that apply before a unit is added.
