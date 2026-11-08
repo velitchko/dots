@@ -304,8 +304,8 @@ EOF
             printf 'Appearance\tcolor_scheme_path\t%s\n' "$qd/colors/Kessel.conf"
             printf 'Appearance\ticon_theme\t%s\n' "$icons6"
             printf 'Appearance\tstyle\t%s\n' "$qstyle"
-            printf 'Fonts\tgeneral\t%s\n' '"JetBrainsMono Nerd Font,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"'
-            printf 'Fonts\tfixed\t%s\n' '"JetBrainsMono Nerd Font,12,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"'
+            printf 'Fonts\tgeneral\t%s\n' '"JetBrainsMono Nerd Font,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"'
+            printf 'Fonts\tfixed\t%s\n' '"JetBrainsMono Nerd Font,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"'
         } | kset "$qd/qt6ct.conf"
     fi
 

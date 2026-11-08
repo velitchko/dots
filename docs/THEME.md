@@ -45,7 +45,7 @@ Terminal colors: blue/magenta/cyan are the scheme's primary/tertiary/secondary, 
 
 ## Fonts
 
-**JetBrainsMono Nerd Font** everywhere (UI 11, mono 12). fontconfig maps `sans-serif`/`monospace`/`serif` to it, with **Noto Color Emoji** as the emoji fallback. Font names are set in: `kitty.conf`, `fuzzel.ini`, `dunstrc`, `Theme.qml`, the lock screen's `Style.qml`, `hyprlock.conf`, `gtk-*/settings.ini`, qt6ct and gsettings (via `theme.sh` / the installer).
+**JetBrainsMono Nerd Font** everywhere (UI 10, mono 11). fontconfig maps `sans-serif`/`monospace`/`serif` to it, with **Noto Color Emoji** as the emoji fallback. Font names are set in: `kitty.conf`, `fuzzel.ini`, `dunstrc`, `Theme.qml`, the lock screen's `Style.qml`, `hyprlock.conf`, `gtk-*/settings.ini`, qt6ct and gsettings (via `theme.sh` / the installer).
 
 ## Adding a new app
 

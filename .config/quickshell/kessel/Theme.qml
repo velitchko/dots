@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Shared look: Kessel palette + JetBrainsMono Nerd Font (UI 11 / mono 12, see docs/THEME.md).
+// Shared look: Kessel palette + JetBrainsMono Nerd Font (UI 10 / mono 11, see docs/THEME.md).
 pragma Singleton
 import QtQuick
 import Quickshell
@@ -63,8 +63,8 @@ Singleton {
     // every icon has a 0.6em advance but many draw up to ~1em wide, spilling right,
     // so anything centred by its box sat up to 18% of the icon size off (Wi-Fi).
     readonly property string iconFont: "JetBrainsMono Nerd Font Propo"
-    readonly property real fontUi: 11
-    readonly property real fontMono: 12
+    readonly property real fontUi: 10
+    readonly property real fontMono: 11
     readonly property real fontSmall: 9.5
     readonly property real fontBig: 22
 

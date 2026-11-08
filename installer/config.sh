@@ -89,8 +89,8 @@ record() { # record BDIR LINE
 
 # Font/colour defaults for GTK4/libadwaita apps (they read gsettings, not settings.ini).
 GSETTINGS_WANT=(
-    "org.gnome.desktop.interface font-name 'JetBrainsMono Nerd Font 11'"
-    "org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font 12'"
+    "org.gnome.desktop.interface font-name 'JetBrainsMono Nerd Font 10'"
+    "org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font 11'"
     "org.gnome.desktop.interface color-scheme 'prefer-dark'"   # theme.sh flips this for light mode
     "org.gnome.desktop.interface icon-theme 'Papirus-Dark'"
     "org.gnome.desktop.interface cursor-theme 'Bibata-Modern-Classic'"

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # dunst — the single notification path (D-Bus activated).
 [global]
-    font = JetBrainsMono Nerd Font 11
+    font = JetBrainsMono Nerd Font 10
     origin = top-right
     offset = (14, 14)
     width = (280, 420)
