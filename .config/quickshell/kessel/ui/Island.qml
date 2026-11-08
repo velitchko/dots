@@ -37,6 +37,7 @@ PanelWindow {
     mask: Region {
         item: pill
         Region { item: gearBtn }
+        Region { item: timerPill }
         Region { item: bellBtn }
         Region { item: privacyPill }
         Region { item: updatesPill }
@@ -91,6 +92,41 @@ PanelWindow {
         icon: IslandState.canGoBack ? Icons.back : Icons.settings
         active: IslandState.panel === "control" || IslandState.canGoBack
         onClicked: IslandState.canGoBack ? IslandState.back() : IslandState.openPanel("control")
+    }
+    // Countdown: pill left of the gear while a countdown runs or is paused.
+    // Dims with a pause icon while paused; click opens the timer panel. (The alarm itself still takes over the island.)
+    Rectangle {
+        id: timerPill
+        readonly property bool on: Timers.cdActive && !Alarm.ringing
+        y: 0
+        x: Math.max(0, gearBtn.x - width - 8)
+        height: Theme.islandHeight
+        width: Math.max(height, timerRow.implicitWidth + 24)
+        radius: height / 2
+        color: tma.containsMouse ? Qt.tint(Theme.island, Theme.a(Theme.purple, 0.22)) : Theme.island
+        border.width: 1
+        border.color: Theme.a(Theme.purple, tma.containsMouse ? 0.75 : 0.5)
+        opacity: on ? 1 : 0
+        visible: opacity > 0.01
+        scale: on ? 1 : 0.6
+        Behavior on opacity { NumberAnimation { duration: 200 } }
+        Behavior on scale { SpringAnimation { spring: Theme.springStiffness; damping: 0.4; epsilon: 0.01 } }
+        Behavior on x { SpringAnimation { spring: Theme.springStiffness; damping: Theme.springDamping; epsilon: 0.25 } }
+        Row {
+            id: timerRow
+            anchors.centerIn: parent
+            spacing: 6
+            Glyph { text: Timers.cdRunning ? Icons.sand : Icons.pause; color: Theme.purple; size: Theme.fontSmall + 1; optical: true; anchors.verticalCenter: parent.verticalCenter }
+            Label {
+                text: Time.hms(Timers.cdLeft)
+                color: Timers.cdRunning ? Theme.text : Theme.subtext
+                size: Theme.fontSmall
+                font.bold: true
+                font.features: { "tnum": 1 }          // fixed-width digits: the pill doesn't jitter
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+        MouseArea { id: tma; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: IslandState.openPanel("timer") }
     }
     SideButton {
         id: bellBtn
