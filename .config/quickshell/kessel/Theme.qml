@@ -70,13 +70,17 @@ Singleton {
     readonly property real fontSmall: 10
     readonly property real fontBig: 23
 
-    readonly property int islandHeight: 36
+    // islandHeight is the real driver of "the island looks small" -- everything
+    // else sizes against it, far more than the font constants above. Same
+    // scale-1.25-to-1 story: bumped a little along with radius/pad to stay
+    // proportional rather than just taller with the old tight padding.
+    readonly property int islandHeight: 39
     readonly property int screenCornerRadius: 14      // 0 disables the rounded screen corners
     readonly property int islandMargin: 6
-    readonly property int radius: 18
+    readonly property int radius: 19
     readonly property int radiusPanel: 26
     readonly property int radiusCard: 14
-    readonly property int pad: 14
+    readonly property int pad: 15
 
     readonly property int animMs: 320
 
