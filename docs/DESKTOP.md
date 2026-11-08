@@ -35,6 +35,25 @@ A fingerprint login can't unlock GNOME Keyring or KWallet: they're encrypted wit
 - **Cursor**: Bibata-Modern-Classic, as in end-4 (AUR `bibata-cursor-theme-bin`, installed with `--with-aur`).
 - **Theme reach**: matugen colors flow into the island, Hyprland borders, kitty (16 colors), fish, Starship, fuzzel, Qt (qt6ct, Dolphin), KDE color scheme, GTK 3/4 + libadwaita (`gtk.css`, e.g. OmniGlyph), btop, yazi, the lock screen, and SDDM (on install).
 
+## Root prompt
+
+**Why root looked bare.** `sudo -i` starts root's login shell (bash) and `sudo -s` starts your shell (fish) as root. Both run with `HOME=/root`, and sudo clears `STARSHIP_CONFIG`, so neither reads your `~/.config/fish` or the themed Starship config: root got bash's `[root@host ~]#`.
+
+**`~/Scripts/root-prompt.sh install`** (sudo) sets up root like this:
+
+| File | What |
+| --- | --- |
+| `/root/.config/starship.toml` | a **copy** of your themed config (`~/.local/state/kessel/theme/starship.toml`, or the repo's `starship.toml`), with a marker line on top. The username segment uses `style_root`, so root shows as a red `root` pill |
+| `/root/.bashrc` | `eval "$(starship init bash)"` for interactive shells (not on the TTY console), between `# >>> kessel prompt` / `# <<< kessel prompt` markers. The rest of the file is kept |
+| `/root/.bash_profile` | created only if missing: sources `.bashrc`, because `sudo -i` is a login shell |
+| `/root/.config/fish/conf.d/kessel-prompt.fish` | `starship init fish` for `sudo -s` (fish as root) |
+
+Running `install` again replaces its own block instead of adding a second one. **`remove`** deletes the snippet file, the marked blocks (and `.bash_profile` if that was all it held), and `starship.toml` only if it still carries the marker.
+
+**Why a copy, not a link.** Starship configs can run commands (`[custom]` modules). If root's prompt read a file your user can edit, anything running as your user could get code run as root the next time you open a root shell. The copy is owned by root, so changing it needs sudo, like everything else root runs.
+
+**After a theme change** (wallpaper or light/dark) root keeps the old colours until you run `install` again; theme.sh can't update root's files without sudo.
+
 ## ~/Scripts
 
 `~/Scripts` is a symlink to this repo's `scripts/`, so you can edit it in either place. Every script supports `--dry-run`.

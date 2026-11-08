@@ -102,6 +102,17 @@ systemctl --user restart wireplumber                  # once, so Bluetooth audio
 
 Details: [`docs/DESKTOP.md`](docs/DESKTOP.md#fingerprint).
 
+## Root shells
+
+By default a root shell (`sudo -i`, `sudo -s`) shows the plain bash prompt: root doesn't read your config. To give it the same themed Starship prompt, with `root` in a red pill so you always notice:
+
+```sh
+~/Scripts/root-prompt.sh install     # sudo; re-run after changing wallpaper or light/dark
+~/Scripts/root-prompt.sh remove      # undo
+```
+
+What it changes and why it copies instead of linking: [`docs/DESKTOP.md`](docs/DESKTOP.md#root-prompt).
+
 ## Translation (offline)
 
 Runs fully on your machine (Bergamot, the engine behind Firefox's translation). Needs a CPU with **AVX2** (any recent laptop; on a VM set the CPU type to `host`).
