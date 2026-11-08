@@ -331,9 +331,12 @@ Item {
         Item {
             width: parent.width
             height: 40
+            // centred in the 40×40 circle by box, not by a fixed x (Nerd Font
+            // glyph advances don't match their ink, so x: 10 sat off-centre)
             Text {
-                x: 10
-                anchors.verticalCenter: parent.verticalCenter
+                width: 40; height: 40
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
                 text: root.g(0xF0379)
                 font.family: root.nf; font.pixelSize: 18
                 color: sessionSwitcher.open ? root.accent : root.subtext
