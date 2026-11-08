@@ -35,8 +35,9 @@ ShellRoot {
         WlSessionLock {
             locked: true
             WlSessionLockSurface {
+                id: lockSurf
                 color: "black"
-                LockSurface { anchors.fill: parent; context: ctx }
+                LockSurface { anchors.fill: parent; context: ctx; screenName: lockSurf.screen?.name ?? "" }
             }
         }
     }
@@ -64,6 +65,7 @@ ShellRoot {
             LockSurface {
                 anchors.fill: parent
                 context: ctx
+                screenName: modelData.name
                 Keys.onEscapePressed: ctx.exiting = true
             }
         }

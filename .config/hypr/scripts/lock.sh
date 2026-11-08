@@ -33,11 +33,27 @@ command -v qs >/dev/null 2>&1 && [[ -f $cfg ]] || fallback
 # The island must not hold a keyboard grab / open panel under the lock.
 qs -c kessel ipc call island close >/dev/null 2>&1 || true
 
-qs -n -c kessel-lock -d >/dev/null 2>&1 || fallback
+# Screenshot each output for the lock's "frost over" entrance (the lock starts on
+# the sharp desktop and blurs it, instead of a black frame). Raw PPM: no encode
+# or decode time. In the private runtime dir, and deleted once the lock has
+# loaded them; the lock works without them too.
+shots="$XDG_RUNTIME_DIR/kessel-lock"
+rm -rf "$shots"; mkdir -m 700 -p "$shots"
+if command -v grim >/dev/null && command -v hyprctl >/dev/null; then
+    sleep 0.12   # let the island's closing animation get out of the picture
+    for out in $(hyprctl monitors -j 2>/dev/null | jq -r '.[].name' 2>/dev/null); do
+        timeout 2 grim -t ppm -o "$out" "$shots/$out.ppm" 2>/dev/null &
+    done
+    wait
+fi
+cleanup_shots() { ( sleep 4; rm -rf "$shots" ) >/dev/null 2>&1 & disown; }
+
+qs -n -c kessel-lock -d >/dev/null 2>&1 || { rm -rf "$shots"; fallback; }
 for _ in $(seq 1 30); do
-    [[ "$(qs -c kessel-lock ipc call lockstate secure 2>/dev/null)" == yes ]] && exit 0
+    [[ "$(qs -c kessel-lock ipc call lockstate secure 2>/dev/null)" == yes ]] && { cleanup_shots; exit 0; }
     sleep 0.1
 done
+rm -rf "$shots"
 # Not confirmed: get rid of the half-started locker and use hyprlock.
 qs kill -c kessel-lock >/dev/null 2>&1 || true
 fallback

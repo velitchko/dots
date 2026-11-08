@@ -174,7 +174,7 @@ apply() {
     H_GRN="$(mix "$GREEN" "$P" 0.25)"; H_YEL="$(mix "$YELLOW" "$P" 0.25)"
     RED=$ERR; GREEN=$H_GRN; YELLOW=$H_YEL; PURPLE=$T; CYAN=$S2
 
-    jq -n --arg mode "$mode" --arg wallpaper "$wall" \
+    jq -n --arg mode "$mode" --arg wallpaper "$wall" --arg lockWallpaper "$(lock_wall "$wall")" \
           --arg bg "$BG" --arg surface "$SURFACE" --arg surface2 "$SURFACE2" --arg overlay "$OVERLAY" \
           --arg text "$TEXT" --arg subtext "$SUBTEXT" --arg muted "$MUTED" \
           --arg accent "$A" --arg accent2 "$A2" --arg accent3 "$A3" \
@@ -599,7 +599,20 @@ sized_wall() {
     fi
     echo "$out"
 }
-precompute() { accents "$1" dark >/dev/null; sized_wall "$1" >/dev/null; }
+# lock_wall <image> → a small JPEG for the lock screen, which only shows it
+# blurred: decodes instantly instead of popping in after the full image.
+lock_wall() {
+    local wall=$1 out
+    command -v ffmpeg >/dev/null || { echo "$wall"; return; }
+    out="$WALLS/$(sha1sum "$wall" | cut -c1-16)-lock.jpg"
+    if [[ ! -s $out ]]; then
+        mkdir -p "$WALLS"
+        ffmpeg -nostdin -loglevel error -y -i "$wall" -vf "scale=1280:-2:flags=lanczos" -q:v 3 "$out.tmp.jpg" \
+            && mv "$out.tmp.jpg" "$out" || { rm -f "$out.tmp.jpg"; echo "$wall"; return; }
+    fi
+    echo "$out"
+}
+precompute() { accents "$1" dark >/dev/null; sized_wall "$1" >/dev/null; lock_wall "$1" >/dev/null; }
 
 set_wallpaper() {
     local wall=$1

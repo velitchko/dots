@@ -26,6 +26,8 @@ Singleton {
     readonly property color onAccent: dark ? "#000000" : "#ffffff"
     function a(col, alpha) { return Qt.rgba(col.r, col.g, col.b, alpha) }
     readonly property string wallpaper: c.wallpaper ?? "/usr/share/hypr/wall2.png"
+    // small copy made by theme.sh (shown blurred anyway, decodes instantly)
+    readonly property string lockWallpaper: c.lockWallpaper ?? wallpaper
     readonly property string mono: "JetBrainsMono Nerd Font Mono"
     readonly property string font: "JetBrainsMono Nerd Font"
     readonly property string iconFont: "JetBrainsMono Nerd Font Propo"   // icons centred by their real width (see kessel/Theme.qml)

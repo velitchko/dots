@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Kessel lock surface. Standalone (no end-4 modules); layout follows the user's
 // own adaptation of end-4/dots-hyprland's lock screen and clock widget:
-// blurred wallpaper + dark overlay, frosted centre card (time, date, avatar,
+// the screen frosts over into the blurred wallpaper + dark overlay, frosted centre card (time, date, avatar,
 // "$ whoami", username), a "Locked" pill, and a bottom toolbar
 // (keyboard layout · password · battery / sleep / power / reboot).
 import QtQuick
@@ -18,6 +18,8 @@ MouseArea {
     required property LockContext context
     readonly property bool requirePasswordToPower: true
     readonly property string user: Quickshell.env("USER") || "user"
+    // set by shell.qml: which output this surface covers (for its screenshot)
+    property string screenName: ""
 
     function forceFieldFocus() { passwordBox.forceActiveFocus() }
     Connections {
@@ -49,14 +51,27 @@ MouseArea {
         forceFieldFocus()
     }
 
-    // ── background: blurred wallpaper + dark overlay ─────────────────────────
+    // ── background: the screen frosts over, then becomes the wallpaper ───────
+    // lock.sh saves a screenshot of each output just before locking. The first
+    // frame shows it sharp (no black flash), then the blur and the dark overlay
+    // ease in, and the blurred wallpaper crossfades in underneath. Without a
+    // screenshot the wallpaper simply fades in from black. Both images load
+    // synchronously: the screenshot is raw (PPM) and the wallpaper a small copy,
+    // so the very first frame already has them.
+    property real frost: 0        // 0 = sharp screenshot → 1 = blurred + overlay
+    property real wallIn: 0       // 0 = screenshot → 1 = blurred wallpaper
+    Behavior on frost  { NumberAnimation { duration: 520; easing.type: Easing.OutCubic } }
+    Behavior on wallIn { NumberAnimation { duration: 800; easing.type: Easing.InOutSine } }
+    Timer { running: true; interval: 30;  onTriggered: root.frost = 1 }
+    Timer { running: true; interval: 420; onTriggered: root.wallIn = 1 }
+
     Rectangle { anchors.fill: parent; color: Style.base }
     Image {
         id: wall
         anchors.fill: parent
-        source: "file://" + Style.wallpaper
+        source: "file://" + Style.lockWallpaper
         fillMode: Image.PreserveAspectCrop
-        asynchronous: true
+        asynchronous: false
         visible: false
     }
     MultiEffect {
@@ -66,9 +81,30 @@ MouseArea {
         blurMax: 64
         blur: 1.0
         saturation: -0.1
+        opacity: shotFx.visible ? root.wallIn : Math.max(root.wallIn, root.frost)
         visible: wall.status === Image.Ready
     }
-    Rectangle { anchors.fill: parent; color: Style.overlay }
+    Image {
+        id: shot
+        anchors.fill: parent
+        source: root.screenName !== "" ? "file://" + Quickshell.env("XDG_RUNTIME_DIR") + "/kessel-lock/" + root.screenName + ".ppm" : ""
+        fillMode: Image.Stretch
+        asynchronous: false
+        cache: false
+        visible: false
+    }
+    MultiEffect {
+        id: shotFx
+        anchors.fill: parent
+        source: shot
+        blurEnabled: true
+        blurMax: 64
+        blur: root.frost
+        saturation: -0.1 * root.frost
+        opacity: 1 - root.wallIn
+        visible: shot.status === Image.Ready && opacity > 0.001
+    }
+    Rectangle { anchors.fill: parent; color: Style.overlay; opacity: root.frost }
 
     // ── centre card ──────────────────────────────────────────────────────────
     SystemClock { id: clock; precision: SystemClock.Seconds }
@@ -145,7 +181,9 @@ MouseArea {
                         sourceSize: Qt.size(320, 320)
                         fillMode: Image.PreserveAspectCrop
                         visible: status === Image.Ready
-                        onStatusChanged: if (status === Image.Error && idx < sources.length - 1) idx++
+                        // next candidate one tick later: changing source from inside its
+                        // own status change is a binding loop that stops the chain early
+                        onStatusChanged: if (status === Image.Error && idx < sources.length - 1) Qt.callLater(() => idx++)
                     }
                 }
                 Text {
