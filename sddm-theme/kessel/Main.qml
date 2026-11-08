@@ -262,8 +262,25 @@ Item {
                 font.pixelSize: 16
                 focus: true
                 onAccepted: root.login()
-                onTextChanged: if (text.length > 0) root.failed = false
+                onTextChanged: { if (text.length > 0) root.failed = false; field.syncShapeKinds() }
                 Keys.onEscapePressed: text = ""
+            }
+            // Same fix as the lock screen's LockSurface.qml. First attempt (a
+            // plain `var` array mutated with push()/length=) did not reliably
+            // notify bindings reading shapeKinds[index] -- shapes still
+            // reshuffled on some keystrokes. ListModel's append()/remove() are
+            // real, guaranteed-incremental operations Repeater is built to
+            // handle one-at-a-time, so earlier positions are truly never touched.
+            ListModel { id: shapeKinds }
+            // Keep in sync with ShapeChar.qml's own `kinds` list.
+            readonly property var shapeKindPool: ["circle", "square", "cookie4", "cookie6", "cookie9", "cookie12",
+                "clover4", "clover8", "sunny", "verySunny", "softBurst", "burst", "flower",
+                "triangle", "pentagon", "gem", "diamond", "pill", "puffy", "heart"]
+            function syncShapeKinds() {
+                const n = Math.min(password.text.length, 24)
+                while (shapeKinds.count < n)
+                    shapeKinds.append({ kind: field.shapeKindPool[Math.floor(Math.random() * field.shapeKindPool.length)] })
+                while (shapeKinds.count > n) shapeKinds.remove(shapeKinds.count - 1)
             }
             // No visible caret, so there's nothing to click "between" — the shapes
             // (fixed pitch) and the real masked text (font-metric width) never line
@@ -287,8 +304,8 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
                 Repeater {
-                    model: Math.min(password.text.length, 24)
-                    ShapeChar { color: root.accent; size: 18 }   // Material shapes, as on the lock screen
+                    model: shapeKinds
+                    ShapeChar { color: root.accent; size: 18; forced: model.kind }   // Material shapes, as on the lock screen
                 }
             }
             SequentialAnimation {

@@ -304,12 +304,32 @@ MouseArea {
                 font.pixelSize: 15
             }
             // password characters as Material shapes (end-4 style)
+            //
+            // A ListModel, not an int Repeater model + mutated var array: the
+            // first attempt at this (push()/length= on a plain `var` array) did
+            // NOT reliably notify bindings reading shapeKinds[index] -- shapes
+            // still reshuffled on some keystrokes. ListModel's append()/remove()
+            // are real, guaranteed-incremental operations Repeater is built to
+            // handle one-at-a-time, so earlier positions are truly never touched.
+            ListModel { id: shapeKinds }
+            // Keep in sync with ShapeChar.qml's own `kinds` list.
+            readonly property var shapeKindPool: ["circle", "square", "cookie4", "cookie6", "cookie9", "cookie12",
+                "clover4", "clover8", "sunny", "verySunny", "softBurst", "burst", "flower",
+                "triangle", "pentagon", "gem", "diamond", "pill", "puffy", "heart"]
+            function syncShapeKinds() {
+                const n = Math.min(root.context.currentText.length, 18)
+                while (shapeKinds.count < n)
+                    shapeKinds.append({ kind: field.shapeKindPool[Math.floor(Math.random() * field.shapeKindPool.length)] })
+                while (shapeKinds.count > n) shapeKinds.remove(shapeKinds.count - 1)
+            }
+            Connections { target: root.context; function onCurrentTextChanged() { field.syncShapeKinds() } }
+
             Row {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 4
                 Repeater {
-                    model: Math.min(root.context.currentText.length, 18)
-                    ShapeChar { color: Style.accent; size: 18 }
+                    model: shapeKinds
+                    ShapeChar { color: Style.accent; size: 18; forced: model.kind }
                 }
             }
             SequentialAnimation {
