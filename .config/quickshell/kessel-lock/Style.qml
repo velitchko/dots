@@ -44,9 +44,16 @@ Singleton {
     readonly property string iBattery:  g(0xF0079)
     readonly property string iAccount:  g(0xF0009)
 
+    // Read synchronously: the lock's first frame needs the colours and the small
+    // lock wallpaper. Loaded asynchronously, `c` was still empty when the lock was
+    // built, so it decoded the 8K fallback wallpaper first (~0.65 s before the
+    // lock could appear).
     FileView {
+        id: colorsFile
         path: Quickshell.env("HOME") + "/.local/state/kessel/theme/colors.json"
+        blockLoading: true
         printErrors: false
         onLoaded: { try { root.c = JSON.parse(text()) } catch (e) {} }
     }
+    Component.onCompleted: { try { root.c = JSON.parse(colorsFile.text()) } catch (e) {} }
 }

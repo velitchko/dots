@@ -71,7 +71,9 @@ MouseArea {
         anchors.fill: parent
         source: "file://" + Style.lockWallpaper
         fillMode: Image.PreserveAspectCrop
-        asynchronous: false
+        // synchronous only for theme.sh's small copy; anything else (e.g. no copy
+        // yet) must never hold up the lock
+        asynchronous: !Style.lockWallpaper.endsWith("-lock.jpg")
         visible: false
     }
     MultiEffect {
