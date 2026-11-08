@@ -24,9 +24,11 @@ hl.config({
 })
 
 -- The built-in "workspace" action swipes between already-existing workspaces
--- only — confirmed it won't create a new one past the last, even though
--- gestures.workspace_swipe_create_new is on (hl.dsp.focus with "r+1"/"r-1"
--- does create new ones fine, same as SUPER+Page_Down/Up below). Two directional
--- gestures routed through that same relative dispatch instead.
-hl.gesture({ fingers = 3, direction = "left",  action = function() return hl.dsp.focus({ workspace = "r+1" }) end })
-hl.gesture({ fingers = 3, direction = "right", action = function() return hl.dsp.focus({ workspace = "r-1" }) end })
+-- only, confirmed via hyprctl: dispatching workspace="r+1" directly DOES
+-- create new ones fine (same as SUPER+Page_Down below), but this preset
+-- doesn't. Tried routing it through a custom function action twice (see git
+-- log) -- both passed --verify-config but didn't actually fire on a real
+-- swipe, and there's no way to test the gesture callback signature here
+-- without real touchpad hardware. Reverted to the built-in preset: existing-
+-- workspaces-only, but at least it works.
+hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
