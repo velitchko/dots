@@ -161,11 +161,12 @@ PanelBase {
                             required property var modelData
                             icon: Icons.bluetooth
                             text: modelData.name || modelData.address
-                            sub: "Pair"
+                            sub: Bt.pairingAddress === modelData.address ? "Pairing…" : "Pair"
                             busy: modelData.pairing
                             onClicked: Bt.toggleDevice(modelData)
                         }
                     }
+                    Label { visible: Bt.pairError !== ""; text: Bt.pairError; color: Theme.red; size: Theme.fontSmall; leftPadding: 10; width: parent.width; wrapMode: Text.Wrap }
                     Label { visible: Bt.nearby.length === 0; text: "Put the device in pairing mode"; color: Theme.muted; size: Theme.fontSmall; leftPadding: 10; height: 26 }
                 }
             }

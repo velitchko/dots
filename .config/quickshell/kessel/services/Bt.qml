@@ -58,21 +58,34 @@ Singleton {
 
     function scan(on) { if (available && adapter.enabled) adapter.discovering = on }
 
-    // Click: connected → disconnect; paired → connect; new → pair, then connect
-    // (BlueZ pairs without connecting; headphones would otherwise sit "Paired").
-    property var pairingDevice: null
+    // Click: connected → disconnect; paired → connect; new → pair.
+    // Pairing goes through scripts/bt-pair.sh: BlueZ rejects a pairing nobody
+    // answers, and Quickshell can't register the agent that would. The script
+    // holds bluetoothctl's agent, then trusts and connects the device.
+    property string pairingAddress: ""
+    property string pairError: ""
     function toggleDevice(d) {
         if (d.connected) d.disconnect()
         else if (d.paired) d.connect()
-        else { pairingDevice = d; d.trusted = true; d.pair() }
+        else pair(d)
     }
-    Connections {
-        target: root.pairingDevice
-        ignoreUnknownSignals: true
-        function onPairedChanged() {
-            const d = root.pairingDevice
-            if (d && d.paired) { root.pairingDevice = null; d.connect() }
+    function pair(d) {
+        if (pairer.running) return
+        pairError = ""
+        pairingAddress = d.address
+        pairer.command = [Quickshell.env("HOME") + "/.config/hypr/scripts/bt-pair.sh", d.address]
+        pairer.running = true
+    }
+    Process {
+        id: pairer
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const r = text.trim()
+                if (r.startsWith("failed")) root.pairError = r.replace(/^failed:\s*/, "")
+            }
         }
+        onExited: { root.pairingAddress = ""; errorClear.restart() }
     }
+    Timer { id: errorClear; interval: 10000; onTriggered: root.pairError = "" }
     function forget(d) { d.forget() }
 }
