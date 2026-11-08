@@ -119,7 +119,9 @@ MouseArea {
 
             Item { Layout.preferredHeight: Math.min(48, root.height * 0.04) }
 
-            // avatar: same lookup order as the SDDM theme
+            // avatar: ~/.face first. The lock runs as the user, so it can read it,
+            // and it's the current picture. The SDDM copy (made by sddm-theme.sh
+            // install) and AccountsService's can be stale; they're only fallbacks.
             Item {
                 Layout.alignment: Qt.AlignHCenter
                 readonly property real s: Math.min(160, root.height * 0.17)
@@ -133,9 +135,10 @@ MouseArea {
                         id: avatar
                         anchors.fill: parent
                         readonly property var sources: [
+                            "file://" + Quickshell.env("HOME") + "/.face",
+                            "file://" + Quickshell.env("HOME") + "/.face.icon",
                             "file:///usr/share/sddm/faces/" + root.user + ".face.icon",
-                            "file:///var/lib/AccountsService/icons/" + root.user,
-                            "file://" + Quickshell.env("HOME") + "/.face"
+                            "file:///var/lib/AccountsService/icons/" + root.user
                         ]
                         property int idx: 0
                         source: sources[idx]
