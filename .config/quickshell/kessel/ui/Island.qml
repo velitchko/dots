@@ -161,13 +161,52 @@ PanelWindow {
         Row {
             id: privRow
             anchors.centerIn: parent
-            spacing: 6
-            Glyph { visible: Privacy.mic; text: Icons.mic; color: Theme.red; size: Theme.fontSmall + 1; optical: true }
-            Glyph { visible: Privacy.camera; text: Icons.camera; color: Theme.red; size: Theme.fontSmall + 1; optical: true }
-            Glyph { visible: Privacy.screen; text: Icons.screenShare; color: Theme.red; size: Theme.fontSmall + 1; optical: true }
+            spacing: 4
+            // Mic: click mutes / unmutes the input. While it's live, a soft halo
+            // pulses with your voice (MicLevel); muted shows the crossed-out mic.
+            Item {
+                visible: Privacy.mic
+                width: 24; height: 24
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 22; height: 22; radius: 11
+                    color: Theme.red
+                    opacity: Audio.micMuted ? 0 : Math.min(0.45, MicLevel.level * 0.8)
+                    scale: 0.7 + Math.min(1, MicLevel.level) * 0.5
+                    Behavior on opacity { NumberAnimation { duration: 90 } }
+                    Behavior on scale { NumberAnimation { duration: 90 } }
+                }
+                Glyph {
+                    anchors.centerIn: parent
+                    text: Audio.micMuted ? Icons.micOff : Icons.mic
+                    color: Audio.micMuted ? Theme.subtext : Theme.red
+                    size: Theme.fontSmall + 1
+                    optical: true
+                    scale: Audio.micMuted ? 1 : 1 + Math.min(1, MicLevel.level) * 0.18
+                    Behavior on scale { NumberAnimation { duration: 90 } }
+                }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Audio.toggleMicMute() }
+            }
+            // Camera: no general way to mute a webcam, so click jumps to the app using it.
+            Item {
+                visible: Privacy.camera
+                width: 24; height: 24
+                Glyph { anchors.centerIn: parent; text: Icons.camera; color: Theme.red; size: Theme.fontSmall + 1; optical: true }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Privacy.focusCamera() }
+            }
+            Item {
+                visible: Privacy.screen
+                width: 24; height: 24
+                Glyph { anchors.centerIn: parent; text: Icons.screenShare; color: Theme.red; size: Theme.fontSmall + 1; optical: true }
+            }
         }
         HoverHandler { id: privHover }
-        Hint { visible: privHover.hovered && text !== ""; text: [Privacy.mic ? "Microphone: " + Privacy.micApps : "", Privacy.camera ? "Camera in use" : "", Privacy.screen ? "Screen is being shared" : ""].filter(s => s).join("\n") }
+        Hint {
+            visible: privHover.hovered && text !== ""
+            text: [Privacy.mic ? (Audio.micMuted ? "Microphone muted (" + Privacy.micApps + "): click to unmute" : "Microphone: " + Privacy.micApps + ": click to mute") : "",
+                   Privacy.camera ? "Camera in use: click to go to the app" : "",
+                   Privacy.screen ? "Screen is being shared" : ""].filter(s => s).join("\n")
+        }
     }
 
     // Pending updates: accent pill (after the privacy pill when that's showing)
