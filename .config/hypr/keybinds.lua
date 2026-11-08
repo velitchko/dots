@@ -43,6 +43,12 @@ local function add(e) b[#b + 1] = e end
 
 -- Apps -----------------------------------------------------------------------
 add { group = "Apps", keys = "SUPER + Return",         exec = apps.terminal, desc = "Terminal (kitty)" }
+-- dwindle picks the split from the window's shape (wide → beside, tall → below).
+-- This one always opens the terminal BELOW the focused window; SUPER+ALT+J flips a split afterwards.
+add { group = "Apps", keys = "SUPER + ALT + Return", dsp = function() return function()
+        hl.dispatch(hl.dsp.layout("preselect d"))
+        hl.exec_cmd(apps.terminal)
+    end end, desc = "Terminal below (horizontal split)" }
 add { group = "Apps", keys = "SUPER + T",              exec = apps.terminal, desc = "Terminal (kitty)", hidden = true }
 add { group = "Apps", keys = "CTRL + ALT + T",         exec = apps.terminal, desc = "Terminal (kitty)", hidden = true }
 add { group = "Apps", keys = "SUPER + SHIFT + Return", exec = apps.recovery, desc = "Recovery shell (kitty + plain bash)" }

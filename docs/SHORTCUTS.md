@@ -7,6 +7,7 @@
 | Keys | Action |
 | --- | --- |
 | `SUPER + Return` | Terminal (kitty) |
+| `SUPER + ALT + Return` | Terminal below (horizontal split) |
 | `SUPER + SHIFT + Return` | Recovery shell (kitty + plain bash) |
 | `SUPER + C` | Code editor (Neovim) |
 | `SUPER + W` | Web browser |

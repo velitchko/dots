@@ -108,7 +108,8 @@ Enter copies the result. More languages: `translate.sh available`, then e.g. `tr
 
 | Keys | Action |
 | --- | --- |
-| `SUPER + Return` | Terminal (kitty) |
+| `SUPER + Return` · `SUPER + ALT + Return` | Terminal (kitty) · terminal below the current window |
+| `SUPER + ALT + J` | Flip a split (side by side ↔ stacked) |
 | tap `SUPER` · `SUPER + R` | Launcher |
 | `SUPER + A` / `SUPER + ALT + N` | Quick settings / notifications |
 | `SUPER + Tab` | Workspace overview (click to focus, drag to move) |
