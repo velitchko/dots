@@ -13,4 +13,9 @@ case "$mode" in
     *)      echo "usage: $0 region|full" >&2; exit 2 ;;
 esac
 wl-copy --type image/png < "$file"
-notify-send -a Screenshot -i "$file" "Screenshot saved" "${file/#$HOME/\~} (copied)" || true
+# image-path (not -i, which only sets the small app_icon and Quickshell's
+# iconPath() expects a theme name, not a raw path) is what the island's
+# NotificationCard actually renders as the big thumbnail. x-kessel-open-path
+# is a custom hint it also reads: click the card to open Dolphin on the file.
+notify-send -a Screenshot -h "string:image-path:file://$file" -h "string:x-kessel-open-path:$file" \
+    "Screenshot saved" "${file/#$HOME/\~} (copied)" || true

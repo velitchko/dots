@@ -70,11 +70,20 @@ Singleton {
         id: check
         property string failed: ""
         onExited: code => {
-            if (code === 0 && failed === "")
-                Quickshell.execDetached(["notify-send", "-a", "Recorder", "Recording saved", root.file.replace(Quickshell.env("HOME"), "~")])
-            else
+            if (code === 0 && failed === "") {
+                const thumbDir = Quickshell.env("HOME") + "/.cache/kessel/rec-thumbs"
+                const thumb = thumbDir + "/" + root.file.substring(root.file.lastIndexOf("/") + 1).replace(/\.mp4$/, ".jpg")
+                // Grab a frame for the thumbnail (image-path hint: same reasoning
+                // as screenshot.sh) and pass x-kessel-open-path so clicking the
+                // card opens Dolphin on the video, same as a screenshot notification.
+                Quickshell.execDetached(["sh", "-c",
+                    'mkdir -p "$(dirname "$2")" && ffmpeg -y -ss 0.5 -i "$1" -frames:v 1 -q:v 4 "$2" >/dev/null 2>&1; ' +
+                    'notify-send -a Recorder -h "string:image-path:file://$2" -h "string:x-kessel-open-path:$1" "Recording saved" "$3"',
+                    "sh", root.file, thumb, root.file.replace(Quickshell.env("HOME"), "~")])
+            } else {
                 Quickshell.execDetached(["notify-send", "-u", "critical", "-a", "Recorder", "Recording failed",
                                          failed || root.lastError || "No video was written"])
+            }
         }
     }
 }

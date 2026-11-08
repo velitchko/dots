@@ -30,6 +30,17 @@ Rectangle {
 
     function activate() {
         const n = root.notif
+        // notify-send exits immediately, so it can never receive a real D-Bus
+        // action click-back -- screenshot.sh/Recorder.qml instead pass the path
+        // in a custom hint. Checked before the generic app-focus fallback, which
+        // has no window to find for a one-shot CLI notification anyway.
+        const openPath = n.hints ? n.hints["x-kessel-open-path"] : undefined
+        if (openPath) {
+            Quickshell.execDetached(["dolphin", "--select", openPath])
+            Notifs.dismiss(n)
+            IslandState.closePanel()
+            return
+        }
         const hasDefault = n.actions.some(a => a.identifier === "default")
         if (!hasDefault) Hypr.focusApp([n.desktopEntry, n.appName])
         Notifs.activate(n)
