@@ -247,7 +247,7 @@ PanelBase {
                     x: 12; y: 10
                     spacing: 8
                     visible: Power.hasBattery
-                    Glyph { text: Power.icon; color: Power.charging ? Theme.green : Theme.text }
+                    Glyph { text: Power.icon; color: Power.charging ? Theme.green : Theme.text; optical: true }
                     Label { text: Math.round(Power.percent * 100) + "%"; font.bold: true }
                     Label { text: Power.timeLeft; color: Theme.subtext; size: Theme.fontSmall }
                 }
@@ -280,7 +280,7 @@ PanelBase {
                             Row {
                                 anchors.centerIn: parent
                                 spacing: 6
-                                Glyph { text: modelData.icon; color: parent.parent.on ? Theme.green : Theme.text; size: Theme.fontSmall + 2 }
+                                Glyph { text: modelData.icon; color: parent.parent.on ? Theme.green : Theme.text; size: Theme.fontSmall + 2; optical: true }
                                 Label { text: modelData.label; size: Theme.fontSmall }
                             }
                             MouseArea { id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Power.setProfile(modelData.p) }
@@ -302,20 +302,20 @@ PanelBase {
                     spacing: 8
                     Row {
                         width: parent.width; spacing: 8
-                        Glyph { text: Icons.cpu; width: 18; color: Theme.subtext; anchors.verticalCenter: parent.verticalCenter }
+                        Glyph { text: Icons.cpu; width: 18; color: Theme.subtext; optical: true; anchors.verticalCenter: parent.verticalCenter }
                         Bar { width: parent.width - 18 - 96 - 16; value: Stats.cpu; anchors.verticalCenter: parent.verticalCenter; fill: Stats.cpu > 0.85 ? Theme.red : Theme.accent }
                         Label { text: Math.round(Stats.cpu * 100) + "%"; size: Theme.fontSmall; color: Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
                     }
                     Row {
                         width: parent.width; spacing: 8
-                        Glyph { text: Icons.memory; width: 18; color: Theme.subtext; anchors.verticalCenter: parent.verticalCenter }
+                        Glyph { text: Icons.memory; width: 18; color: Theme.subtext; optical: true; anchors.verticalCenter: parent.verticalCenter }
                         Bar { width: parent.width - 18 - 96 - 16; value: Stats.mem; anchors.verticalCenter: parent.verticalCenter; fill: Stats.mem > 0.85 ? Theme.red : Theme.purple }
                         Label { text: Stats.memUsedGiB.toFixed(1) + "G"; size: Theme.fontSmall; color: Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
                     }
                     Row {
                         visible: Stats.temp >= 0
                         width: parent.width; spacing: 8
-                        Glyph { text: Icons.thermo; width: 18; color: Theme.subtext; anchors.verticalCenter: parent.verticalCenter }
+                        Glyph { text: Icons.thermo; width: 18; color: Theme.subtext; optical: true; anchors.verticalCenter: parent.verticalCenter }
                         Bar { width: parent.width - 18 - 96 - 16; value: Math.min(1, Stats.temp / 100); anchors.verticalCenter: parent.verticalCenter; fill: Stats.temp > 85 ? Theme.red : Theme.yellow }
                         Label { text: Math.round(Stats.temp) + "°C"; size: Theme.fontSmall; color: Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
                     }
@@ -324,7 +324,7 @@ PanelBase {
                         Row {
                             required property var modelData
                             width: sys.width; spacing: 8
-                            Glyph { text: Icons.disk; width: 18; color: Theme.subtext; anchors.verticalCenter: parent.verticalCenter }
+                            Glyph { text: Icons.disk; width: 18; color: Theme.subtext; optical: true; anchors.verticalCenter: parent.verticalCenter }
                             Bar { width: parent.width - 18 - 96 - 16; value: modelData.frac; anchors.verticalCenter: parent.verticalCenter; fill: modelData.frac > 0.9 ? Theme.red : Theme.accent2 }
                             Label { text: Stats.gib(modelData.size - modelData.used) + " free"; size: Theme.fontSmall; color: Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
                         }

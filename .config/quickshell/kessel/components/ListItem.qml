@@ -19,7 +19,7 @@ Rectangle {
     radius: 9
     color: ma.containsMouse ? Theme.cardHi : "transparent"
     // fixed slot: Propo icons have their real widths, labels must still line up
-    Glyph { id: ic; x: 6; width: 22; text: root.icon; visible: text !== ""; color: root.selected ? Theme.accent : Theme.subtext; anchors.verticalCenter: parent.verticalCenter; size: Theme.fontUi + 1 }
+    Glyph { id: ic; x: 6; width: 22; text: root.icon; visible: text !== ""; color: root.selected ? Theme.accent : Theme.subtext; optical: true; anchors.verticalCenter: parent.verticalCenter; size: Theme.fontUi + 1 }
     Label {
         anchors.left: ic.visible ? ic.right : parent.left
         anchors.leftMargin: ic.visible ? 8 : 10
@@ -37,7 +37,7 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         spacing: 6
         Label { text: root.busy ? "…" : root.sub; color: Theme.subtext; size: Theme.fontSmall - 0.5; anchors.verticalCenter: parent.verticalCenter }
-        Glyph { visible: root.selected; text: Icons.check; color: Theme.accent; size: Theme.fontSmall + 1; anchors.verticalCenter: parent.verticalCenter }
+        Glyph { visible: root.selected; text: Icons.check; color: Theme.accent; size: Theme.fontSmall + 1; optical: true; anchors.verticalCenter: parent.verticalCenter }
         Item { width: root.action !== "" ? 24 : 0; height: 24; anchors.verticalCenter: parent.verticalCenter }   // room for the action button
     }
     MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.clicked() }

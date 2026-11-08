@@ -25,7 +25,7 @@ Rectangle {
         anchors.leftMargin: 12
         anchors.verticalCenter: parent.verticalCenter
         spacing: 2
-        Glyph { text: root.icon; color: root.active ? root.tint : Theme.text; size: Theme.fontUi + 4 }
+        Glyph { text: root.icon; color: root.active ? root.tint : Theme.text; size: Theme.fontUi + 4; optical: true }
         Label { text: root.label; size: Theme.fontSmall; color: Theme.text; width: root.width - 20 }
     }
     MouseArea {
