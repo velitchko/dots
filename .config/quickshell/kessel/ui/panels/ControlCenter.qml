@@ -273,15 +273,24 @@ PanelBase {
                         Rectangle {
                             required property var modelData
                             readonly property bool on: Power.profile === modelData.p
-                            width: 110; height: 32; radius: 16
+                            // Content-sized, not a hardcoded 110 (didn't fit "Performance" at
+                            // today's font sizes) or a uniform width matched to the widest
+                            // label (made the whole row wider than the 360px card: Saver and
+                            // Balanced don't need "Performance"'s room, and this card has none
+                            // to spare for three pills that size).
+                            width: Math.max(72, content.implicitWidth + 24); height: 32; radius: 16
                             color: on ? Theme.a(Theme.green, 0.2) : (pm.containsMouse ? Theme.cardHi : "transparent")
                             border.width: on ? 1 : 0
                             border.color: Theme.green
                             Row {
+                                id: content
                                 anchors.centerIn: parent
                                 spacing: 6
-                                Glyph { text: modelData.icon; color: parent.parent.on ? Theme.green : Theme.text; size: Theme.fontSmall + 2; optical: true }
-                                Label { text: modelData.label; size: Theme.fontSmall }
+                                // Row doesn't vertically center children by default -- the
+                                // icon (fontSmall+2) and label (fontSmall) sat at different
+                                // baselines without this, the "text and icon not aligned" complaint.
+                                Glyph { text: modelData.icon; color: parent.parent.on ? Theme.green : Theme.text; size: Theme.fontSmall + 2; optical: true; anchors.verticalCenter: parent.verticalCenter }
+                                Label { text: modelData.label; size: Theme.fontSmall; anchors.verticalCenter: parent.verticalCenter }
                             }
                             MouseArea { id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Power.setProfile(modelData.p) }
                         }
