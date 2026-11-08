@@ -5,9 +5,8 @@
 local HOME = os.getenv("HOME")
 
 -- Feature toggles ----------------------------------------------------------------
--- Automatic idle locking stays OFF until manual lock/unlock with hyprlock
--- has been verified on this machine (SUPER+L).
-local ENABLE_IDLE   = false
+-- Manual lock/unlock with hyprlock verified working on this machine (SUPER+L).
+local ENABLE_IDLE   = true
 local ENABLE_ISLAND = true
 
 hl.on("hyprland.start", function()
