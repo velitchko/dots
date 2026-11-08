@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Minimal perspective: just the time and date.
+// Minimal perspective: just the time and date (+ battery on laptops).
 import QtQuick
 import "../.."
 import "../../services"
@@ -14,5 +14,6 @@ Item {
         spacing: 10
         Label { text: Time.time; font.bold: true; size: Theme.fontUi + 2; anchors.verticalCenter: parent.verticalCenter }
         Label { text: Time.dateShort; color: Theme.subtext; anchors.verticalCenter: parent.verticalCenter }
+        BatteryChip { anchors.verticalCenter: parent.verticalCenter }
     }
 }

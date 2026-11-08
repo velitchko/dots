@@ -141,5 +141,6 @@ Item {
             onClicked: Media.toggle()
             anchors.verticalCenter: parent.verticalCenter
         }
+        BatteryChip { anchors.verticalCenter: parent.verticalCenter }
     }
 }

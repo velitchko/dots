@@ -32,6 +32,7 @@ Item {
             Chip { required property var modelData; icon: Icons.disk; text: Stats.pct(modelData.frac) + " " + (modelData.mount === "/" ? "/" : modelData.mount.split("/").pop())
                    tint: modelData.frac > 0.9 ? Theme.red : Theme.subtext; anchors.verticalCenter: parent.verticalCenter }
         }
+        BatteryChip { anchors.verticalCenter: parent.verticalCenter }
         Chip { icon: Icons.timer; text: "up " + User.uptime; anchors.verticalCenter: parent.verticalCenter }
     }
 }

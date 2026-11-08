@@ -48,5 +48,6 @@ Item {
         // running countdown / stopwatch
         Chip { visible: Timers.cdActive; icon: Icons.sand; text: Time.hms(Timers.cdLeft); tint: Theme.purple; anchors.verticalCenter: parent.verticalCenter }
         Chip { visible: Timers.swRunning; icon: Icons.timer; text: Time.hms(Timers.swMs / 1000); tint: Theme.purple; anchors.verticalCenter: parent.verticalCenter }
+        BatteryChip { anchors.verticalCenter: parent.verticalCenter }
     }
 }

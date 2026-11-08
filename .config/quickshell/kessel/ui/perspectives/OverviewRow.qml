@@ -89,8 +89,7 @@ Item {
         Chip { clickable: true; onClicked: IslandState.openPanel("control"); icon: Net.icon; tint: Net.online ? Theme.subtext : Theme.red; anchors.verticalCenter: parent.verticalCenter }
         Chip { visible: Net.online; clickable: true; onClicked: IslandState.openPanel("control"); icon: Icons.download; text: Stats.compact(Stats.rxRate); reserve: "999K"; anchors.verticalCenter: parent.verticalCenter }
         Chip { visible: Net.online; clickable: true; onClicked: IslandState.openPanel("control"); icon: Icons.upload; text: Stats.compact(Stats.txRate); reserve: "999K"; anchors.verticalCenter: parent.verticalCenter }
-        Chip { visible: Power.hasBattery; icon: Power.icon; text: Stats.pct(Power.percent); reserve: "100%"
-               tint: Power.charging ? Theme.green : Power.percent < 0.15 ? Theme.red : Theme.subtext; anchors.verticalCenter: parent.verticalCenter }
+        BatteryChip { anchors.verticalCenter: parent.verticalCenter }
 
         // live activities
         Chip { clickable: true; onClicked: Recorder.stop(); visible: Recorder.recording; icon: Icons.record; text: Time.hms(Recorder.elapsed); tint: Theme.red; anchors.verticalCenter: parent.verticalCenter }
