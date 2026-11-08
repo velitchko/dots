@@ -26,7 +26,7 @@ My Arch Linux desktop: **Hyprland** (Lua config), **Quickshell**, and a dynamic 
 
 ## What's in it
 
-- **Island** (Quickshell): workspaces, time, weather, media, system stats, battery. Scroll over it to switch view (Overview · Time · Music · Metrics · Minimal). It morphs into panels: quick settings, notifications, launcher, clipboard, workspace overview, notes, media, mixer, timer, wallpaper.
+- **Island** (Quickshell): workspaces, time, weather, media, system stats, battery. Scroll over it to switch view (Overview · Time · Music · Metrics · Minimal). It morphs into panels: quick settings, notifications, launcher, clipboard, workspace overview, notes, media, mixer, timer, wallpaper, shortcuts. Small pills beside it show a running countdown, mic/camera/screen use (click to mute the mic) and pending updates.
 - **Terminal:** kitty + fish + Starship. **Editor:** Neovim (LazyVim).
 - **Launchers:** island launcher (`SUPER+R` or tap `SUPER`) and fuzzel (`SUPER+SHIFT+Space`) as fallback.
 - **Theme:** one script recolors everything from the wallpaper (island, Hyprland, kitty, fish, GTK, Qt/KDE, Neovim, lock, login).
@@ -77,7 +77,7 @@ systemctl --user restart wireplumber                  # once, so Bluetooth audio
 - **Wi-Fi:** click the row to see networks. Open networks connect directly, others ask for a password. Hover a saved network to forget it. "Hidden network, VPN, more…" opens NetworkManager's editor.
 - **Bluetooth:** "Nearby" devices pair with one click, then connect. Pairing runs through `~/.config/hypr/scripts/bt-pair.sh` (BlueZ needs a pairing agent). Devices that need a typed PIN (some keyboards) still need `bluetoothctl`.
 - **Audio:** expand the output / microphone row to switch devices (Bluetooth headsets appear here once connected).
-- **Fingerprint reader:** `~/Scripts/fingerprint.sh enroll` (fprintd comes with `--with-laptop`). The lock screen then accepts the password *or* your finger. For the login screen too: `~/Scripts/fingerprint.sh sddm-on` (asks first, backs up `/etc/pam.d/sddm`), then `~/Scripts/sddm-theme.sh install`; at login, press Enter on an empty password and touch the sensor. A fingerprint login can't unlock a keyring.
+- **Fingerprint reader:** see below.
 - **No sound devices at all?** Most laptops since ~2018 need `sof-firmware` (included in `--with-laptop`). Reboot after installing.
 - **Beeping in terminals / TTYs?** That's the PC speaker. Turn it off with:
   ```sh
@@ -85,6 +85,21 @@ systemctl --user restart wireplumber                  # once, so Bluetooth audio
   ```
 - **Displays:** `monitors.lua` arranges them automatically and re-applies on hot-plug: one external display goes to the **left** of the laptop; with three, the main one sits in the middle (set `MAIN_MONITOR`).
 - **Display manager (optional):** [hyprmoncfg](https://github.com/crmne/hyprmoncfg) (installed with `--with-aur`) lets you drag displays into place and save profiles like `desk` or `home`. Run `hyprmoncfg`; once you apply a layout it takes over from `monitors.lua`. To switch profiles automatically on plug/unplug and lid close: `systemctl --user enable --now hyprmoncfgd`. Delete `~/.config/hypr/hyprmoncfg-monitors.lua` to go back to the automatic layout.
+
+### Fingerprint
+
+`fprintd` comes with `--with-laptop` (it starts on demand, no service to enable).
+
+```sh
+~/Scripts/fingerprint.sh enroll        # touch the sensor until it says done (default: right index finger)
+~/Scripts/fingerprint.sh status        # reader, enrolled fingers, login-screen state
+```
+
+- **Lock screen:** works right after enrolling. The field says *Password or fingerprint*; touch the sensor or type, whichever comes first. Nothing in `/etc` changes (the lock brings its own fingerprint PAM stack).
+- **Login screen (optional):** `~/Scripts/fingerprint.sh sddm-on`, then `~/Scripts/sddm-theme.sh install`. At login, press **Enter on an empty password**, then touch the sensor; a typed password still works. It edits `/etc/pam.d/sddm` (shows the diff, asks, keeps a backup); `sddm-off` undoes it.
+- A fingerprint login can't unlock a keyring (GNOME Keyring / KWallet need the password).
+
+Details: [`docs/DESKTOP.md`](docs/DESKTOP.md#fingerprint).
 
 ## Translation (offline)
 
@@ -135,6 +150,14 @@ Enter copies the result. More languages: `translate.sh available`, then e.g. `tr
 | `CTRL + SUPER + R` | Reload Hyprland + restart the island |
 | `SUPER + /` | All shortcuts (searchable panel; fuzzel if the island is down) |
 
+### Pills beside the island
+
+| Pill | Shows | Click |
+| --- | --- | --- |
+| Countdown (left of ⚙) | time left of a running countdown; a pause icon while paused | opens the timer |
+| Privacy (red, right of 🔔) | mic, camera or screen in use; hover for which apps | **mic:** mute / unmute (grey crossed-out mic while muted; a red halo pulses while you talk). **camera:** jumps to the app using it (a webcam can't be muted, turn it off there) |
+| Updates | number of pending package updates | runs the update in a terminal |
+
 Full list: [`docs/SHORTCUTS.md`](docs/SHORTCUTS.md) (generated from `.config/hypr/keybinds.lua`, the single source of truth).
 
 **Wallpapers:** drop images into `~/Pictures/Wallpapers`, pick one from quick settings or `CTRL+SUPER+T`. Accents follow the wallpaper; details in [`docs/THEME.md`](docs/THEME.md).
@@ -163,6 +186,8 @@ After pulling changes that add files to the island: `~/.config/hypr/scripts/isla
 | Translation error | `translate.sh repair`, or `translate.sh add <pair>` |
 | OnlyOffice has transparent margins | `~/.config/hypr/scripts/theme.sh apply`, then restart OnlyOffice |
 | Fish broken | `SUPER+SHIFT+Return` opens plain bash; `chsh -s /usr/bin/bash` to switch back |
+| Fingerprint isn't offered on the lock | `~/Scripts/fingerprint.sh status` (needs fprintd + an enrolled finger); then lock again |
+| Mic halo doesn't pulse | It needs `cava` and runs only while an app uses the mic and it isn't muted |
 | Lock screen died | From SSH/TTY: `hyprctl --instance 0 eval 'hl.clear_crashed_lockscreen()'` |
 
 ## Rollback
