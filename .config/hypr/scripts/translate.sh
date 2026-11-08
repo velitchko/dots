@@ -9,6 +9,7 @@
 #   translate.sh add <pair|code>… download more, e.g.  add en-fr   or  add deu-ukr-tiny
 #   translate.sh installed        downloaded models
 #   translate.sh remove <code>    delete a downloaded model
+#   translate.sh repair           fix models the bergamot downloader left half-installed
 #   translate.sh run <from> <to>  translate stdin → stdout (pivots through English)
 #   translate.sh status           "ready" / "no-avx2" / "no-runtime" / "no-models" (for the island)
 #
@@ -71,11 +72,65 @@ installed_codes() { # "repo code" lines for downloaded models
 }
 is_installed() { installed_codes | grep -qx "$1 $2"; }
 
+# repair <repo> <code>: make a downloaded model usable.
+# The bergamot package expects each archive to unpack into a folder named after
+# its URL (ende.student.base.v2.37b172bc9b594f9b), but current archives unpack
+# into a shorter one (ende.student.base). Its download then links the code to a
+# folder that doesn't exist and dies before writing config.bergamot.yml, and
+# translating fails with "You need to provide at least one model file or a
+# config file". We link the expected name to the real folder and write the
+# config with the same settings the package's patch step uses.
+repair() {
+    [[ -x $VENV/bin/python ]] || return 0
+    inventory "$1" >/dev/null   # refreshes $CACHE/<repo>.json (the script itself comes on stdin)
+    "$VENV/bin/python" -I - "$1" "$2" "${XDG_DATA_HOME:-$HOME/.local/share}/bergamot" "$CACHE/$1.json" <<'PY'
+import json, os, sys, tarfile
+import yaml
+repo, code, base, invfile = sys.argv[1:5]
+inv = json.load(open(invfile))
+m = next((m for m in inv["models"] if m["code"] == code), None)
+if m is None:
+    sys.exit(0)
+models = os.path.join(base, "models", repo)
+want = os.path.join(models, os.path.basename(m["url"]).replace(".tar.gz", ""))
+if not os.path.isdir(want):
+    arch = os.path.join(base, "archives", repo, m["shortName"] + ".tar.gz")
+    if not os.path.exists(arch):
+        sys.exit(f"translate: {code}: archive {arch} missing, download again")
+    with tarfile.open(arch) as t:
+        top = next((n.split("/")[0] for n in t.getnames() if n.split("/")[0] not in ("", ".")), None)
+        if top is None or not os.path.isdir(os.path.join(models, top)):
+            t.extractall(models)
+    if top and os.path.isdir(os.path.join(models, top)):
+        if os.path.islink(want): os.remove(want)
+        os.symlink(top, want)
+    if not os.path.isdir(want):
+        sys.exit(f"translate: {code}: can't find the unpacked model folder")
+link = os.path.join(models, code)
+if not os.path.exists(link):
+    if os.path.islink(link): os.remove(link)
+    os.symlink(want, link)
+cfg = os.path.join(want, "config.bergamot.yml")
+if not os.path.exists(cfg) or os.path.getsize(cfg) == 0:
+    src = next((os.path.join(want, f) for f in ("config.intgemm8bitalpha.yml", "config.yml") if os.path.exists(os.path.join(want, f))), None)
+    if src is None:
+        sys.exit(f"translate: {code}: no marian config in {want}")
+    data = yaml.load(open(src), Loader=yaml.FullLoader)
+    data.update({"ssplit-prefix-file": "", "ssplit-mode": "paragraph", "max-length-break": 128,
+                 "mini-batch-words": 1024, "workspace": 128, "alignment": "soft"})
+    with open(cfg, "w") as f:
+        print(yaml.dump(data, sort_keys=False), file=f)
+    print(f"✓ {code}: config written")
+PY
+}
+
 download() { # download <repo> <code>
     [[ -x $BIN ]] || die "runtime missing — run: translate.sh setup"
-    is_installed "$1" "$2" && { echo "✓ $2 ($1) already installed"; return; }
+    if is_installed "$1" "$2"; then repair "$1" "$2"; echo "✓ $2 ($1) already installed"; return; fi
     echo "↓ $2 ($1)"
-    "$BIN" download -r "$1" -m "$2"
+    # may exit non-zero on the folder-name mismatch above; repair finishes the job
+    "$BIN" download -r "$1" -m "$2" || true
+    repair "$1" "$2"
 }
 
 add() { # add <pair|code>…
@@ -99,6 +154,8 @@ run_translate() {
     [[ -x $BIN ]] || die "runtime missing — run: ~/.config/hypr/scripts/translate.sh setup"
     text="$(cat)"
     [[ -n $text ]] || return 0
+    # fix models downloaded before repair() existed (cheap once fixed)
+    local r; while read -r r; do [[ -n $r ]] && repair $r >&2; done < <(installed_codes)
     r1="$(resolve "$f" "$t")"
     if [[ -n $r1 ]] && is_installed $r1; then
         printf '%s' "$text" | "$BIN" translate -r "${r1% *}" -m "${r1#* }"; echo; return
@@ -151,13 +208,18 @@ case "${1:-}" in
         shift; (( $# )) || die "usage: translate.sh remove <code>"
         for repo in browsermt opus; do
             l="${XDG_DATA_HOME:-$HOME/.local/share}/bergamot/models/$repo/$1"
-            if [[ -L $l ]]; then rm -rf -- "$(readlink -f "$l")"; rm -f -- "$l"; echo "removed $1 ($repo)"; fi
+            if [[ -L $l ]]; then
+                rm -rf -- "$(readlink -f "$l")"; rm -f -- "$l"
+                find "${l%/*}" -maxdepth 1 -xtype l -delete   # the URL-named link repair() made
+                echo "removed $1 ($repo)"
+            fi
         done ;;
+    repair)    while read -r r; do [[ -n $r ]] && repair $r; done < <(installed_codes); echo "✓ models checked" ;;
     run)       shift; (( $# == 2 )) || die "usage: translate.sh run <from> <to>  (text on stdin)"; run_translate "$1" "$2" ;;
     status)
         if ! grep -qw avx2 /proc/cpuinfo; then echo no-avx2
         elif [[ ! -x $BIN || ! -e $STAMP ]]; then echo no-runtime
         elif [[ -z "$(installed_codes)" ]]; then echo no-models
         else echo ready; fi ;;
-    *) sed -n '3,15p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+    *) sed -n '3,16p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac
