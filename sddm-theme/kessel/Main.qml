@@ -255,6 +255,10 @@ Item {
                 selectionColor: "transparent"
                 selectedTextColor: "transparent"
                 cursorVisible: false
+                // Qt re-sets cursorVisible itself on focus-in, overriding the plain
+                // `false` above the moment this field is focused (it always is).
+                // Re-assert it every time, or the native blink cursor comes back.
+                onActiveFocusChanged: cursorVisible = false
                 font.pixelSize: 16
                 focus: true
                 onAccepted: root.login()
