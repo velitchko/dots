@@ -5,4 +5,7 @@ set -euo pipefail
 pkill -x fuzzel 2>/dev/null && exit 0
 f="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/kessel-shortcuts.txt"
 [[ -r $f ]] || { notify-send "Shortcuts" "No shortcuts file yet — reload Hyprland (SUPER+CTRL+R)"; exit 0; }
-fuzzel --dmenu --prompt '  ' --placeholder 'Search shortcuts' --width 90 --lines 20 < "$f" >/dev/null || true
+# Nerd Font *Mono*: every key icon is one cell wide, so the columns line up.
+# Medium weight: fuzzel draws the regular weight visibly thinner than the island (Qt).
+fuzzel --dmenu --font 'JetBrainsMono Nerd Font Mono:size=11:weight=medium' \
+    --prompt $'\uf303  ' --placeholder 'Search shortcuts' --width 72 --lines 20 < "$f" >/dev/null || true

@@ -30,13 +30,41 @@ local function grouped(binds)
     return groups, order
 end
 
---- Plain-text view (for fuzzel --dmenu).
+-- Key names → Nerd Font icons for the SUPER+/ list (codepoints checked by name
+-- against Nerd Fonts' glyphnames.json). The Markdown view keeps plain names.
+local ICON = {
+    SUPER = "\u{f303}", SUPER_L = "\u{f303}",                       -- linux-archlinux
+    SHIFT = "\u{f0636}", CTRL = "\u{f0634}", ALT = "\u{f0635}",      -- md-apple_keyboard_shift/control/option
+    Return = "\u{f0311}", Tab = "\u{f0312}", Space = "\u{f1050}",    -- md-keyboard_return/tab/space
+    Escape = "\u{f12b7}", Print = "\u{f0e51}",                       -- md-keyboard_esc, md-monitor_screenshot
+    ["mouse:272"] = "\u{f037d} L", ["mouse:273"] = "\u{f037d} R", ["mouse:274"] = "\u{f037d} M",
+    mouse_down = "\u{f1550}", mouse_up = "\u{f1551}",                -- md-mouse_move_down/up
+    XF86AudioRaiseVolume = "\u{f057e}", XF86AudioLowerVolume = "\u{f057f}", XF86AudioMute = "\u{f075f}",
+    XF86AudioMicMute = "\u{f036d}", XF86AudioPlay = "\u{f040e}", XF86AudioPause = "\u{f040e}",
+    XF86AudioNext = "\u{f04ad}", XF86AudioPrev = "\u{f04ae}",
+    XF86MonBrightnessUp = "\u{f00e0}", XF86MonBrightnessDown = "\u{f00de}",
+    slash = "/", period = ".", equal = "=", minus = "\u{2212}", semicolon = ";", apostrophe = "'",
+    left = "\u{2190}", right = "\u{2192}", Page_Up = "PgUp", Page_Down = "PgDn", Delete = "Del",
+}
+local function pretty_keys(keys)
+    if keys == "SUPER + SUPER_L" then return "tap " .. ICON.SUPER end
+    -- "SUPER (+ CTRL) + 1…0" style entries keep their wording, icons swapped in
+    local s = keys:gsub("[%w_:]+", function(tok) return ICON[tok] or tok end)
+    return (s:gsub(" %+ ", "  "))
+end
+local function pad(str, width)   -- pad by characters, not bytes (icons are multi-byte)
+    local n = utf8.len(str) or #str
+    return str .. string.rep(" ", math.max(1, width - n))
+end
+
+--- Plain-text view (for fuzzel --dmenu; shown with the Nerd Font Mono, so every
+--- icon is one cell wide and the columns line up).
 function M.render_text(binds)
     local groups, order = grouped(binds)
     local out = {}
     for _, g in ipairs(order) do
         for _, e in ipairs(groups[g] or {}) do
-            out[#out + 1] = ("%-12s %-28s %s"):format(g, e.keys, e.desc)
+            out[#out + 1] = pad(g, 12) .. pad(pretty_keys(e.keys), 18) .. e.desc
         end
     end
     return table.concat(out, "\n") .. "\n"
