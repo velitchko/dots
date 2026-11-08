@@ -14,9 +14,13 @@ local MAIN_MONITOR = ""      -- e.g. "Dell Inc. DELL U2723QE" (substring match)
 -- Per-output mode overrides (output name → mode). Everything not listed uses its
 -- preferred mode. Virtual displays often default to an odd mode, so pin one here.
 local MODES = { ["Virtual-1"] = "1920x1080" }
--- Per-output scale overrides. "auto" (DPI-based) rounded eDP-1 up to 1.5, which
--- felt too large; pinned a bit lower instead.
-local SCALES = { ["eDP-1"] = "1.25" }
+-- Per-output scale overrides. "auto" (DPI-based) rounded eDP-1 up to 1.5.
+-- Tried 1.25 first, but any fractional scale renders visibly soft here
+-- (confirmed A/B, live) even with QT_SCALE_FACTOR_ROUNDING_POLICY=PassThrough
+-- set (env.lua) -- this Qt6/Quickshell stack doesn't cleanly support
+-- fractional buffer scaling. Pinned to the nearest integer instead; size is
+-- tuned via font points (see docs/THEME.md), not surface scale.
+local SCALES = { ["eDP-1"] = "1" }
 for name, mode in pairs(MODES) do
     hl.monitor({ output = name, mode = mode, position = "0x0", scale = SCALES[name] or "auto" })
 end
