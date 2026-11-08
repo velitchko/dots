@@ -7,6 +7,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import ".."
 
 Singleton {
     id: root
@@ -42,20 +43,28 @@ Singleton {
     Timer {
         id: debounce
         interval: 550
-        onTriggered: {
-            const p = root.parse(root.query)
-            if (!p) return
-            if (proc.running) proc.signal(15)
-            root.busy = true; root.error = ""
-            proc.command = ["sh", "-c", 'printf "%s" "$3" | "$0" run "$1" "$2"', root.script, p.from, p.to, p.text]
-            proc.running = true
-        }
+        onTriggered: root.start()
+    }
+    // Typing while a translation runs used to drop the new request: setting
+    // running = true on a process that is still running does nothing. Now the
+    // old one is stopped, its output ignored, and the latest query runs next.
+    property bool rerun: false
+    function start() {
+        const p = parse(query)
+        if (!p) return
+        busy = true; error = ""
+        if (proc.running) { rerun = true; proc.signal(15); return }
+        proc.command = ["sh", "-c", 'printf "%s" "$3" | "$0" run "$1" "$2"', script, p.from, p.to, p.text]
+        proc.running = true
     }
     Process {
         id: proc
-        stdout: StdioCollector { onStreamFinished: { root.result = text.trim(); root.busy = false } }
-        stderr: StdioCollector { onStreamFinished: if (text.trim() !== "") root.error = text.trim().split("\n").pop().replace(/^translate: /, "") }
-        onExited: root.busy = false
+        stdout: StdioCollector { onStreamFinished: if (!root.rerun) root.result = text.trim() }
+        stderr: StdioCollector { onStreamFinished: if (!root.rerun && text.trim() !== "") root.error = text.trim().split("\n").pop().replace(/^translate: /, "") }
+        onExited: {
+            if (root.rerun) { root.rerun = false; root.start() }
+            else root.busy = false
+        }
     }
 
     function refresh() { if (!probe.running) probe.running = true }
