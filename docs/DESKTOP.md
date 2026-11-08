@@ -47,6 +47,7 @@ A fingerprint login can't unlock GNOME Keyring or KWallet: they're encrypted wit
 | `~/Scripts/uninstall.sh` | Undo every deployment newest-first, restoring the original files. Asks first; `--purge` also removes generated state. Never removes packages |
 | `~/Scripts/sddm-theme.sh` | Login screen: `test` (window preview), `install` / `uninstall` (sudo) |
 | `~/Scripts/gen-shortcuts.sh` | Rebuild `docs/SHORTCUTS.md` from `keybinds.lua` |
+| `~/Scripts/root-prompt.sh` | `install` / `remove` (sudo): the themed Starship prompt in root shells (`sudo -i`, `sudo -s`), root shown as a red pill. Copies the config (root must not read a file your user can edit); re-run after a theme change |
 | `~/Scripts/fingerprint.sh` | `status`, `enroll [finger]`, `sddm-on` / `sddm-off` (sudo; fingerprint login at SDDM) |
 
 ## How config deployment works

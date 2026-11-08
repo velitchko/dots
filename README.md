@@ -45,6 +45,7 @@ git clone https://github.com/velitchko/dots ~/dot-files && cd ~/dot-files
 ./install.sh --with-aur --apply-config             # 2. packages + config links + theme
 ./install.sh --set-shell                           # 3. optional: fish as login shell
 ~/Scripts/sddm-theme.sh install                    # 4. optional: login screen (sudo)
+~/Scripts/root-prompt.sh install                   #    optional: themed prompt for root shells too (sudo)
 ./install.sh --check                               # 5. verify
 ```
 
