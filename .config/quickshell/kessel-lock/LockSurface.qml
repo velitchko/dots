@@ -275,6 +275,14 @@ MouseArea {
                     function onCurrentTextChanged() { if (passwordBox.text !== root.context.currentText) passwordBox.text = root.context.currentText }
                 }
             }
+            // No visible caret, so there's nothing to click "between" — the shapes
+            // (fixed 22px pitch) and the real masked text (font-metric width) never
+            // line up anyway. A click just focuses and goes to the end, instead of
+            // letting Qt silently jump the edit point to a mismatched position.
+            MouseArea {
+                anchors.fill: parent
+                onClicked: { passwordBox.forceActiveFocus(); passwordBox.cursorPosition = passwordBox.text.length }
+            }
             // placeholder / status
             Text {
                 anchors.verticalCenter: parent.verticalCenter

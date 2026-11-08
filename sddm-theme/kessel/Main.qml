@@ -261,6 +261,14 @@ Item {
                 onTextChanged: if (text.length > 0) root.failed = false
                 Keys.onEscapePressed: text = ""
             }
+            // No visible caret, so there's nothing to click "between" — the shapes
+            // (fixed pitch) and the real masked text (font-metric width) never line
+            // up anyway. A click just focuses and goes to the end, instead of
+            // letting Qt silently jump the edit point to a mismatched position.
+            MouseArea {
+                anchors.fill: parent
+                onClicked: { password.forceActiveFocus(); password.cursorPosition = password.text.length }
+            }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: password.text.length === 0
