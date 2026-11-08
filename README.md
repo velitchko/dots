@@ -1,261 +1,183 @@
 # dots
 
-My Arch Linux desktop: **Hyprland** (Lua configuration), **Quickshell**, and a small dynamic island instead of a conventional bar. Wallpaper colors flow through the desktop via matugen; the base stays either pitch black or eggshell. GPL-3.0-or-later.
+![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?logo=archlinux&logoColor=white)
+![Hyprland](https://img.shields.io/badge/Hyprland-0.57_(Lua)-58E1FF?logo=hyprland&logoColor=white)
+![Quickshell](https://img.shields.io/badge/Quickshell-0.3-8A63D2)
+![Shell](https://img.shields.io/badge/shell-fish-4AAE47?logo=fishshell&logoColor=white)
+![License](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)
 
-> **Personal dotfiles. Use at your own risk.** This is the setup I run day to day, shared as-is. It is tuned to my habits and hardware, changes without notice, and comes with no support or guarantees. Read the scripts before running them, start with `--dry-run`, and keep a backup.
+My Arch Linux desktop: **Hyprland** (Lua config), **Quickshell**, and a dynamic island instead of a bar. Accents come from the wallpaper; the base is pitch black (dark) or eggshell (light).
 
-- **Terminal:** kitty, fish, and Starship.
-- **Launchers:** the island launcher (`SUPER+R`: apps, calculator, URLs, offline translation) plus fuzzel (`SUPER+SHIFT+Space`) as the dependable fallback.
-- **Keys:** mostly end-4/dots-hyprland muscle memory. Press `SUPER+/` for the generated list.
-- **Safety:** configs are symlinked from this repo, deployment is reversible, and the desktop remains usable if Quickshell is down.
+> **Personal dotfiles, use at your own risk.** Tuned to my hardware and habits, no support. Read the scripts, start with `--dry-run`, keep a backup.
 
-New here? Start with **Install** below. Want to change something? Read [`AGENTS.md`](AGENTS.md) (repo map and pitfalls) and [`CONTRIBUTING.md`](CONTRIBUTING.md).
+![The island: resting view with countdown pill, gear and bell, then the Time, Music, Metrics and Minimal perspectives](docs/screenshots/island.png)
 
-```
-dots/
-├── install.sh · installer/        # idempotent installer (packages, config links, theme, checks, rollback)
-├── profiles/minimal.links         # repo path → ~ path for every linked config
-├── pkglist.txt                    # official packages
-├── pkglist-aur.txt                # optional AUR (--with-aur, via yay): OmniGlyph, Bibata cursor
-├── pkglist-laptop.txt             # optional laptop extras (--with-laptop)
-├── .config/
-│   ├── hypr/                      # Hyprland (Lua): hyprland.lua loads monitors · env · general ·
-│   │   │                          #   input · workspaces · exec · keybinds (THE registry) · custom
-│   │   ├── lib/                   #   safety (rescue binds) · binder · floatmode
-│   │   ├── scripts/               #   island · theme · lock · translate · screenshot · clipboard · …
-│   │   └── hypridle.conf hyprlock.conf hyprpaper.conf (fallback)
-│   ├── quickshell/kessel/         # the island: services/ (logic) · ui/ (views, panels, perspectives) · components/
-│   ├── quickshell/kessel-lock/    # lock screen (separate process; hyprlock fallback)
-│   ├── kitty/ fish/ starship.toml fuzzel/ dunst/
-│   └── fontconfig/ gtk-3.0/ gtk-4.0/ omniglyph/
-├── sddm-theme/kessel/             # login screen matching the lock screen
-├── scripts/                       # = ~/Scripts: install · update · uninstall · backup · sddm-theme · gen-shortcuts
-├── services/                      # future systemd units (never deployed automatically)
-├── docs/                          # SHORTCUTS.md (generated) · THEME.md · DESIGN.md · backlog/
-├── AGENTS.md · CONTRIBUTING.md · INSPIRATIONS.md · .github/   # contributor docs, credits, issue/PR templates
-└── LICENSE                        # GPL-3.0-or-later
-```
-
-## The island
-
-The island lives in `.config/quickshell/kessel`. At rest it shows the useful basics: workspaces, time, weather, media, system state, and laptop status where that exists. Small indicators cover recording, timers, Do Not Disturb, and notifications.
-
-Scroll over it to switch perspective: **Overview**, **Time**, **Music**, **Metrics**, or **Minimal**. Music appears when playback starts and yields the space again after eight seconds paused. Panels opened from another panel get a back button; `Alt+Left` and the mouse-back button do the same thing. The motion is deliberately simple spring animation, configured in `Theme.qml`.
-
-Two round buttons float beside it: **⚙ left** opens quick settings, and **🔔 right** opens notifications (with a count badge; it shows a crossed-out bell while Do Not Disturb is on). It **morphs** into:
-
-| Opens with | Panel |
+| Quick settings | Light mode |
 | --- | --- |
-| hover | Glance: avatar, time/date, weather, music controller, system |
-| `SUPER+A` (or click it) | Quick settings: you (`~/.face`), Wi‑Fi, Bluetooth, output + mic sliders with device pickers, brightness, battery + power modes, wallpaper strip, Do Not Disturb, stay-awake, light/dark, notes, color picker, screenshot, region/screen recording, timer, session |
-| `SUPER+N` | Notifications (click = focus the app, × = dismiss) + calendar + weather forecast |
-| `SUPER+Space` | Launcher (fuzzel if the island is down) |
-| `SUPER+V` | Clipboard history with image thumbnails |
-| `SUPER+Tab` | Overview: every workspace with live window previews; click to focus, drag to move |
-| `SUPER+G` | Notes (`~/Documents/notes/kessel.md`) |
-| `CTRL+SUPER+T` | Wallpaper & theme picker |
-| `CTRL+ALT+Delete` | Session: lock · standby · log out · restart · shut down (destructive ones need a second press) |
-| `SUPER+ALT+T` | Timer + stopwatch |
+| ![Quick settings](docs/screenshots/quick-settings.png) | ![Quick settings in light mode](docs/screenshots/quick-settings-light.png) |
+| **Launcher** (apps, calculator, URLs, translation) | **Notifications** (calendar, weather) |
+| ![Launcher](docs/screenshots/launcher.png) | ![Notifications](docs/screenshots/notifications.png) |
+| **Wallpaper & theme** | **Timer** |
+| ![Wallpaper picker](docs/screenshots/wallpaper.png) | ![Timer](docs/screenshots/timer.png) |
 
-Hardware-specific controls—battery, power profiles, brightness, Wi‑Fi, Bluetooth—only appear when the corresponding hardware and service are available. The same configuration therefore works on a desktop, laptop, or VM. While the island runs it owns notifications; if it stops, Dunst takes over through D-Bus activation.
+<sub>Screenshots are the real island components rendered offscreen on a VM (no Wi-Fi or audio hardware there; the battery is simulated).</sub>
 
-## Theme: light / dark from the wallpaper
+## What's in it
 
-`~/.config/hypr/scripts/theme.sh` (also `CTRL+SUPER+SHIFT+D`, the quick-settings tile, the wallpaper picker):
+- **Island** (Quickshell): workspaces, time, weather, media, system stats, battery. Scroll over it to switch view (Overview · Time · Music · Metrics · Minimal). It morphs into panels: quick settings, notifications, launcher, clipboard, workspace overview, notes, media, mixer, timer, wallpaper.
+- **Terminal:** kitty + fish + Starship. **Editor:** Neovim (LazyVim).
+- **Launchers:** island launcher (`SUPER+R` or tap `SUPER`) and fuzzel (`SUPER+SHIFT+Space`) as fallback.
+- **Theme:** one script recolors everything from the wallpaper (island, Hyprland, kitty, fish, GTK, Qt/KDE, Neovim, lock, login).
+- **Lock + login:** Quickshell lock screen and a matching SDDM theme.
+- **Safe:** configs are symlinks into this repo, every deployment can be rolled back, and the desktop still works if Quickshell is down.
 
-- **Dark** = pitch black (`#000000`). **Light** = eggshell (`#F0EAD6`). Only the *accents* come from the wallpaper (matugen, cached per image).
-- It writes `~/.local/state/kessel/theme/{colors.json,kitty.conf,fuzzel.ini,hyprland.lua}`. kitty reloads live, and fish + the Starship prompt follow kitty's palette. Hyprland borders, fuzzel, the island, and GTK's color scheme follow too.
-- Wallpapers: drop images in `~/Pictures/Wallpapers`. **awww** draws them with an animated transition and remembers the last one (hyprpaper is the fallback); the island caches small thumbnails in `~/.cache/kessel/thumbs`.
-- Switching is smooth: island colors animate, and the whole screen crossfades from a snapshot while apps repaint.
+## Install
 
-## Lock screen & login screen
-
-- **Lock (`SUPER+L`)**: `kessel-lock`, a separate Quickshell config that runs only while locked. It has a blurred wallpaper, a frosted card (time, date, avatar, `$ whoami`, user), a "Locked" pill, and a bottom toolbar (keyboard layout · password · battery / sleep / shut down / restart; shut down and restart need the password). `CTRL+Enter` unlocks and keeps the session awake. Passwords are checked by PAM (`/etc/pam.d/hyprlock`). `lock.sh` falls back to **hyprlock** if the Quickshell lock can't confirm a secure lock within 3 s.
-- **If a locker ever dies** (Hyprland shows "the lockscreen app died"), recover from SSH or another TTY: `hyprctl --instance 0 eval 'hl.clear_crashed_lockscreen()'`, or start hyprlock (`allow_session_lock_restore` is on). Tested.
-- **Login (SDDM)**: `sddm-theme/kessel` is the same design for the Qt6 greeter, with a session picker and user switching. `~/Scripts/sddm-theme.sh test` previews it in a window; `install` / `uninstall` (sudo) copy the theme, current wallpaper and `~/.face`, and select it via `/etc/sddm.conf.d/10-kessel.conf`.
-- **Cursor**: Bibata-Modern-Classic, as in end-4 (AUR `bibata-cursor-theme-bin`, installed with `--with-aur`).
-- **Theme reach**: matugen colors flow into the island, Hyprland borders, kitty (16 colors), fish, Starship, fuzzel, Qt (qt6ct, Dolphin), KDE color scheme, GTK 3/4 + libadwaita (`gtk.css`, e.g. OmniGlyph), btop, yazi, the lock screen, and SDDM (on install).
-
-## Performance note (no GPU)
-
-On a VM or other system without a GPU render node, `general.lua` disables blur and shadows automatically. The island also stays small when idle. This keeps software rendering sane; on the development VM it reduced Hyprland CPU use from roughly 110% to 9%. Systems with a usable GPU keep the effects.
-
-## Displays
-
-`monitors.lua` arranges displays left→right and re-applies on hot-plug. With **2** displays the external goes to the right of the laptop. With **3**, the main display sits in the middle (set `MAIN_MONITOR` to its description to choose which one). Every display gets an island; panels open on the focused one.
-
-## Neovim (`SUPER + C`)
-
-[LazyVim](https://lazyvim.org) with a VS Code-like setup. Plugins download on the first start (`:Lazy` shows them; `:checkhealth` lists anything missing).
-
-| | |
-| --- | --- |
-| Files & folders | `nvim .` or `nvim folder/` opens the tree; `<C-p>` / `<space>ff` find file, `<space>fr` recent, `<space>fp` projects, `<space>fd` open any folder under `~` |
-| Tabs & panel | every open file is a tab (`<C-Tab>`, `<space>bd` closes); `<C-b>` toggles the project tree |
-| Languages | JS/TS, Python, LaTeX (pdflatex via latexmk, `\ll` compile, `\lv` view in zathura; TeX itself: `./install.sh --with-tex`), HTML/CSS + emmet, QML (qmlls from Qt), bash (shellcheck/shfmt), Markdown (rendered), JSON/TOML; servers install themselves via Mason |
-| Preview | images and PDFs open inside the editor (kitty graphics); CSV/TSV as an aligned table |
-| Git | signs + blame in the gutter, `<space>gg` lazygit, `<space>gh` file history, `<space>gH` repo history, `<space>gD` diff view |
-| pi ([pi.dev](https://pi.dev)) | `<space>ai` ask pi about the file / selection (it edits, Neovim reloads), `<space>aP` full pi session in a split. Needs `pi` installed and set up by you |
-| Colors | follow the desktop theme live (`~/.local/state/kessel/theme/nvim.json`) |
-
-Press `<space>` and wait: which-key lists everything.
-
-## Install (fresh machine)
-
-Start from a fresh Arch installation with Hyprland and a display manager (SDDM). Read the commands before running them; the first one is intentionally a dry run.
+Fresh Arch with Hyprland and SDDM. The first command is a dry run.
 
 ```sh
 sudo pacman -S --needed git
-git clone <repo> ~/dots && cd ~/dots          # any folder works; links point at wherever you cloned it
+git clone https://github.com/velitchko/dots ~/dot-files && cd ~/dot-files
 
-./install.sh --dry-run --with-aur --with-translate --apply-config   # 1. preview everything (changes nothing)
-./install.sh --with-aur --apply-config                             # 2. packages (pacman + yay, bootstraps yay) + config links + theme
-./install.sh --skip-packages --with-translate                      # 3. optional: offline translation (downloads ~150 MB)
-./install.sh --set-shell                                           # 4. optional: fish as login shell
-~/Scripts/sddm-theme.sh install                                    # 5. optional: matching login screen (sudo)
-./install.sh --check                                               # 6. verify
+./install.sh --dry-run --with-aur --apply-config   # 1. preview (changes nothing)
+./install.sh --with-aur --apply-config             # 2. packages + config links + theme
+./install.sh --set-shell                           # 3. optional: fish as login shell
+~/Scripts/sddm-theme.sh install                    # 4. optional: login screen (sudo)
+./install.sh --check                               # 5. verify
 ```
 
-Log out and back in once so Hyprland picks up the environment (Qt theme, cursor, menus).
-After that, `~/Scripts/update.sh` keeps everything current.
+Log out and back in once. Then see **Laptop** and **Translation** below if you want them.
 
 | Flag | What it does |
 | --- | --- |
-| `--apply-config` | Link configs into `~` (backs up anything replaced) and generate the theme |
-| `--with-aur` | `pkglist-aur.txt` via **yay** (installs yay-bin first if needed): OmniGlyph, Bibata cursor |
-| `--with-laptop` | `pkglist-laptop.txt` (bluez, power-profiles-daemon, laptop audio firmware). It does **not** enable their services: run `sudo systemctl enable --now bluetooth` yourself |
-| `--with-translate` | Offline translation runtime + EN↔DE, EN↔BG models (see below) |
-| `--with-tex` | `pkglist-tex.txt`: complete TeX Live (pdflatex, xelatex, lualatex, all fonts and icon packages, German + Cyrillic) for Neovim/vimtex (~2.8 GB) |
-| `--set-shell` | `chsh -s /usr/bin/fish` |
-| `--skip-packages` | Config / extras only |
+| `--apply-config` | Link configs into `~` (anything replaced is backed up) and generate the theme |
+| `--with-aur` | AUR extras via yay (installs yay if needed): OmniGlyph emoji picker, Bibata cursor |
+| `--with-laptop` | Bluetooth, power profiles, laptop audio firmware (see **Laptop**) |
+| `--with-translate` | Offline translation (see **Translation**) |
+| `--with-tex` | Full TeX Live for LaTeX in Neovim (~2.8 GB) |
+| `--set-shell` | Make fish the login shell |
+| `--skip-packages` | Only config / extras, no package install |
 | `--rollback [ts]` | Undo a config deployment |
+| `--dry-run` | Show what would happen |
 
-### Offline translation (launcher)
+The installer never enables services, never touches SSH, network or firewall, and never handles secrets.
 
-Needs a CPU with **AVX2**. Any recent laptop or desktop has it; on a VM, set the CPU type to `host`.
-
-Type in the launcher (`SUPER+R`): `>de good morning` (EN→DE), `>bg …` (EN→BG), `>en …` (→EN, Cyrillic is detected as Bulgarian), or an explicit pair like `>de-bg Hallo`. Enter copies the result. It runs **entirely locally** using Bergamot, the same engine and models as translateLocally and Firefox's offline translation. A private Python 3.10 managed by `uv` holds it, so nothing needs compiling.
+## Laptop
 
 ```sh
-~/.config/hypr/scripts/translate.sh available     # every downloadable model
-~/.config/hypr/scripts/translate.sh add en-fr     # add a language (pairs via English are automatic)
-~/.config/hypr/scripts/translate.sh installed
-~/.config/hypr/scripts/translate.sh remove en-fr-tiny
+./install.sh --with-laptop                            # bluez, power-profiles-daemon, sof-firmware, alsa-ucm-conf
+sudo systemctl enable --now bluetooth                 # the installer never enables services
+sudo systemctl enable --now power-profiles-daemon     # Saver / Balanced / Performance in quick settings
+systemctl --user restart wireplumber                  # once, so Bluetooth audio devices show up
 ```
 
-### How config deployment works
+- **Quick settings** (`SUPER+A`) then shows Wi-Fi, Bluetooth, battery and power modes. Each row says what's missing (e.g. "Service off: …") instead of disappearing.
+- **Wi-Fi:** click the row to see networks. Open networks connect directly, others ask for a password. Hover a saved network to forget it. "Hidden network, VPN, more…" opens NetworkManager's editor.
+- **Bluetooth:** "Nearby" devices pair with one click, then connect. Pairing runs through `~/.config/hypr/scripts/bt-pair.sh` (BlueZ needs a pairing agent). Devices that need a typed PIN (some keyboards) still need `bluetoothctl`.
+- **Audio:** expand the output / microphone row to switch devices (Bluetooth headsets appear here once connected).
+- **No sound devices at all?** Most laptops since ~2018 need `sof-firmware` (included in `--with-laptop`). Reboot after installing.
+- **Beeping in terminals / TTYs?** That's the PC speaker. Turn it off with:
+  ```sh
+  printf 'blacklist pcspkr\nblacklist snd_pcsp\n' | sudo tee /etc/modprobe.d/nobeep.conf
+  ```
+- **Displays:** `monitors.lua` lines displays up left to right and re-applies on hot-plug. With three, set `MAIN_MONITOR` for the middle one.
 
-Each entry in `profiles/minimal.links` becomes a **symlink** from `~` into this repo. Editing through `~/.config/...` therefore edits the repository, and `git status` shows the change.
+## Translation (offline)
 
-- If something already exists at a link target, it is **moved** (never deleted) to `~/.local/state/dot-files/backups/<timestamp>/`, with a diff preview printed first.
-- Every run that changes something writes `backups/<timestamp>/MANIFEST`, which is what `--rollback` replays.
-- gsettings font and color values are recorded too, so rollback restores the previous values.
+Runs fully on your machine (Bergamot, the engine behind Firefox's translation). Needs a CPU with **AVX2** (any recent laptop; on a VM set the CPU type to `host`).
 
-## ~/Scripts
+```sh
+./install.sh --skip-packages --with-translate          # runtime + EN↔DE, EN↔BG (~150 MB)
+~/.config/hypr/scripts/translate.sh status             # should print: ready
+~/.config/hypr/scripts/translate.sh installed          # en-de, de-en, en-bg, bg-en
+```
 
-`~/Scripts` is a symlink to this repo's `scripts/`, so you can edit it in either place. Every script supports `--dry-run`.
+In the launcher (`SUPER+R`):
 
-| Script | What it does |
+| Type | Translates |
 | --- | --- |
-| `~/Scripts/install.sh` | Fresh install / re-apply (packages + config links). Passes any `install.sh` flag through |
-| `~/Scripts/update.sh` | Pull (if a remote exists) → re-apply config → regenerate shortcuts → reload Hyprland, restart island, re-apply theme. `--system` adds `pacman -Syu`, `--aur` adds `yay -Sua` |
-| `~/Scripts/backup.sh` | `~/Backups/kessel/kessel-<ts>.tar.zst`: repo as a git bundle, package lists, theme/install state, notes, `~/.face`, wallpapers. Keeps 10 (`--keep N`). No secrets |
-| `~/Scripts/uninstall.sh` | Undo every deployment newest-first, restoring the original files. Asks first; `--purge` also removes generated state. Never removes packages |
-| `~/Scripts/sddm-theme.sh` | Login screen: `test` (window preview), `install` / `uninstall` (sudo) |
-| `~/Scripts/gen-shortcuts.sh` | Rebuild `docs/SHORTCUTS.md` from `keybinds.lua` |
+| `>de good morning` | English → German |
+| `>bg good morning` | English → Bulgarian |
+| `>en Guten Morgen` | German → English (Latin text is assumed German) |
+| `>en Добро утро` | Bulgarian → English (Cyrillic is detected) |
+| `>de-bg Hallo` | any pair (goes through English) |
+
+Enter copies the result. More languages: `translate.sh available`, then e.g. `translate.sh add en-fr`. If translating errors out, run `translate.sh repair` (fixes half-installed models) or `translate.sh add de-en` for a missing direction.
+
+## Daily use
+
+| Keys | Action |
+| --- | --- |
+| `SUPER + Return` | Terminal (kitty) |
+| tap `SUPER` · `SUPER + R` | Launcher |
+| `SUPER + A` / `SUPER + ALT + N` | Quick settings / notifications |
+| `SUPER + Tab` | Workspace overview (click to focus, drag to move) |
+| `SUPER + V` · `SUPER + .` | Clipboard history · emoji picker |
+| `SUPER + G` / `SUPER + SHIFT + G` | Notes (`~/Notes`) / kanban board |
+| `SUPER + M` / `SUPER + SHIFT + V` | Media player / volume mixer |
+| `SUPER + ALT + T` | Timer + stopwatch (a pill shows the countdown beside the island) |
+| `CTRL + SUPER + T` / `CTRL + SUPER + SHIFT + D` | Wallpaper picker / toggle light-dark |
+| `SUPER + SHIFT + S` · `Print` | Screenshot region · screen (→ `~/Pictures/Screenshots` + clipboard) |
+| `SUPER + SHIFT + R` · `CTRL + ALT + R` | Record region · screen; same keys stop (→ `~/Videos/Recordings`) |
+| `SUPER + SHIFT + C` | Color picker |
+| `SUPER + E` · `SUPER + C` · `SUPER + W` · `SUPER + O` | Files · Neovim · browser · Obsidian |
+| `SUPER + Q` · `SUPER + F` · `SUPER + D` | Close · fullscreen · float/tile window |
+| `SUPER + 1…0` / `SUPER + ALT + 1…0` | Go to / send window to workspace |
+| `SUPER + S` | Scratchpad |
+| `SUPER + Space` | Focus mode (hide the island) |
+| `SUPER + L` / `SUPER + SHIFT + L` | Lock / suspend |
+| `CTRL + ALT + Delete` | Session menu |
+| `CTRL + SUPER + R` | Reload Hyprland + restart the island |
+| `SUPER + /` | All shortcuts |
+
+Full list: [`docs/SHORTCUTS.md`](docs/SHORTCUTS.md) (generated from `.config/hypr/keybinds.lua`, the single source of truth).
+
+**Wallpapers:** drop images into `~/Pictures/Wallpapers`, pick one from quick settings or `CTRL+SUPER+T`. Accents follow the wallpaper; details in [`docs/THEME.md`](docs/THEME.md).
+
+**Profile picture:** `~/.face` (shown round in the island, lock and login screen).
 
 ## Update
 
 ```sh
-cd ~/dots && git pull                        # wherever you cloned the repo
-./install.sh --profile minimal --apply-config  # picks up new links/packages; idempotent
-hyprctl reload                               # Hyprland also auto-reloads on save
-scripts/gen-shortcuts.sh                     # after editing keybinds.lua
+~/Scripts/update.sh            # pull, re-apply config, reload Hyprland, restart the island
+~/Scripts/update.sh --system   # …and pacman -Syu  (--aur also updates AUR packages)
 ```
 
-Before deploying any Hyprland change, validate it offline:
+After pulling changes that add files to the island: `~/.config/hypr/scripts/island.sh restart`.
 
-```sh
-KESSEL_STRICT=1 Hyprland --verify-config -c ~/.config/hypr/hyprland.lua
-```
-
-## Keybindings
-
-`.config/hypr/keybinds.lua` is the single source of truth. `lib/binder.lua` then:
-
-- creates the real binds,
-- writes the in-session view (**SUPER + /**, opened in fuzzel),
-- writes `docs/SHORTCUTS.md` (via `scripts/gen-shortcuts.sh`).
-
-Duplicate keys in the registry are reported as config errors.
-
-The essentials (end-4 layout; full list in `docs/SHORTCUTS.md` or **SUPER + /**):
-
-| Keys | Action |
-| --- | --- |
-| `SUPER + Return` / `SUPER + T` | Kitty (runs fish) |
-| `SUPER + SHIFT + Return` | Recovery shell (`kitty bash --norc`) |
-| tap `SUPER` · `SUPER + R` / `SUPER + SHIFT + Space` | Island launcher (calculator, URLs) / fuzzel |
-| `SUPER + E` · `SUPER + O` · `SUPER + C` · `SUPER + W` | Dolphin · Obsidian · Neovim · browser |
-| `SUPER + Q` | Close window (**never** the terminal) |
-| `SUPER + F` / `SUPER + D` / `SUPER + SHIFT + F` | Fullscreen / detach (float) this window / all windows floating |
-| `SUPER + 1…0`, `CTRL + SUPER + 1…0` / `SUPER + ALT + 1…0` | Go to / send window to workspace |
-| `SUPER + S` / `SUPER + ALT + S` | Scratchpad / send window there |
-| `SUPER + ←↑→↓` / `SUPER + SHIFT + ←↑→↓` | Focus / move window |
-| `SUPER + LMB drag` / `SUPER + RMB drag` | Move / resize window |
-| `SUPER + ;` / `SUPER + '` | Narrower / wider |
-| `SUPER + Space` | Focus mode (hide the island) |
-| `SUPER + ALT + ←/→` | Previous / next island perspective (or scroll / two-finger swipe on the island) |
-| `SUPER + A` / `SUPER + ALT + N` | Quick settings / notifications |
-| `SUPER + G` / `SUPER + SHIFT + G` | Notes / kanban board |
-| `SUPER + M` / `SUPER + SHIFT + V` | Media player / volume mixer |
-| `SUPER + P` · `SUPER + N` · `SUPER + SHIFT + N` | Play-pause · next · previous |
-| `CTRL + SUPER + V` / `SUPER + ALT + M` | Mute output / mute mic |
-| `SUPER + V` · `SUPER + .` | Clipboard · emoji picker |
-| `SUPER + SHIFT + S` · `SUPER + SHIFT + C` · `SUPER + SHIFT + R` | Screenshot region · color picker · record region |
-| `SUPER + =` / `SUPER + −` | Zoom in / out |
-| `SUPER + L` / `SUPER + SHIFT + L` | Lock / standby |
-| `CTRL + SUPER + R` | Reload Hyprland + restart the island |
-| `SUPER + /` | All shortcuts |
-
-## Check the installation
-
-```sh
-./install.sh --check        # config verifies, links OK, sshd active,
-                            # live binds present, no Hyprland config errors
-qs -c kessel ipc call island status
-```
-
-## Recovery
+## Troubleshooting
 
 | Problem | Fix |
 | --- | --- |
-| Quickshell broken or missing | Nothing else depends on it: every island bind falls back (fuzzel, cliphist) and dunst takes over notifications. `CTRL + SUPER + R` restarts it; `~/.config/hypr/scripts/island.sh stop` stops it (works over SSH too); set `ENABLE_ISLAND = false` in `exec.lua` to disable |
-| Hyprland module error | A red banner names the file. Other modules and the **rescue binds** (`SUPER+Return`, `SUPER+SHIFT+Return`, `SUPER+R`) still work. Fix the file; Hyprland reloads on save (or `CTRL+SHIFT+SUPER+R`) |
-| Keybinds gone entirely | SSH in and run `KESSEL_STRICT=1 Hyprland --verify-config -c ~/.config/hypr/hyprland.lua` to see the error |
-| Fish broken | `SUPER + SHIFT + Return` gives plain bash. Over SSH: `ssh -t <host> bash --norc`. Revert the login shell with `chsh -s /usr/bin/bash` |
-| Locked out of the lock screen | SSH in: `pkill -USR1 hyprlock` (unlocks) |
+| Island broken or missing | Everything falls back (fuzzel, cliphist, dunst). `CTRL+SUPER+R` restarts it; `qs log -c kessel` shows errors |
+| Hyprland config error | A banner names the file; rescue binds (`SUPER+Return`, `SUPER+R`) keep working. Check with `KESSEL_STRICT=1 Hyprland --verify-config -c ~/.config/hypr/hyprland.lua` |
+| Wallpaper doesn't change | `theme.sh` starts `awww-daemon` if needed; check `pgrep -a awww-daemon` |
+| A terminal keeps old colors | `~/.local/state/kessel/theme/kitty.log` shows what happened per kitty window |
+| Bluetooth headset not in audio outputs | `systemctl --user restart wireplumber`, reconnect |
+| Recording does nothing | A notification now says why; full-screen recording uses the focused display |
+| Translation error | `translate.sh repair`, or `translate.sh add <pair>` |
+| OnlyOffice has transparent margins | `~/.config/hypr/scripts/theme.sh apply`, then restart OnlyOffice |
+| Fish broken | `SUPER+SHIFT+Return` opens plain bash; `chsh -s /usr/bin/bash` to switch back |
+| Lock screen died | From SSH/TTY: `hyprctl --instance 0 eval 'hl.clear_crashed_lockscreen()'` |
 
 ## Rollback
 
+Every `--apply-config` that changes something backs up replaced files to `~/.local/state/dot-files/backups/<timestamp>/`.
+
 ```sh
-./install.sh --rollback --dry-run      # preview the latest rollback
-./install.sh --rollback                # remove links, restore backed-up files + gsettings
-./install.sh --rollback 20260101-120000  # a specific deployment (timestamp from the list below)
-ls ~/.local/state/dot-files/backups/   # all backups
-hyprctl reload
+./install.sh --rollback --dry-run   # preview
+./install.sh --rollback             # undo the latest deployment
+~/Scripts/uninstall.sh              # undo all of them (never removes packages)
 ```
 
-Your original configs (from before the first `--apply-config`) are in the oldest backup folder.
+## More
 
-## Inspirations
+- [`docs/SHORTCUTS.md`](docs/SHORTCUTS.md): every keybind
+- [`docs/THEME.md`](docs/THEME.md): how colors flow from the wallpaper
+- [`docs/DESKTOP.md`](docs/DESKTOP.md): lock and login screen, `~/Scripts`, how config deployment works, VMs without a GPU
+- [`docs/NEOVIM.md`](docs/NEOVIM.md): the editor setup and its keys
+- [`docs/DESIGN.md`](docs/DESIGN.md): decisions and why
+- [`AGENTS.md`](AGENTS.md): repo map, rules and known pitfalls (read before changing things)
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`INSPIRATIONS.md`](INSPIRATIONS.md)
 
-Built on ideas from end-4/dots-hyprland, Panacea, ActivSpot, impasto, Brain_Shell, hyprwave and more. The full list, with links and what each one inspired, is in [`INSPIRATIONS.md`](INSPIRATIONS.md).
-
-## Contributing
-
-Bug reports and pull requests: see [`CONTRIBUTING.md`](CONTRIBUTING.md). Agents and newcomers: [`AGENTS.md`](AGENTS.md) maps the repo and lists known pitfalls.
-
-## Licensing
-
-GPL-3.0-or-later (see `LICENSE`). OmniGlyph (GPL-3.0-only) is an external AUR dependency and is not vendored.
+GPL-3.0-or-later. OmniGlyph (GPL-3.0-only) is an external AUR dependency and is not vendored.

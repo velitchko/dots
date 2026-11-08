@@ -23,7 +23,7 @@ Personal Arch Linux + **Hyprland (Lua config, 0.57+)** + **Quickshell** desktop 
 | `sddm-theme/kessel/` | Qt6 SDDM theme (installed by `scripts/sddm-theme.sh`, needs sudo) |
 | `scripts/` | `~/Scripts`: install/update/uninstall/backup, `gen-shortcuts.sh`, `sddm-theme.sh` |
 | `services/` | **Future** systemd units. Nothing here is deployed or enabled |
-| `docs/` | `DESIGN.md` (decisions + why), `SHORTCUTS.md` (generated), `THEME.md`, `backlog/` |
+| `docs/` | `DESIGN.md` (decisions + why), `SHORTCUTS.md` (generated), `THEME.md`, `DESKTOP.md` (lock/login, scripts, deployment), `NEOVIM.md`, `screenshots/` (offscreen renders used by the README), `backlog/` |
 | `INSPIRATIONS.md` | Projects that informed the design |
 
 ## Ground rules
