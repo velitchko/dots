@@ -69,10 +69,12 @@ Singleton {
     // (1.25 -> 1, see monitors.lua) when switching to integer scale for
     // sharpness. Restores the pre-scale-change physical size exactly, rather
     // than guessing at another small increment.
-    readonly property real fontUi: 12.5
-    readonly property real fontMono: 13.75
-    readonly property real fontSmall: 11.9
-    readonly property real fontBig: 27.5
+    // 1.5pt down from the 1.25x pass above (12.5/13.75/11.9/27.5) -- island
+    // size (pill height/padding/radius) stays as-is, just the text.
+    readonly property real fontUi: 11
+    readonly property real fontMono: 12.25
+    readonly property real fontSmall: 10.4
+    readonly property real fontBig: 26
 
     readonly property int islandHeight: 45
     readonly property int screenCornerRadius: 14      // 0 disables the rounded screen corners
