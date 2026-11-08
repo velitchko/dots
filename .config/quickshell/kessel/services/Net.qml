@@ -16,6 +16,8 @@ Singleton {
     readonly property var wiredDevice: devices.find(d => d.type === DeviceType.Wired) ?? null
     readonly property bool hasWifi: wifiDevice !== null
     readonly property bool wifiEnabled: Networking.wifiEnabled
+    // rfkill / airplane switch: the software toggle can't override it
+    readonly property bool wifiBlocked: !Networking.wifiHardwareEnabled
     readonly property bool wiredConnected: wiredDevice?.connected ?? false
 
     readonly property var networks: hasWifi
@@ -34,9 +36,46 @@ Singleton {
     }
     function setWifi(on) { Networking.wifiEnabled = on }
     function scan(on) { if (hasWifi) wifiDevice.scannerEnabled = on }
+
+    // Open / OWE networks connect without asking; saved ones reuse their secret.
+    function isOpen(n) { return n.security === WifiSecurityType.Open || n.security === WifiSecurityType.Owe }
+    // WPA-Enterprise (eduroam, …) needs a username/certificate: NetworkManager's editor.
+    function isEnterprise(n) {
+        return n.security === WifiSecurityType.Wpa2Eap || n.security === WifiSecurityType.WpaEap
+            || n.security === WifiSecurityType.Wpa3SuiteB192 || n.security === WifiSecurityType.Leap
+            || n.security === WifiSecurityType.DynamicWep
+    }
+    function needsPassword(n) { return !n.known && !isOpen(n) && !isEnterprise(n) }
+
+    // Last failure, shown under the list; "wrong password" re-opens the prompt.
+    property string error: ""
+    property var errorNetwork: null
+    signal passwordRejected(var network)
+    Instantiator {
+        model: root.hasWifi ? root.wifiDevice.networks : null
+        delegate: Connections {
+            required property var modelData
+            target: modelData
+            function onConnectionFailed(reason) {
+                const n = modelData
+                root.errorNetwork = n
+                if (reason === ConnectionFailReason.NoSecrets || reason === ConnectionFailReason.WifiAuthTimeout) {
+                    root.error = "Wrong password for " + n.name
+                    root.passwordRejected(n)
+                } else root.error = "Couldn't connect to " + n.name
+                errorClear.restart()
+            }
+        }
+    }
+    Timer { id: errorClear; interval: 8000; onTriggered: { root.error = ""; root.errorNetwork = null } }
+
     function connect(n, psk) {
+        error = ""
         if (psk !== undefined && psk !== "") n.connectWithPsk(psk)
         else n.connect()
     }
     function disconnect(n) { n.disconnect() }
+    function forget(n) { n.forget() }
+    // Hidden networks, enterprise logins, VPNs, static IPs
+    function openEditor() { Quickshell.execDetached(["sh", "-c", "command -v nm-connection-editor >/dev/null && exec nm-connection-editor || exec kitty -e nmtui"]) }
 }

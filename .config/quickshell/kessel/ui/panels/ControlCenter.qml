@@ -4,6 +4,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Services.UPower
+import Quickshell.Bluetooth
 import "../.."
 import "../../services"
 import "../../components"
@@ -60,29 +61,39 @@ PanelBase {
                 width: parent.width
                 icon: Net.icon
                 title: Net.hasWifi ? "Wi-Fi" : "Network"
-                sub: Net.available ? Net.label : "NetworkManager unavailable"
+                sub: !Net.available ? "NetworkManager unavailable"
+                    : Net.hasWifi && Net.wifiBlocked ? "Blocked by the airplane switch / rfkill"
+                    : Net.label
                 showSwitch: Net.hasWifi
                 checked: Net.hasWifi ? Net.wifiEnabled : Net.online
                 expandable: Net.hasWifi && Net.wifiEnabled
                 onToggled: Net.setWifi(!Net.wifiEnabled)
-                onExpandedChanged: Net.scan(expanded)
+                onExpandedChanged: { Net.scan(expanded); if (!expanded) root.pskTarget = null }
+                Connections {
+                    target: Net
+                    function onPasswordRejected(n) { root.pskTarget = n; wifiRow.expanded = true }
+                }
 
                 Column {
                     width: parent.width
                     spacing: 2
                     Repeater {
-                        model: Net.networks.slice(0, 8)
+                        model: Net.networks.slice(0, 10)
                         ListItem {
                             required property var modelData
                             icon: Net.wifiIcon(modelData.signalStrength)
                             text: modelData.name
-                            sub: modelData.connected ? "Connected" : modelData.known ? "Saved" : ""
+                            sub: modelData.connected ? "Connected" : modelData.known ? "Saved"
+                                : Net.isOpen(modelData) ? "Open" : Net.isEnterprise(modelData) ? "Enterprise…" : ""
                             selected: modelData.connected
                             busy: modelData.stateChanging
+                            action: modelData.known ? Icons.trash : ""
+                            onActionClicked: Net.forget(modelData)
                             onClicked: {
                                 if (modelData.connected) Net.disconnect(modelData)
-                                else if (modelData.known) Net.connect(modelData)
-                                else root.pskTarget = modelData
+                                else if (Net.isEnterprise(modelData) && !modelData.known) Net.openEditor()
+                                else if (Net.needsPassword(modelData)) root.pskTarget = modelData
+                                else Net.connect(modelData)
                             }
                         }
                     }
@@ -94,7 +105,9 @@ PanelBase {
                         onVisibleChanged: if (visible) focusInput()
                         onAccepted: { Net.connect(root.pskTarget, text); text = ""; root.pskTarget = null }
                     }
+                    Label { visible: Net.error !== ""; text: Net.error; color: Theme.red; size: Theme.fontSmall; leftPadding: 10; height: 24 }
                     Label { visible: Net.networks.length === 0; text: "Scanning…"; color: Theme.subtext; size: Theme.fontSmall; leftPadding: 10; height: 28 }
+                    ListItem { icon: Icons.settings; text: "Hidden network, VPN, more…"; onClicked: { IslandState.closePanel(); Net.openEditor() } }
                 }
             }
             SectionRow {
@@ -108,6 +121,7 @@ PanelBase {
 
             // Bluetooth
             SectionRow {
+                id: btRow
                 width: parent.width
                 icon: Bt.enabled ? Icons.bluetooth : Icons.btOff
                 title: "Bluetooth"
@@ -116,6 +130,8 @@ PanelBase {
                 showSwitch: Bt.available
                 checked: Bt.enabled
                 expandable: Bt.enabled
+                clickable: !Bt.available && Bt.hwPresent
+                onClicked: Bt.restartIsland()
                 onToggled: Bt.setEnabled(!Bt.enabled)
                 onExpandedChanged: Bt.scan(expanded)
                 Component.onCompleted: Bt.refresh()
@@ -123,20 +139,34 @@ PanelBase {
                 Column {
                     width: parent.width
                     spacing: 2
+                    Label { visible: Bt.paired.length > 0; text: "My devices"; color: Theme.subtext; size: Theme.fontSmall - 1; leftPadding: 10; height: 20 }
                     Repeater {
-                        model: Bt.devices.slice(0, 8)
+                        model: Bt.paired.slice(0, 8)
                         ListItem {
                             required property var modelData
                             icon: modelData.connected ? Icons.btOn : Icons.bluetooth
                             text: modelData.name || modelData.address
-                            sub: modelData.connected ? (modelData.batteryAvailable ? Math.round(modelData.battery * 100) + "%" : "Connected")
-                                : modelData.paired ? "Paired" : ""
+                            sub: modelData.connected ? (modelData.batteryAvailable ? Math.round(modelData.battery * 100) + "%" : "Connected") : "Connect"
                             selected: modelData.connected
+                            busy: modelData.state === BluetoothDeviceState.Connecting || modelData.state === BluetoothDeviceState.Disconnecting
+                            action: Icons.trash
+                            onActionClicked: Bt.forget(modelData)
+                            onClicked: Bt.toggleDevice(modelData)
+                        }
+                    }
+                    Label { text: Bt.discovering ? "Nearby · searching…" : "Nearby"; color: Theme.subtext; size: Theme.fontSmall - 1; leftPadding: 10; height: 20 }
+                    Repeater {
+                        model: Bt.nearby.slice(0, 8)
+                        ListItem {
+                            required property var modelData
+                            icon: Icons.bluetooth
+                            text: modelData.name || modelData.address
+                            sub: "Pair"
                             busy: modelData.pairing
                             onClicked: Bt.toggleDevice(modelData)
                         }
                     }
-                    Label { visible: Bt.devices.length === 0; text: "Searching…"; color: Theme.subtext; size: Theme.fontSmall; leftPadding: 10; height: 28 }
+                    Label { visible: Bt.nearby.length === 0; text: "Put the device in pairing mode"; color: Theme.muted; size: Theme.fontSmall; leftPadding: 10; height: 26 }
                 }
             }
 
@@ -155,7 +185,7 @@ PanelBase {
                 title: "Output · " + Audio.sinkName
                 value: Audio.volume
                 muted: Audio.muted
-                expandable: Audio.sinks.length > 1
+                expandable: Audio.sinks.length > 0
                 onMoved: v => Audio.setVolume(v)
                 onIconClicked: Audio.toggleMute()
                 Repeater {
@@ -179,7 +209,7 @@ PanelBase {
                 value: Audio.micVolume
                 muted: Audio.micMuted
                 tint: Theme.purple
-                expandable: Audio.sources.length > 1
+                expandable: Audio.sources.length > 0
                 onMoved: v => Audio.setMicVolume(v)
                 onIconClicked: Audio.toggleMicMute()
                 Repeater {
@@ -219,6 +249,15 @@ PanelBase {
                     Glyph { text: Power.icon; color: Power.charging ? Theme.green : Theme.text }
                     Label { text: Math.round(Power.percent * 100) + "%"; font.bold: true }
                     Label { text: Power.timeLeft; color: Theme.subtext; size: Theme.fontSmall }
+                }
+                Label {
+                    x: 14; y: 50
+                    width: parent.width - 28
+                    visible: !Power.profilesAvailable && Power.profilesReason !== ""
+                    text: Power.profilesReason
+                    color: Theme.subtext
+                    size: Theme.fontSmall - 0.5
+                    elide: Text.ElideRight
                 }
                 Row {
                     x: 10; y: 42

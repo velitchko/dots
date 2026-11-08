@@ -41,6 +41,7 @@ qt5-wayland
 qt6-wayland
 xdg-user-dirs
 xdg-utils
+nm-connection-editor    # quick settings → Wi-Fi "More…": hidden / enterprise networks, VPN (nmtui fallback)
 # OmniGlyph (AUR) needs this at runtime but its package does not declare it
 gtk4-layer-shell
 # colour emoji (OmniGlyph, notifications, browsers) — without it emojis render as boxes

@@ -12,9 +12,12 @@ Rectangle {
     property bool checked: false
     property bool expandable: false
     property bool expanded: false
+    // header click without an expander (e.g. "restart to fix")
+    property bool clickable: false
     property color tint: Theme.accent
     default property alias content: inner.data
     signal toggled()
+    signal clicked()
 
     implicitWidth: 360
     implicitHeight: head.height + (expanded ? inner.childrenRect.height + 10 : 0)
@@ -26,23 +29,26 @@ Rectangle {
     Item {
         id: head
         width: parent.width
-        height: 48
+        height: Math.max(48, texts.implicitHeight + 16)
         Rectangle {
             id: ic
             x: 10
             anchors.verticalCenter: parent.verticalCenter
             width: 30; height: 30; radius: 15
             color: root.checked ? Theme.a(root.tint, 0.2) : Theme.overlay
-            Glyph { anchors.centerIn: parent; text: root.icon; color: root.checked ? root.tint : Theme.text; size: Theme.fontUi + 2 }
+            Glyph { anchors.centerIn: parent; optical: true; text: root.icon; color: root.checked ? root.tint : Theme.text; size: Theme.fontUi + 2 }
         }
         Column {
+            id: texts
             anchors.left: ic.right
             anchors.leftMargin: 10
             anchors.right: tail.left
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             Label { text: root.title; width: parent.width; font.bold: true; size: Theme.fontSmall + 1 }
-            Label { text: root.sub; visible: text !== ""; width: parent.width; color: Theme.subtext; size: Theme.fontSmall - 0.5 }
+            // up to two lines: setup hints ("sudo systemctl enable …") must stay readable
+            Label { text: root.sub; visible: text !== ""; width: parent.width; color: Theme.subtext; size: Theme.fontSmall - 0.5
+                    wrapMode: Text.Wrap; maximumLineCount: 2 }
         }
         Row {
             id: tail
@@ -64,9 +70,9 @@ Rectangle {
             anchors.left: parent.left
             anchors.right: tail.left
             height: parent.height
-            enabled: root.expandable
+            enabled: root.expandable || root.clickable
             cursorShape: Qt.PointingHandCursor
-            onClicked: root.expanded = !root.expanded
+            onClicked: root.expandable ? root.expanded = !root.expanded : root.clicked()
         }
     }
     Item {

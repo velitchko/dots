@@ -27,9 +27,18 @@ Singleton {
     readonly property bool hasPerformance: PowerProfiles.hasPerformanceProfile
     function setProfile(p) { PowerProfiles.profile = p }
 
+    // Why the mode buttons are missing (laptops only): shown in their place.
+    // Re-probed while missing, so enabling the service shows up without a restart.
+    property string profilesReason: ""
+    Timer { interval: 10000; repeat: true; running: root.hasBattery && !root.profilesAvailable; onTriggered: if (!probe.running) probe.running = true }
     Process {
+        id: probe
         running: true
-        command: ["sh", "-c", "command -v powerprofilesctl >/dev/null && powerprofilesctl get >/dev/null 2>&1"]
+        command: ["sh", "-c", "command -v powerprofilesctl >/dev/null || { echo missing; exit 1; }; powerprofilesctl get >/dev/null 2>&1 || { echo stopped; exit 1; }"]
+        stdout: StdioCollector {
+            onStreamFinished: root.profilesReason = text.trim() === "missing" ? "Power modes: install.sh --with-laptop"
+                : text.trim() === "stopped" ? "Power modes: sudo systemctl enable --now power-profiles-daemon" : ""
+        }
         onExited: code => root.profilesAvailable = code === 0
     }
 }
