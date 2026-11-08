@@ -53,7 +53,7 @@ Log out and back in once. Then see **Laptop** and **Translation** below if you w
 | Flag | What it does |
 | --- | --- |
 | `--apply-config` | Link configs into `~` (anything replaced is backed up) and generate the theme |
-| `--with-aur` | AUR extras via yay (installs yay if needed): OmniGlyph emoji picker, Bibata cursor |
+| `--with-aur` | AUR extras via yay (installs yay if needed): OmniGlyph emoji picker, Bibata cursor, hyprmoncfg display manager |
 | `--with-laptop` | Bluetooth, power profiles, laptop audio firmware (see **Laptop**) |
 | `--with-translate` | Offline translation (see **Translation**) |
 | `--with-tex` | Full TeX Live for LaTeX in Neovim (~2.8 GB) |
@@ -82,7 +82,8 @@ systemctl --user restart wireplumber                  # once, so Bluetooth audio
   ```sh
   printf 'blacklist pcspkr\nblacklist snd_pcsp\n' | sudo tee /etc/modprobe.d/nobeep.conf
   ```
-- **Displays:** `monitors.lua` lines displays up left to right and re-applies on hot-plug. With three, set `MAIN_MONITOR` for the middle one.
+- **Displays:** `monitors.lua` arranges them automatically and re-applies on hot-plug: one external display goes to the **left** of the laptop; with three, the main one sits in the middle (set `MAIN_MONITOR`).
+- **Display manager (optional):** [hyprmoncfg](https://github.com/crmne/hyprmoncfg) (installed with `--with-aur`) lets you drag displays into place and save profiles like `desk` or `home`. Run `hyprmoncfg`; once you apply a layout it takes over from `monitors.lua`. To switch profiles automatically on plug/unplug and lid close: `systemctl --user enable --now hyprmoncfgd`. Delete `~/.config/hypr/hyprmoncfg-monitors.lua` to go back to the automatic layout.
 
 ## Translation (offline)
 

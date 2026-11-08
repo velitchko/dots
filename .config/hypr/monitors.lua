@@ -2,7 +2,7 @@
 -- Displays. Arranged left→right automatically, re-applied on hot-plug:
 --
 --   1 display   it is the origin
---   2 displays  [laptop] [external]          external always to the RIGHT
+--   2 displays  [external] [laptop]          external always to the LEFT
 --   3 displays  [left]   [MAIN]   [right]    the main display in the MIDDLE
 --               (laptop, if present, goes left; MAIN_MONITOR picks the middle one,
 --                otherwise the first external is used)
@@ -31,7 +31,18 @@ local function logical_width(m)
     return math.floor(w / s + 0.5)
 end
 
+-- hyprmoncfg (optional, AUR: hyprmoncfg-bin) arranges displays from saved
+-- profiles. Once it has written its file, it owns the layout: arrange() steps
+-- aside so the two don't fight on every hot-plug (the defaults above still
+-- give new displays a mode and scale).
+local HYPRMONCFG = (function()
+    local f = io.open(os.getenv("HOME") .. "/.config/hypr/hyprmoncfg-monitors.lua", "r")
+    if f then f:close(); return true end
+    return false
+end)()
+
 local function arrange()
+    if HYPRMONCFG then return end
     local ok, mons = pcall(hl.get_monitors)
     if not ok or type(mons) ~= "table" then return end
 
@@ -46,7 +57,7 @@ local function arrange()
 
     local order
     if internal and #externals == 1 then
-        order = { internal, externals[1] }
+        order = { externals[1], internal }
     else
         local main = externals[1]
         if MAIN_MONITOR ~= "" then

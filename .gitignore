@@ -10,3 +10,6 @@
 *.log
 /backups/
 sddm-theme/kessel/background.*
+# hyprmoncfg writes its layout next to the Hyprland config (~/.config/hypr → this repo)
+.config/hypr/hyprmoncfg-monitors.lua
+.config/hypr/hyprmoncfg-monitors.conf

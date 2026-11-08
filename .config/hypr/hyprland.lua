@@ -21,3 +21,6 @@ end)
 safety.load("custom", nil, { optional = true }) -- personal tweaks, loaded last
 
 safety.finish()            -- ensure rescue binds exist, report failures
+
+-- Added by hyprmoncfg: its generated monitor rules load last, so nothing before this can override the applied layout.
+do local path = os.getenv("HOME") .. "/.config/hypr/hyprmoncfg-monitors.lua"; local file = io.open(path, "r"); if file then file:close(); dofile(path) end end

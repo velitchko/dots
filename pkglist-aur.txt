@@ -3,3 +3,6 @@
 omniglyph
 # end-4's cursor (Bibata-Modern-Classic)
 bibata-cursor-theme-bin
+# Display layouts: drag displays into place, save profiles, auto-switch on hot-plug
+# (TUI; the daemon is opt-in: systemctl --user enable --now hyprmoncfgd)
+hyprmoncfg-bin
