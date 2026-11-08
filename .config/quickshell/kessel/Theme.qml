@@ -63,10 +63,12 @@ Singleton {
     // every icon has a 0.6em advance but many draw up to ~1em wide, spilling right,
     // so anything centred by its box sat up to 18% of the icon size off (Wi-Fi).
     readonly property string iconFont: "JetBrainsMono Nerd Font Propo"
-    readonly property real fontUi: 10
-    readonly property real fontMono: 11
-    readonly property real fontSmall: 9.5
-    readonly property real fontBig: 22
+    // Small bump from 10/11/9.5/22: monitor scale dropped from 1.25 to 1 for
+    // sharpness (see monitors.lua), and the island read a bit small afterward.
+    readonly property real fontUi: 10.5
+    readonly property real fontMono: 11.5
+    readonly property real fontSmall: 10
+    readonly property real fontBig: 23
 
     readonly property int islandHeight: 36
     readonly property int screenCornerRadius: 14      // 0 disables the rounded screen corners
