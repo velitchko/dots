@@ -515,6 +515,11 @@ set_wallpaper() {
 show_wallpaper() {
     local wall=$1 i
     [[ -n ${WAYLAND_DISPLAY:-} || -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] || return 0
+    # awww installed but its daemon isn't running (not started at login, or it
+    # crashed): start it ourselves instead of failing silently.
+    if command -v awww-daemon >/dev/null && ! pgrep -x awww-daemon >/dev/null; then
+        setsid -f awww-daemon >"$STATE/awww-daemon.log" 2>&1 </dev/null || true
+    fi
     for (( i = 0; i < 25; i++ )); do
         if command -v awww >/dev/null && awww query >/dev/null 2>&1; then
             awww img "$wall" --transition-type grow --transition-pos 0.5,0.97 \
