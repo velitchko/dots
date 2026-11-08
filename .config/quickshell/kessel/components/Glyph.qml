@@ -8,7 +8,7 @@ Text {
     id: root
     property real size: Theme.fontUi + 3
     property bool optical: false
-    font.family: Theme.font
+    font.family: Theme.iconFont
     font.pointSize: size
     color: Theme.text
     verticalAlignment: Text.AlignVCenter

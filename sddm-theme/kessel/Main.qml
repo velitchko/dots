@@ -25,7 +25,7 @@ Item {
     readonly property color onAccent: dark ? "#000000" : "#ffffff"
     function a(c, alpha) { return Qt.rgba(c.r, c.g, c.b, alpha) }
     readonly property string mono: "JetBrainsMono Nerd Font Mono"
-    readonly property string nf: "JetBrainsMono Nerd Font"
+    readonly property string nf: "JetBrainsMono Nerd Font Propo"   // icons: real widths, so they centre (regular build spills right)
     function g(cp) { return String.fromCodePoint(cp) }
 
     // ── state ────────────────────────────────────────────────────────────────

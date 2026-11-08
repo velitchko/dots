@@ -149,7 +149,7 @@ MouseArea {
                     anchors.centerIn: parent
                     visible: avatar.status !== Image.Ready
                     text: Style.iAccount
-                    font.family: Style.font
+                    font.family: Style.iconFont
                     font.pixelSize: parent.s
                     color: Style.subtext
                 }
@@ -191,7 +191,7 @@ MouseArea {
             id: lockedRow
             anchors.centerIn: parent
             spacing: 6
-            Text { text: Style.iLock; font.family: Style.font; font.pixelSize: 18; color: Style.subtext; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: Style.iLock; font.family: Style.iconFont; font.pixelSize: 18; color: Style.subtext; anchors.verticalCenter: parent.verticalCenter }
             Text { text: "Locked"; font.family: Style.mono; font.pixelSize: 16; color: Style.subtext; anchors.verticalCenter: parent.verticalCenter }
         }
     }
@@ -287,7 +287,7 @@ MouseArea {
             Layout.leftMargin: 8
             Layout.rightMargin: 8
             spacing: 8
-            Text { text: Style.iKeyboard; font.family: Style.font; font.pixelSize: 20; color: Style.subtext; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: Style.iKeyboard; font.family: Style.iconFont; font.pixelSize: 20; color: Style.subtext; anchors.verticalCenter: parent.verticalCenter }
             Text { id: layoutText; text: "us"; font.family: Style.mono; font.pixelSize: 15; color: Style.subtext; anchors.verticalCenter: parent.verticalCenter }
         }
     }
@@ -320,7 +320,7 @@ MouseArea {
             spacing: 4
             Text {
                 text: !UPower.onBattery ? Style.iBolt : Style.iBattery
-                font.family: Style.font; font.pixelSize: 20
+                font.family: Style.iconFont; font.pixelSize: 20
                 color: parent.has && UPower.onBattery && parent.bat.percentage < 0.15 ? Style.red : Style.subtext
                 anchors.verticalCenter: parent.verticalCenter
             }

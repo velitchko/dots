@@ -19,7 +19,7 @@ Rectangle {
     Text {
         anchors.centerIn: parent
         text: root.icon
-        font.family: Style.font
+        font.family: Style.iconFont
         font.pixelSize: 20
         color: root.iconColor
     }

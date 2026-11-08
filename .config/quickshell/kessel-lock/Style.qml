@@ -28,6 +28,7 @@ Singleton {
     readonly property string wallpaper: c.wallpaper ?? "/usr/share/hypr/wall2.png"
     readonly property string mono: "JetBrainsMono Nerd Font Mono"
     readonly property string font: "JetBrainsMono Nerd Font"
+    readonly property string iconFont: "JetBrainsMono Nerd Font Propo"   // icons centred by their real width (see kessel/Theme.qml)
 
     function g(cp) { return String.fromCodePoint(cp) }
     readonly property string iLock:     g(0xF033E)
