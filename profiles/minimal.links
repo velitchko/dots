@@ -12,7 +12,8 @@
 .config/fish/conf.d/theme.fish     .config/fish/conf.d/theme.fish
 .config/fish/functions/starship_transient_prompt_func.fish  .config/fish/functions/starship_transient_prompt_func.fish
 .config/starship.toml        .config/starship.toml
-.config/nvim                 .config/nvim
+# .config/nvim is intentionally not linked yet — AstroNvim stays until I'm ready to switch to LazyVim.
+# .config/nvim               .config/nvim
 .config/fontconfig/fonts.conf .config/fontconfig/fonts.conf
 .config/gtk-3.0/settings.ini .config/gtk-3.0/settings.ini
 .config/gtk-4.0/settings.ini .config/gtk-4.0/settings.ini
