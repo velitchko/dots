@@ -57,7 +57,10 @@ write() { local tmp; tmp="$(mktemp "$1.XXXXXX")"; cat > "$tmp"; mv "$tmp" "$1"; 
 # content kept), but kwriteconfig6 costs ~12 ms a call and a theme switch set
 # ~100 keys, which was most of the toggle's lag.
 kset() {
-    python3 - "$1" <<'PY'
+    # -c (not `python3 - <<PY`): a heredoc on `python3 -` becomes the program's
+    # stdin, so it's consumed as the SCRIPT and never reaches sys.stdin.read()
+    # below — the piped group/key/value lines were silently discarded.
+    python3 -c '
 import os, sys, tempfile
 path = sys.argv[1]
 groups, head, order = {}, [], []
@@ -89,7 +92,7 @@ os.makedirs(d, exist_ok=True)
 fd, tmp = tempfile.mkstemp(dir=d, prefix=".kset.")
 with os.fdopen(fd, "w", encoding="utf-8") as f: f.write("\n".join(out).rstrip("\n") + "\n")
 os.replace(tmp, path)
-PY
+' "$1"
 }
 
 # ── accents from the wallpaper ──────────────────────────────────────────────
