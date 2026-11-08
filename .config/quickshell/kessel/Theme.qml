@@ -76,7 +76,7 @@ Singleton {
 
     readonly property int islandHeight: 45
     readonly property int screenCornerRadius: 14      // 0 disables the rounded screen corners
-    readonly property int islandMargin: 8
+    readonly property int islandMargin: 0
     readonly property int radius: 23
     readonly property int radiusPanel: 33
     readonly property int radiusCard: 18
