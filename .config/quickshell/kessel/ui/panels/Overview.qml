@@ -57,10 +57,10 @@ PanelBase {
                     width: root.cardW
                     height: root.cardH
                     radius: 10
-                    clip: true
                     color: drop.containsDrag ? Theme.a(Theme.accent, 0.18) : Theme.card
-                    border.width: root.sel === ws.index || Hypr.focusedId === ws.wsId ? 2 : 1
-                    border.color: root.sel === ws.index ? Theme.accent
+                    // border drawn by an overlay above the window previews (below)
+                    readonly property real borderW: root.sel === ws.index || Hypr.focusedId === ws.wsId ? 2 : 1
+                    readonly property color borderC: root.sel === ws.index ? Theme.accent
                         : Hypr.focusedId === ws.wsId ? Theme.a(Theme.accent, 0.5) : Theme.a(Theme.text, 0.06)
 
                     MouseArea {
@@ -76,62 +76,77 @@ PanelBase {
                         onDropped: if (root.dragging) { Hypr.moveWindowTo(root.dragging, ws.wsId); root.dragging = null }
                     }
 
-                    Repeater {
-                        model: ws.wins
-                        Rectangle {
-                            id: win
-                            required property var modelData
-                            readonly property var ipc: modelData.lastIpcObject
-                            readonly property real mx: mon ? mon.x : 0
-                            readonly property real my: mon ? mon.y : 0
-                            x: ((ipc?.at?.[0] ?? 0) - mx) * root.k
-                            y: ((ipc?.at?.[1] ?? 0) - my) * root.k
-                            width: Math.max(12, (ipc?.size?.[0] ?? 100) * root.k)
-                            height: Math.max(10, (ipc?.size?.[1] ?? 80) * root.k)
-                            radius: 4
-                            color: Theme.overlay
-                            border.width: wma.containsMouse ? 1 : 0
-                            border.color: Theme.accent
-                            Drag.active: wma.drag.active
-                            Drag.hotSpot.x: width / 2
-                            Drag.hotSpot.y: height / 2
+                    // Windows are cropped to the card's rounded shape: clip: true only
+                    // cuts square, so tiled windows (which fill the card) stuck out of
+                    // its corners. The border is drawn on top, after them.
+                    ClippingRectangle {
+                        anchors.fill: parent
+                        radius: card.radius
+                        color: "transparent"
+                        Repeater {
+                            model: ws.wins
+                            Rectangle {
+                                id: win
+                                required property var modelData
+                                readonly property var ipc: modelData.lastIpcObject
+                                readonly property real mx: mon ? mon.x : 0
+                                readonly property real my: mon ? mon.y : 0
+                                x: ((ipc?.at?.[0] ?? 0) - mx) * root.k
+                                y: ((ipc?.at?.[1] ?? 0) - my) * root.k
+                                width: Math.max(12, (ipc?.size?.[0] ?? 100) * root.k)
+                                height: Math.max(10, (ipc?.size?.[1] ?? 80) * root.k)
+                                radius: 4
+                                color: Theme.overlay
+                                border.width: wma.containsMouse ? 1 : 0
+                                border.color: Theme.accent
+                                Drag.active: wma.drag.active
+                                Drag.hotSpot.x: width / 2
+                                Drag.hotSpot.y: height / 2
 
-                            // live preview with rounded corners (clip: true only cuts square)
-                            ClippingRectangle {
-                                anchors.fill: parent
-                                anchors.margins: parent.border.width
-                                radius: Math.max(0, parent.radius - parent.border.width)
-                                color: "transparent"
-                                ScreencopyView {
+                                // live preview with rounded corners (clip: true only cuts square)
+                                ClippingRectangle {
                                     anchors.fill: parent
-                                    captureSource: win.modelData.wayland
-                                    live: true
-                                    paintCursor: false
+                                    anchors.margins: parent.border.width
+                                    radius: Math.max(0, parent.radius - parent.border.width)
+                                    color: "transparent"
+                                    ScreencopyView {
+                                        anchors.fill: parent
+                                        captureSource: win.modelData.wayland
+                                        live: true
+                                        paintCursor: false
+                                    }
                                 }
-                            }
-                            Image {
-                                anchors.centerIn: parent
-                                width: Math.min(24, parent.width * 0.5)
-                                height: width
-                                sourceSize: Qt.size(48, 48)
-                                source: Quickshell.iconPath((win.ipc?.class ?? "").toLowerCase(), true)
-                                opacity: 0.85
-                            }
-                            MouseArea {
-                                id: wma
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                drag.target: win
-                                onPressed: root.dragging = win.modelData
-                                onReleased: {
-                                    const moved = win.Drag.target !== null
-                                    win.Drag.drop()
-                                    if (!moved) { const t = win.modelData; Hypr.afterPanel(() => Hypr.focusWindow(t)) }
-                                    else IslandState.closePanel()
+                                Image {
+                                    anchors.centerIn: parent
+                                    width: Math.min(24, parent.width * 0.5)
+                                    height: width
+                                    sourceSize: Qt.size(48, 48)
+                                    source: Quickshell.iconPath((win.ipc?.class ?? "").toLowerCase(), true)
+                                    opacity: 0.85
+                                }
+                                MouseArea {
+                                    id: wma
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    drag.target: win
+                                    onPressed: root.dragging = win.modelData
+                                    onReleased: {
+                                        const moved = win.Drag.target !== null
+                                        win.Drag.drop()
+                                        if (!moved) { const t = win.modelData; Hypr.afterPanel(() => Hypr.focusWindow(t)) }
+                                        else IslandState.closePanel()
+                                    }
                                 }
                             }
                         }
+                    }
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: card.radius
+                        color: "transparent"
+                        border.width: card.borderW
+                        border.color: card.borderC
                     }
                 }
                 Row {
