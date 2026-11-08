@@ -28,5 +28,5 @@ hl.config({
 -- gestures.workspace_swipe_create_new is on (hl.dsp.focus with "r+1"/"r-1"
 -- does create new ones fine, same as SUPER+Page_Down/Up below). Two directional
 -- gestures routed through that same relative dispatch instead.
-hl.gesture({ fingers = 3, direction = "left",  action = function() hl.dispatch(function() hl.dsp.focus({ workspace = "r+1" }) end) end })
-hl.gesture({ fingers = 3, direction = "right", action = function() hl.dispatch(function() hl.dsp.focus({ workspace = "r-1" }) end) end })
+hl.gesture({ fingers = 3, direction = "left",  action = function() return hl.dsp.focus({ workspace = "r+1" }) end })
+hl.gesture({ fingers = 3, direction = "right", action = function() return hl.dsp.focus({ workspace = "r-1" }) end })
