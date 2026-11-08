@@ -14,8 +14,16 @@ local MAIN_MONITOR = ""      -- e.g. "Dell Inc. DELL U2723QE" (substring match)
 -- Per-output mode overrides (output name → mode). Everything not listed uses its
 -- preferred mode. Virtual displays often default to an odd mode, so pin one here.
 local MODES = { ["Virtual-1"] = "1920x1080" }
+-- Per-output scale overrides. "auto" (DPI-based) rounded eDP-1 up to 1.5, which
+-- felt too large; pinned a bit lower instead.
+local SCALES = { ["eDP-1"] = "1.25" }
 for name, mode in pairs(MODES) do
-    hl.monitor({ output = name, mode = mode, position = "0x0", scale = "auto" })
+    hl.monitor({ output = name, mode = mode, position = "0x0", scale = SCALES[name] or "auto" })
+end
+for name, scale in pairs(SCALES) do
+    if not MODES[name] then
+        hl.monitor({ output = name, mode = "preferred", position = "auto-right", scale = scale })
+    end
 end
 -- Everything else: preferred mode, auto scale; position set by arrange() below.
 hl.monitor({ output = "", mode = "preferred", position = "auto-right", scale = "auto" })
@@ -74,7 +82,7 @@ local function arrange()
 
     local x = 0
     for _, m in ipairs(order) do
-        hl.monitor({ output = m.name, mode = MODES[m.name] or "preferred", position = x .. "x0", scale = "auto" })
+        hl.monitor({ output = m.name, mode = MODES[m.name] or "preferred", position = x .. "x0", scale = SCALES[m.name] or "auto" })
         x = x + logical_width(m)
     end
 end
