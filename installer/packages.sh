@@ -5,7 +5,10 @@
 missing_pkgs() {
     local p
     while read -r p; do
-        pacman -Qq "$p" >/dev/null 2>&1 || pacman -Qqg "$p" >/dev/null 2>&1 || echo "$p"
+        # foo-bin is also satisfied by foo (the same program built from source,
+        # e.g. when a -bin download is temporarily failing)
+        pacman -Qq "$p" >/dev/null 2>&1 || pacman -Qqg "$p" >/dev/null 2>&1 ||
+            { [[ $p == *-bin ]] && pacman -Qq "${p%-bin}" >/dev/null 2>&1; } || echo "$p"
     done < <(read_manifest "$1")
 }
 
