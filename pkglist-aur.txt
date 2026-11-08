@@ -5,6 +5,7 @@ omniglyph
 bibata-cursor-theme-bin
 # Display layouts: drag displays into place, save profiles, auto-switch on hot-plug
 # (TUI; the daemon is opt-in: systemctl --user enable --now hyprmoncfgd).
-# Built from source by yay (needs go, pulled in automatically); an installed
-# hyprmoncfg-bin also counts, it provides "hyprmoncfg".
-hyprmoncfg
+# The -git package: built by yay from the repository (needs git + go, pulled in
+# automatically). The release downloads behind hyprmoncfg / hyprmoncfg-bin kept
+# failing with HTTP errors; cloning works. Only one of the three can be installed.
+hyprmoncfg-git

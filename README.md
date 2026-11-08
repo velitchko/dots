@@ -85,7 +85,7 @@ systemctl --user restart wireplumber                  # once, so Bluetooth audio
   printf 'blacklist pcspkr\nblacklist snd_pcsp\n' | sudo tee /etc/modprobe.d/nobeep.conf
   ```
 - **Displays:** `monitors.lua` arranges them automatically and re-applies on hot-plug: one external display goes to the **left** of the laptop; with three, the main one sits in the middle (set `MAIN_MONITOR`).
-- **Display manager (optional):** [hyprmoncfg](https://github.com/crmne/hyprmoncfg) (installed with `--with-aur`) lets you drag displays into place and save profiles like `desk` or `home`. Run `hyprmoncfg`; once you apply a layout it takes over from `monitors.lua`. To switch profiles automatically on plug/unplug and lid close: `systemctl --user enable --now hyprmoncfgd`. Delete `~/.config/hypr/hyprmoncfg-monitors.lua` to go back to the automatic layout.
+- **Display manager (optional):** [hyprmoncfg](https://github.com/crmne/hyprmoncfg) (`hyprmoncfg-git`, installed with `--with-aur`) lets you drag displays into place and save profiles like `desk` or `home`. Run `hyprmoncfg`; once you apply a layout it takes over from `monitors.lua`. To switch profiles automatically on plug/unplug and lid close: `systemctl --user enable --now hyprmoncfgd`. Delete `~/.config/hypr/hyprmoncfg-monitors.lua` to go back to the automatic layout.
 
 ### Fingerprint
 
