@@ -43,8 +43,8 @@ hl.config({
         rounding_power = 2,
         -- Focused windows keep their own look (kitty is slightly translucent by
         -- itself); unfocused ones fade a little so the frosted blur shows through.
-        active_opacity   = 1.0,
-        inactive_opacity = 0.90,
+        active_opacity   = 0.96,
+        inactive_opacity = 0.85,
         shadow = {
             enabled      = not SOFTWARE,
             range        = 8,
