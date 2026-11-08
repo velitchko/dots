@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Music perspective: spinning art · scrolling title/artist · cava visualizer ·
+// Music perspective: spinning record (art as its label) · scrolling title/artist · cava visualizer ·
 // time left · play/pause; a progress line runs along the pill's bottom edge
 // (drawn by RestView). Bars rest as a dot row when paused (dot-matrix idle).
 import QtQuick
 import Quickshell
+import Quickshell.Widgets
 import "../.."
 import "../../services"
 import "../../components"
@@ -22,15 +23,57 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         spacing: 12
 
-        Rectangle {
+        // A small vinyl record: dark disc with faint grooves, the album art as a
+        // round centre label, a spindle hole. Only the record spins (the square
+        // art used to rotate, because clip cuts to the rectangle, not the circle).
+        Item {
             id: art
-            width: 24; height: 24; radius: 12
-            color: Theme.overlay
-            clip: true
+            width: 26; height: 26
             anchors.verticalCenter: parent.verticalCenter
-            Image { anchors.fill: parent; source: Media.art; fillMode: Image.PreserveAspectCrop; asynchronous: true; visible: status === Image.Ready }
-            Glyph { anchors.centerIn: parent; optical: true; text: Icons.music; size: Theme.fontSmall; color: Theme.subtext; visible: Media.art === "" }
-            RotationAnimation on rotation { running: Media.playing; from: 0; to: 360; duration: 12000; loops: Animation.Infinite }
+            Item {
+                id: disc
+                anchors.fill: parent
+                // vinyl stays dark in both modes; a touch lighter than the pitch-black pill
+                Rectangle { anchors.fill: parent; radius: width / 2; color: "#1c1c1c"; border.width: 1; border.color: Theme.a(Theme.text, 0.16) }
+                // grooves
+                Repeater {
+                    model: 3
+                    Rectangle {
+                        required property int index
+                        anchors.centerIn: parent
+                        width: disc.width - 5 - index * 4; height: width; radius: width / 2
+                        color: "transparent"
+                        border.width: 0.6
+                        border.color: Qt.rgba(1, 1, 1, 0.09)
+                    }
+                }
+                // a sheen across the grooves makes the rotation visible on a plain disc
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: disc.width - 4; height: 1.2; radius: 0.6
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop { position: 0.0;  color: "transparent" }
+                        GradientStop { position: 0.3;  color: Qt.rgba(1, 1, 1, 0.12) }
+                        GradientStop { position: 0.42; color: "transparent" }
+                        GradientStop { position: 0.58; color: "transparent" }
+                        GradientStop { position: 0.7;  color: Qt.rgba(1, 1, 1, 0.12) }
+                        GradientStop { position: 1.0;  color: "transparent" }
+                    }
+                }
+                // label: accent paper, album art on top clipped to a circle
+                Rectangle { anchors.centerIn: parent; width: 12; height: 12; radius: 6; color: Theme.accent }
+                ClippingRectangle {
+                    anchors.centerIn: parent
+                    width: 12; height: 12; radius: 6
+                    color: "transparent"
+                    Image { anchors.fill: parent; source: Media.art; sourceSize: Qt.size(48, 48); fillMode: Image.PreserveAspectCrop; asynchronous: true; visible: status === Image.Ready }
+                }
+                // spindle hole
+                Rectangle { anchors.centerIn: parent; width: 2.5; height: 2.5; radius: 1.25; color: "#1c1c1c" }
+                // 33⅓ rpm would be a blur at this size: one calm turn every 6 s; holds its angle on pause
+                RotationAnimation on rotation { running: Media.playing; from: 0; to: 360; duration: 6000; loops: Animation.Infinite }
+            }
         }
 
         // marquee: scrolls when "title — artist" is wider than its box
