@@ -6,6 +6,7 @@
 #   theme.sh wallpaper <image>        set wallpaper and re-derive accents
 #   theme.sh restore                  re-apply saved state (run at login)
 #   theme.sh apply                    regenerate files from saved state
+#   theme.sh precache                 prepare every wallpaper (screen-sized copy + colours)
 #   theme.sh status                   print the saved state
 #
 # Base colours are fixed per mode (pitch black / eggshell); only the ACCENTS
@@ -569,6 +570,37 @@ EOG
     echo "theme: $mode · accent $A · $(basename "$wall")"
 }
 
+# ── wallpaper speed ──
+# Wallpapers are often 8K PNGs: awww spends a second or more decoding and scaling
+# one before its transition can start, and matugen ~1-2 s the first time. So:
+#   sized_wall   a copy at the widest display's width (cached), which awww loads fast
+#   precompute   that copy + the matugen colours, so a switch only reads caches
+#   precache     both for every wallpaper, run in the background by the island
+TRANSITION_S=1.2
+WALLS="${XDG_CACHE_HOME:-$HOME/.cache}/kessel/walls"
+screen_width() {
+    local w=""
+    [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] && w="$(hyprctl monitors -j 2>/dev/null | jq -r 'map(.width) | max // empty' 2>/dev/null)"
+    [[ $w =~ ^[0-9]+$ ]] && echo "$w" || echo 3840
+}
+# sized_wall <image> → path of a copy no wider than the widest display (or the
+# image itself when it's already small, or when ffmpeg isn't available).
+sized_wall() {
+    local wall=$1 w iw out
+    command -v ffmpeg >/dev/null || { echo "$wall"; return; }
+    w="${SCREEN_W:-$(screen_width)}"
+    iw="$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of csv=p=0 "$wall" 2>/dev/null | head -1)"
+    [[ $iw =~ ^[0-9]+$ ]] && (( iw > w )) || { echo "$wall"; return; }
+    out="$WALLS/$(sha1sum "$wall" | cut -c1-16)-$w.png"
+    if [[ ! -s $out ]]; then
+        mkdir -p "$WALLS"
+        ffmpeg -nostdin -loglevel error -y -i "$wall" -vf "scale=$w:-2:flags=lanczos" -compression_level 1 "$out.tmp.png" \
+            && mv "$out.tmp.png" "$out" || { rm -f "$out.tmp.png"; echo "$wall"; return; }
+    fi
+    echo "$out"
+}
+precompute() { accents "$1" dark >/dev/null; sized_wall "$1" >/dev/null; }
+
 set_wallpaper() {
     local wall=$1
     [[ -r $wall ]] || { echo "theme: cannot read $wall" >&2; exit 1; }
@@ -580,8 +612,11 @@ set_wallpaper() {
 # Put $1 on every display. Retries for up to ~5 s so a call right after login
 # doesn't lose the race against the daemon starting (that used to fail silently).
 show_wallpaper() {
-    local wall=$1 i
-    [[ -n ${WAYLAND_DISPLAY:-} || -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] || return 0
+    local wall=$1 i shown
+    # awww and hyprpaper are Wayland clients: no display, nothing to do (a stale
+    # Hyprland runtime dir used to make this retry for ~18 s over SSH).
+    [[ -n ${WAYLAND_DISPLAY:-} ]] || return 0
+    shown="$(sized_wall "$wall")"
     # awww installed but its daemon isn't running (not started at login, or it
     # crashed): start it ourselves instead of failing silently.
     if command -v awww-daemon >/dev/null && ! pgrep -x awww-daemon >/dev/null; then
@@ -589,10 +624,10 @@ show_wallpaper() {
     fi
     for (( i = 0; i < 25; i++ )); do
         if command -v awww >/dev/null && awww query >/dev/null 2>&1; then
-            awww img "$wall" --transition-type grow --transition-pos 0.5,0.97 \
-                --transition-duration 1 --transition-fps 60 >/dev/null 2>&1 && return 0
+            awww img "$shown" --transition-type grow --transition-pos 0.5,0.97 \
+                --transition-duration "$TRANSITION_S" --transition-fps 60 --transition-bezier .2,.8,.2,1 >/dev/null 2>&1 && return 0
         elif ! command -v awww-daemon >/dev/null && pgrep -x hyprpaper >/dev/null &&
-             hyprctl hyprpaper wallpaper ",$wall" >/dev/null 2>&1; then
+             hyprctl hyprpaper wallpaper ",$shown" >/dev/null 2>&1; then
             return 0
         fi
         sleep 0.2
@@ -616,9 +651,11 @@ thaw() {
 # One switch at a time: a keybind and an island click (or two quick clicks)
 # used to interleave, each reading the old mode and racing freeze/thaw and
 # state.json. A queued "toggle" reads the mode only once it holds the lock.
-if [[ ${1:-status} != status ]] && command -v flock >/dev/null; then
-    exec 9>"$STATE/.lock"; flock 9
-fi
+# (precache has its own lock and only fills caches, so it never blocks a switch.)
+case ${1:-status} in
+    status|precache|precompute-one) ;;
+    *) if command -v flock >/dev/null; then exec 9>"$STATE/.lock"; flock 9; fi ;;
+esac
 
 case "${1:-status}" in
     mode)
@@ -630,11 +667,28 @@ case "${1:-status}" in
         state_set mode "$m"; freeze; apply; thaw ;;
     wallpaper)
         [[ -n ${2:-} ]] || { echo "usage: $0 wallpaper <image>" >&2; exit 2; }
-        freeze; set_wallpaper "$2"; apply; thaw ;;
+        # The new picture grows in from the island at once (no frozen screen);
+        # its colours are worked out meanwhile, then only the recolour crossfades.
+        [[ -r $2 ]] && { accents "$(realpath "$2")" dark >/dev/null & }   # matugen, in parallel
+        set_wallpaper "$2"
+        t0=$EPOCHREALTIME
+        wait
+        rest="$(awk -v a="$t0" -v b="$EPOCHREALTIME" -v d="$TRANSITION_S" 'BEGIN { r = d - (b - a); print (r > 0 ? r : 0) }')"
+        sleep "$rest"                    # let the transition finish before the snapshot
+        freeze; apply; thaw ;;
+    precache)
+        # Every wallpaper's screen-sized copy + colours, at idle priority; one run at a time.
+        exec 8>"$STATE/.precache.lock"; flock -n 8 || exit 0
+        SCREEN_W="$(screen_width)"
+        dir="$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Pictures")/Wallpapers"
+        find -L "$dir" -maxdepth 2 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) ! -iname '*lock*' 2>/dev/null |
+            while IFS= read -r f; do nice -n 19 ionice -c 3 "$0" precompute-one "$f" || true; done ;;
+    precompute-one)
+        [[ -r ${2:-} ]] && precompute "$(realpath "$2")" ;;
     restore)
         w="$(state_get wallpaper)"; [[ -r $w ]] || w="$DEFAULT_WALL"
         set_wallpaper "$w"; apply ;;
     apply)  apply ;;
     status) cat "$STATE_FILE" 2>/dev/null || echo '{}' ;;
-    *) echo "usage: $0 mode|wallpaper|restore|apply|status" >&2; exit 2 ;;
+    *) echo "usage: $0 mode|wallpaper|restore|apply|precache|status" >&2; exit 2 ;;
 esac

@@ -14,7 +14,10 @@ Run it from the island (quick settings → **Dark mode** switch, wallpaper strip
 ~/.config/hypr/scripts/theme.sh mode dark|light|toggle
 ~/.config/hypr/scripts/theme.sh wallpaper ~/Pictures/Wallpapers/foo.png
 ~/.config/hypr/scripts/theme.sh apply        # regenerate from saved state
+~/.config/hypr/scripts/theme.sh precache     # prepare every wallpaper (the island runs this in the background)
 ```
+
+A wallpaper switch starts the new picture's grow-in transition at once, works out its colors meanwhile, then crossfades the recolor. To keep it quick with 4K–8K images, each wallpaper gets a copy at the display's width (`~/.cache/kessel/walls/`, what awww loads) and cached matugen colors (`~/.cache/kessel/matugen/`).
 
 ## What it themes
 

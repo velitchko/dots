@@ -77,7 +77,16 @@ PanelBase {
             radius: 12
             color: Theme.card
             border.width: active || root.sel === index ? 2 : 0
-            border.color: active ? Theme.accent : Theme.a(Theme.text, 0.4)
+            border.color: active ? Theme.a(Theme.accent, pulse) : Theme.a(Theme.text, 0.4)
+            // pulses while the switch is being applied
+            property real pulse: 1
+            SequentialAnimation on pulse {
+                running: active && Themes.applying
+                loops: Animation.Infinite
+                NumberAnimation { to: 0.3; duration: 450; easing.type: Easing.InOutSine }
+                NumberAnimation { to: 1; duration: 450; easing.type: Easing.InOutSine }
+                onStopped: pulse = 1
+            }
             // rounded crop just inside the border (clip: true only cuts square)
             ClippingRectangle {
                 anchors.fill: parent

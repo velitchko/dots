@@ -10,7 +10,11 @@ Singleton {
     id: root
     readonly property string script: Quickshell.env("HOME") + "/.config/hypr/scripts/theme.sh"
     readonly property string wallDir: Quickshell.env("HOME") + "/Pictures/Wallpapers"
-    readonly property string current: Theme.c.wallpaper ?? ""
+    // The picked wallpaper shows as current at once (the switch takes ~1.5 s);
+    // `applying` lets the thumbnail pulse until theme.sh has finished.
+    property string wantWall: ""
+    readonly property string current: wantWall !== "" ? wantWall : (Theme.c.wallpaper ?? "")
+    readonly property bool applying: wantWall !== ""
     property var wallpapers: []
     // path → small cached JPEG. Wallpapers are often 4K–8K PNGs that take seconds
     // to decode; thumbnails are made once (ffmpeg) in ~/.cache/kessel/thumbs.
@@ -26,7 +30,7 @@ Singleton {
 
     function toggleMode() { setMode(dark ? "light" : "dark") }
     function setMode(m) { wantMode = m; run(["mode", m]) }
-    function setWallpaper(path) { run(["wallpaper", path]) }
+    function setWallpaper(path) { if (path === current) return; wantWall = path; run(["wallpaper", path]) }
     // A click while theme.sh runs used to be dropped (proc.running was already
     // true). Now requests queue, at most one per kind ("mode", "wallpaper"): a
     // newer one of the same kind replaces the waiting one. Commands are absolute
@@ -43,7 +47,7 @@ Singleton {
         onExited: {
             root.busy = false
             if (root.pending.length) { const next = root.pending[0]; root.pending = root.pending.slice(1); root.run(next) }
-            else root.wantMode = ""
+            else { root.wantMode = ""; root.wantWall = "" }
         }
     }
 
@@ -63,6 +67,9 @@ Singleton {
                 const m = {}
                 for (const l of text.split("\n")) { const p = l.split("\t"); if (p.length === 2) m[p[0]] = p[1] }
                 root.thumbs = m
+                // then prepare every wallpaper (screen-sized copy + colours) at
+                // idle priority, so switching to any of them only reads caches
+                Quickshell.execDetached([root.script, "precache"])
             }
         }
     }
