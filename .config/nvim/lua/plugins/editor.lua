@@ -1,5 +1,25 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 -- VS Code-like workflow: side panel, images/PDF, git history, CSV tables.
+
+-- Pad every line to the same display width before joining. The dashboard
+-- centers each line by its own width, so if the source lines differ (the "L"'s
+-- foot is wider than its stem) the letters jog sideways — and trailing spaces
+-- in the literal string don't survive a save/format pass, so pad at runtime.
+local function kessel_header()
+  local lines = {
+    " ██╗  ██╗███████╗███████╗███████╗███████╗██╗",
+    " ██║ ██╔╝██╔════╝██╔════╝██╔════╝██╔════╝██║",
+    " █████╔╝ █████╗  ███████╗███████╗█████╗  ██║",
+    " ██╔═██╗ ██╔══╝  ╚════██║╚════██║██╔══╝  ██║",
+    " ██║  ██╗███████╗███████║███████║███████╗███████╗",
+    " ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚══════╝╚══════╝",
+  }
+  local w = 0
+  for _, l in ipairs(lines) do w = math.max(w, vim.fn.strdisplaywidth(l)) end
+  for i, l in ipairs(lines) do lines[i] = l .. string.rep(" ", w - vim.fn.strdisplaywidth(l)) end
+  return table.concat(lines, "\n")
+end
+
 return {
   -- Side panel (project tree). `nvim some/folder` opens straight into it.
   {
@@ -23,13 +43,7 @@ return {
     opts = {
       image = { enabled = true, doc = { inline = true, float = true } },
       picker = { hidden = true, sources = { files = { hidden = true } } },
-      dashboard = { preset = { header = [[
- ██╗  ██╗███████╗███████╗███████╗███████╗██╗
- ██║ ██╔╝██╔════╝██╔════╝██╔════╝██╔════╝██║
- █████╔╝ █████╗  ███████╗███████╗█████╗  ██║
- ██╔═██╗ ██╔══╝  ╚════██║╚════██║██╔══╝  ██║
- ██║  ██╗███████╗███████║███████║███████╗███████╗
- ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚══════╝╚══════╝]] } },
+      dashboard = { preset = { header = kessel_header() } },
     },
   },
 
