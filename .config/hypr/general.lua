@@ -80,6 +80,16 @@ hl.config({
         disable_hyprland_logo   = true,
         disable_splash_rendering = true,
         allow_session_lock_restore = true, -- a new locker (hyprlock) may take over a crashed one
+        -- Fullscreen must not change the display's mode: on many laptop panels a
+        -- mode change is a ~1 s black screen. VRR "only for fullscreen" (2) and
+        -- auto-HDR switch modes the moment a window goes fullscreen.
+        vrr = 0,
+    },
+
+    render = {
+        direct_scanout    = 0,      -- handing a fullscreen window straight to the display can re-program it (black flash)
+        cm_auto_hdr       = 0,      -- no automatic HDR switch for fullscreen apps
+        send_content_type = false,  -- some panels blank while switching to "game"/"video" picture modes
     },
 
     layers = {
