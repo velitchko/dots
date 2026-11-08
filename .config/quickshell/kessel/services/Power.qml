@@ -13,9 +13,41 @@ Singleton {
     readonly property bool hasBattery: (battery?.isLaptopBattery ?? false) && (battery?.isPresent ?? false)
     readonly property real percent: hasBattery ? battery.percentage : 0     // 0..1
     readonly property bool charging: hasBattery && !UPower.onBattery
+    // Time left. UPower's timeToEmpty/timeToFull come from the *instantaneous*
+    // power draw, so they jump with every load spike (and were shown to the
+    // second). We average the draw (exponential moving average over ~2-3 min),
+    // restart when the charger is (un)plugged, wait for a few samples, and
+    // round the result: "3 h 15 min".
+    property real avgRate: 0        // W, smoothed
+    property int samples: 0
+    function sample() {
+        if (!hasBattery) return
+        const r = Math.abs(battery.changeRate ?? 0)
+        if (r < 0.1) return                       // no reading yet / idle full battery
+        avgRate = samples === 0 ? r : avgRate + 0.12 * (r - avgRate)
+        samples++
+    }
+    onChargingChanged: { avgRate = 0; samples = 0; sample() }
+    Connections { target: root.battery; ignoreUnknownSignals: true; function onChangeRateChanged() { root.sample() } }
+    Timer { interval: 15000; repeat: true; running: root.hasBattery; onTriggered: root.sample() }
+    readonly property bool settled: samples >= 4
+    readonly property real secondsLeft: {
+        if (!hasBattery || avgRate <= 0) return 0
+        const e = battery.energy ?? 0, cap = battery.energyCapacity ?? 0
+        const wh = charging ? Math.max(0, cap - e) : e
+        return wh / avgRate * 3600
+    }
+    function duration(sec) {
+        const min = Math.round(sec / 60)
+        if (min < 2) return "a minute"
+        if (min < 60) return min + " min"
+        const r = Math.round(min / 5) * 5        // an estimate: 5-minute steps
+        const h = Math.floor(r / 60), m = r % 60
+        return m === 0 ? h + " h" : h + " h " + m + " min"
+    }
     readonly property string timeLeft: !hasBattery ? ""
-        : charging ? (battery.timeToFull > 0 ? Time.hms(battery.timeToFull) + " to full" : "Charging")
-        : (battery.timeToEmpty > 0 ? Time.hms(battery.timeToEmpty) + " left" : "")
+        : charging ? (percent >= 0.995 ? "Full" : !settled || secondsLeft <= 0 ? "Charging" : duration(secondsLeft) + " to full")
+        : (!settled || secondsLeft <= 0 ? "Estimating…" : duration(secondsLeft) + " left")
     readonly property string icon: charging ? Icons.batCharging
         : percent > 0.9 ? Icons.bat100 : percent > 0.6 ? Icons.bat70 : percent > 0.3 ? Icons.bat40
         : percent > 0.1 ? Icons.bat20 : Icons.batAlert
