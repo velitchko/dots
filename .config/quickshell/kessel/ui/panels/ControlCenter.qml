@@ -328,7 +328,7 @@ PanelBase {
             Tile { width: 119; visible: NightLight.available; icon: Icons.night; label: NightLight.active ? (NightLight.manual ? "Night · on" : "Night · auto") : (NightLight.manual ? "Night · off" : "Night light")
                    active: NightLight.active; tint: Theme.yellow; onClicked: NightLight.toggle() }
             // Appearance: pitch black ↔ eggshell (accents always follow the wallpaper)
-            Tile { width: 119; icon: Icons.lightDark; label: Theme.dark ? "Dark mode" : "Light mode"; active: Theme.dark; tint: Theme.accent; onClicked: Themes.setMode(Theme.dark ? "light" : "dark") }
+            Tile { width: 119; icon: Icons.lightDark; label: Themes.dark ? "Dark mode" : "Light mode"; active: Themes.dark; tint: Theme.accent; onClicked: Themes.toggleMode() }
             Tile { width: 119; icon: Icons.coffee; label: "Stay awake"; active: Session.inhibitIdle; tint: Theme.yellow; onClicked: Session.inhibitIdle = !Session.inhibitIdle }
             Tile { width: 119; icon: Session.floatMode ? Icons.floating : Icons.tiling; label: Session.floatMode ? "Floating" : "Tiling"; active: Session.floatMode; tint: Theme.accent3; onClicked: Session.toggleFloatMode() }
             Tile { width: 119; icon: Icons.notes; label: "Notes"; onClicked: IslandState.openPanel("notes") }

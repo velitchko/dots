@@ -24,7 +24,7 @@ DEFAULT_WALL="/usr/share/hypr/wall2.png"
 
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 if [[ -z ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
-    HYPRLAND_INSTANCE_SIGNATURE="$(ls -t "$XDG_RUNTIME_DIR/hypr" 2>/dev/null | head -1)"; export HYPRLAND_INSTANCE_SIGNATURE
+    HYPRLAND_INSTANCE_SIGNATURE="$(ls -t "$XDG_RUNTIME_DIR/hypr" 2>/dev/null | head -1 || true)"; export HYPRLAND_INSTANCE_SIGNATURE
 fi
 if [[ -z ${WAYLAND_DISPLAY:-} ]]; then   # awww finds its daemon by the Wayland socket name
     for s in "$XDG_RUNTIME_DIR"/wayland-*; do
@@ -50,6 +50,46 @@ state_set() {
     mv "$tmp" "$STATE_FILE"
 }
 write() { local tmp; tmp="$(mktemp "$1.XXXXXX")"; cat > "$tmp"; mv "$tmp" "$1"; }   # atomic
+
+# kset FILE < "group<TAB>key<TAB>value" lines: set many KConfig keys in one pass.
+# Same result as one kwriteconfig6 call per key (groups and keys sorted, other
+# content kept), but kwriteconfig6 costs ~12 ms a call and a theme switch set
+# ~100 keys, which was most of the toggle's lag.
+kset() {
+    python3 - "$1" <<'PY'
+import os, sys, tempfile
+path = sys.argv[1]
+groups, head, order = {}, [], []
+cur = None
+if os.path.exists(path):
+    for line in open(path, encoding="utf-8").read().splitlines():
+        s = line.strip()
+        if s.startswith("[") and s.endswith("]"):
+            cur = s[1:-1]
+            if cur not in groups: groups[cur] = {}; order.append(cur)
+        elif cur is None:
+            if s: head.append(line)          # keys before any group: keep verbatim
+        elif "=" in line:
+            k, v = line.split("=", 1)
+            groups[cur][k] = v
+for line in sys.stdin.read().splitlines():
+    if not line: continue
+    g, k, v = line.split("\t", 2)
+    if g not in groups: groups[g] = {}; order.append(g)
+    groups[g][k] = v
+out = head + ([""] if head else [])
+for g in sorted(order):
+    if not groups[g]: continue
+    out.append(f"[{g}]")
+    out += [f"{k}={groups[g][k]}" for k in sorted(groups[g])]
+    out.append("")
+d = os.path.dirname(path) or "."
+os.makedirs(d, exist_ok=True)
+fd, tmp = tempfile.mkstemp(dir=d, prefix=".kset.")
+with os.fdopen(fd, "w", encoding="utf-8") as f: f.write("\n".join(out).rstrip("\n") + "\n")
+os.replace(tmp, path)
+PY
+}
 
 # ── accents from the wallpaper ──────────────────────────────────────────────
 # Prints: primary secondary tertiary   (for the given mode)
@@ -226,21 +266,19 @@ EOF
             echo "inactiveBackground=$(rgb "$BG")"; echo "inactiveForeground=$(rgb "$SUBTEXT")"
         } | write "$cs/Kessel.colors"
         local icons; [[ $mode == dark ]] && icons="Papirus-Dark" || icons="Papirus-Light"
-        kwriteconfig6 --file kdeglobals --group General --key ColorScheme Kessel
-        kwriteconfig6 --file dolphinrc --group UiSettings --key ColorScheme Kessel
-        kwriteconfig6 --file kdeglobals --group General --key TerminalApplication kitty
-        kwriteconfig6 --file kdeglobals --group General --key TerminalService kitty.desktop
-        kwriteconfig6 --file kdeglobals --group Icons --key Theme "$icons"
-        kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle Breeze
-        # apply the scheme's colours to the [Colors:*] groups KDE apps read from kdeglobals
-        while IFS= read -r line; do
-            case $line in
-                \[Colors:*\]) grp="${line#[}"; grp="${grp%]}" ;;
-                *=*) [[ -n ${grp:-} ]] && kwriteconfig6 --file kdeglobals --group "$grp" --key "${line%%=*}" "${line#*=}" ;;
-                "") ;;
-                *) grp="" ;;
-            esac
-        done < "$cs/Kessel.colors"
+        local cfg="${XDG_CONFIG_HOME:-$HOME/.config}"
+        printf 'UiSettings\tColorScheme\tKessel\n' | kset "$cfg/dolphinrc"
+        {
+            printf 'General\tColorScheme\tKessel\n'
+            printf 'General\tTerminalApplication\tkitty\n'
+            printf 'General\tTerminalService\tkitty.desktop\n'
+            printf 'Icons\tTheme\t%s\n' "$icons"
+            printf 'KDE\twidgetStyle\tBreeze\n'
+            # the scheme's colours, into the [Colors:*] groups KDE apps read from kdeglobals
+            awk '/^\[Colors:.*\]$/ { g = substr($0, 2, length($0) - 2); next }
+                 /^\[/ { g = ""; next }
+                 g != "" && index($0, "=") { i = index($0, "="); printf "%s\t%s\t%s\n", g, substr($0, 1, i - 1), substr($0, i + 1) }' "$cs/Kessel.colors"
+        } | kset "$cfg/kdeglobals"
     fi
 
     # Qt apps (Dolphin, …): qt6ct palette, applied at app start. KDE apps outside
@@ -256,12 +294,15 @@ EOF
     printf '[ColorScheme]\nactive_colors=%s\ninactive_colors=%s\ndisabled_colors=%s\n' "$act" "$act" "$dis" | write "$qd/colors/Kessel.conf"
     if command -v kwriteconfig6 >/dev/null; then
         local icons6; [[ $mode == dark ]] && icons6="Papirus-Dark" || icons6="Papirus-Light"
-        kwriteconfig6 --file "$qd/qt6ct.conf" --group Appearance --key custom_palette true
-        kwriteconfig6 --file "$qd/qt6ct.conf" --group Appearance --key color_scheme_path "$qd/colors/Kessel.conf"
-        kwriteconfig6 --file "$qd/qt6ct.conf" --group Appearance --key icon_theme "$icons6"
-        kwriteconfig6 --file "$qd/qt6ct.conf" --group Appearance --key style "$( [[ -d /usr/lib/qt6/plugins/styles ]] && ls /usr/lib/qt6/plugins/styles | grep -qi breeze && echo Breeze || echo Fusion )"
-        kwriteconfig6 --file "$qd/qt6ct.conf" --group Fonts --key general '"JetBrainsMono Nerd Font,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"'
-        kwriteconfig6 --file "$qd/qt6ct.conf" --group Fonts --key fixed '"JetBrainsMono Nerd Font,12,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"'
+        local qstyle; ls /usr/lib/qt6/plugins/styles 2>/dev/null | grep -qi breeze && qstyle=Breeze || qstyle=Fusion
+        {
+            printf 'Appearance\tcustom_palette\ttrue\n'
+            printf 'Appearance\tcolor_scheme_path\t%s\n' "$qd/colors/Kessel.conf"
+            printf 'Appearance\ticon_theme\t%s\n' "$icons6"
+            printf 'Appearance\tstyle\t%s\n' "$qstyle"
+            printf 'Fonts\tgeneral\t%s\n' '"JetBrainsMono Nerd Font,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"'
+            printf 'Fonts\tfixed\t%s\n' '"JetBrainsMono Nerd Font,12,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"'
+        } | kset "$qd/qt6ct.conf"
     fi
 
     # Starship: repo config + a generated [palettes.kessel] (fish points STARSHIP_CONFIG here)
@@ -545,6 +586,13 @@ thaw() {
     sleep 0.2                      # let kitty / GTK repaint before revealing them
     qs -c kessel ipc call island thaw >/dev/null 2>&1 || true
 }
+
+# One switch at a time: a keybind and an island click (or two quick clicks)
+# used to interleave, each reading the old mode and racing freeze/thaw and
+# state.json. A queued "toggle" reads the mode only once it holds the lock.
+if [[ ${1:-status} != status ]] && command -v flock >/dev/null; then
+    exec 9>"$STATE/.lock"; flock 9
+fi
 
 case "${1:-status}" in
     mode)

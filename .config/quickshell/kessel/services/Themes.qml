@@ -18,15 +18,34 @@ Singleton {
     function thumb(path) { return "file://" + (thumbs[path] ?? path) }
     property bool busy: false
 
-    function toggleMode() { run(["mode", "toggle"]) }
-    function setMode(m) { run(["mode", m]) }
+    // The mode the user last asked for. Theme.dark only changes once theme.sh
+    // has finished, so a toggle decided from it during a switch picked the old
+    // direction again. UI shows and toggles from this instead.
+    property string wantMode: ""
+    readonly property bool dark: wantMode !== "" ? wantMode === "dark" : Theme.dark
+
+    function toggleMode() { setMode(dark ? "light" : "dark") }
+    function setMode(m) { wantMode = m; run(["mode", m]) }
     function setWallpaper(path) { run(["wallpaper", path]) }
+    // A click while theme.sh runs used to be dropped (proc.running was already
+    // true). Now requests queue, at most one per kind ("mode", "wallpaper"): a
+    // newer one of the same kind replaces the waiting one. Commands are absolute
+    // (no "toggle"), so collapsing is correct.
+    property var pending: []
     function run(args) {
+        if (proc.running) { pending = pending.filter(a => a[0] !== args[0]).concat([args]); return }
         busy = true
         proc.command = [script].concat(args)
         proc.running = true
     }
-    Process { id: proc; onExited: root.busy = false }
+    Process {
+        id: proc
+        onExited: {
+            root.busy = false
+            if (root.pending.length) { const next = root.pending[0]; root.pending = root.pending.slice(1); root.run(next) }
+            else root.wantMode = ""
+        }
+    }
 
     function refresh() { if (!lister.running) lister.running = true }
     Process {

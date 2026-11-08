@@ -33,7 +33,7 @@ PanelBase {
             model: [{ m: "dark", label: "Dark · pitch black", icon: Icons.night }, { m: "light", label: "Light · eggshell", icon: Icons.sunny }]
             Rectangle {
                 required property var modelData
-                readonly property bool on: (modelData.m === "dark") === Theme.dark
+                readonly property bool on: (modelData.m === "dark") === Themes.dark
                 width: 190; height: 36; radius: 18
                 color: on ? Theme.a(Theme.accent, 0.22) : (mm.containsMouse ? Theme.cardHi : Theme.card)
                 border.width: on ? 1 : 0
