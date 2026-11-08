@@ -21,7 +21,7 @@ Singleton {
         : percent > 0.1 ? Icons.bat20 : Icons.batAlert
 
     // power-profiles-daemon is optional (laptop profile). PowerProfiles.profile is
-    // only meaningful when the daemon exists; we probe it with powerprofilesctl.
+    // only meaningful when the daemon exists; we probe it over D-Bus.
     property bool profilesAvailable: false
     readonly property int profile: PowerProfiles.profile
     readonly property bool hasPerformance: PowerProfiles.hasPerformanceProfile
@@ -34,7 +34,11 @@ Singleton {
     Process {
         id: probe
         running: true
-        command: ["sh", "-c", "command -v powerprofilesctl >/dev/null || { echo missing; exit 1; }; powerprofilesctl get >/dev/null 2>&1 || { echo stopped; exit 1; }"]
+        // Ask the daemon over D-Bus (what Quickshell itself uses). powerprofilesctl
+        // was used before, but it is a Python script that needs python-gobject (only
+        // an optional dependency), so it failed with the daemon running.
+        command: ["sh", "-c", "busctl --system get-property net.hadess.PowerProfiles /net/hadess/PowerProfiles net.hadess.PowerProfiles ActiveProfile >/dev/null 2>&1 && exit 0; "
+            + "systemctl list-unit-files power-profiles-daemon.service tuned-ppd.service --no-legend 2>/dev/null | grep -q . && echo stopped || echo missing; exit 1"]
         stdout: StdioCollector {
             onStreamFinished: root.profilesReason = text.trim() === "missing" ? "Power modes: install.sh --with-laptop"
                 : text.trim() === "stopped" ? "Power modes: sudo systemctl enable --now power-profiles-daemon" : ""
