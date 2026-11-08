@@ -51,11 +51,34 @@ PanelBase {
                 border.width: root.sel === index ? 1 : 0
                 border.color: isArmed ? Theme.red : Theme.a(Theme.accent, 0.6)
                 Behavior on color { ColorAnimation { duration: Theme.fadeMs } }
+                // Labels are held to the card's width (centred, wrapping): the old
+                // armed text "Again to confirm" was wider than the 104 px card.
                 Column {
                     anchors.centerIn: parent
-                    spacing: 8
+                    width: parent.width - 12
+                    spacing: 6
                     Glyph { text: modelData.icon; size: 22; color: isArmed ? Theme.red : Theme.text; anchors.horizontalCenter: parent.horizontalCenter }
-                    Label { text: isArmed ? "Again to confirm" : modelData.label; size: Theme.fontSmall; color: isArmed ? Theme.red : Theme.text; anchors.horizontalCenter: parent.horizontalCenter }
+                    Label {
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 2
+                        text: modelData.label
+                        size: Theme.fontSmall
+                        font.bold: isArmed
+                        color: isArmed ? Theme.red : Theme.text
+                    }
+                    // armed: a short second line instead of replacing the label
+                    Label {
+                        width: parent.width
+                        visible: isArmed
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 2
+                        text: "Press again"
+                        size: Theme.fontSmall - 1
+                        color: Theme.a(Theme.red, 0.85)
+                    }
                 }
                 MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onEntered: root.sel = index; onClicked: root.trigger(index) }
             }
