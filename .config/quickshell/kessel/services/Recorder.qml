@@ -32,7 +32,13 @@ Singleton {
         }
         file = Config.recordDir + "/" + Qt.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss") + ".mp4"
         if (region) {
-            pick.running = true
+            // Detached, not a Quickshell Process: slurp spawned as a tracked
+            // Process child here never gets a layer-shell surface (confirmed via
+            // hyprctl layers -- no "selection" namespace, with or without an
+            // sh -c wrapper), while the identical binary run detached, or from a
+            // plain shell/exec_cmd (screenshot.sh), works every time. The script
+            // calls back via `qs ipc call island recordRegionGeometry`.
+            Quickshell.execDetached([Quickshell.env("HOME") + "/.config/hypr/scripts/record-pick.sh"])
         } else {
             // Name the output: with several outputs wf-recorder otherwise asks on
             // stdin which one to record, and waits forever (nothing gets recorded).
@@ -47,11 +53,6 @@ Singleton {
     }
     function stop() { if (recording) rec.signal(2) }   // SIGINT lets wf-recorder finalise the file
 
-    Process {
-        id: pick
-        command: ["slurp", "-d"]
-        stdout: StdioCollector { onStreamFinished: { const g = text.trim(); if (g !== "") root.launch(["-g", g]) } }
-    }
     // Report failures instead of claiming "saved": wf-recorder's errors used to
     // be thrown away, so a recorder that died at once looked like nothing happened.
     property string lastError: ""

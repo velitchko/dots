@@ -127,6 +127,8 @@ Singleton {
         function dnd(): string { Notifs.dnd = !Notifs.dnd; return Notifs.dnd ? "dnd on" : "dnd off" }
         function record(): string { Recorder.toggle(false); return "ok" }
         function recordRegion(): string { Recorder.toggle(true); return "ok" }
+        // scripts/desktop/record-pick.sh calls back with slurp's result; see Recorder.qml.
+        function recordRegionGeometry(geom: string): string { Recorder.launch(["-g", geom]); return "ok" }
         function layoutMode(mode: string): string {
             Session.floatMode = mode === "floating"
             root.showOsd(Session.floatMode ? Icons.floating : Icons.tiling, Session.floatMode ? "Floating" : "Tiling", 1)
