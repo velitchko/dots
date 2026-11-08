@@ -33,8 +33,11 @@ Item {
             Item {
                 id: disc
                 anchors.fill: parent
-                // vinyl stays dark in both modes; a touch lighter than the pitch-black pill
-                Rectangle { anchors.fill: parent; radius: width / 2; color: "#1c1c1c"; border.width: 1; border.color: Theme.a(Theme.text, 0.16) }
+                // Vinyl stays dark in both modes. On the pitch-black island (dark mode)
+                // a near-black disc vanished: lift it to charcoal and give it an
+                // accent rim, like the light reflecting off a record's edge.
+                readonly property color vinyl: Theme.dark ? "#2e2e2e" : "#1c1c1c"
+                Rectangle { anchors.fill: parent; radius: width / 2; color: disc.vinyl; border.width: 1.2; border.color: Theme.a(Theme.accent, Theme.dark ? 0.75 : 0.45) }
                 // grooves
                 Repeater {
                     model: 3
@@ -44,7 +47,7 @@ Item {
                         width: disc.width - 5 - index * 4; height: width; radius: width / 2
                         color: "transparent"
                         border.width: 0.6
-                        border.color: Qt.rgba(1, 1, 1, 0.09)
+                        border.color: Qt.rgba(1, 1, 1, Theme.dark ? 0.16 : 0.10)
                     }
                 }
                 // a sheen across the grooves makes the rotation visible on a plain disc
@@ -54,10 +57,10 @@ Item {
                     gradient: Gradient {
                         orientation: Gradient.Horizontal
                         GradientStop { position: 0.0;  color: "transparent" }
-                        GradientStop { position: 0.3;  color: Qt.rgba(1, 1, 1, 0.12) }
+                        GradientStop { position: 0.3;  color: Qt.rgba(1, 1, 1, 0.22) }
                         GradientStop { position: 0.42; color: "transparent" }
                         GradientStop { position: 0.58; color: "transparent" }
-                        GradientStop { position: 0.7;  color: Qt.rgba(1, 1, 1, 0.12) }
+                        GradientStop { position: 0.7;  color: Qt.rgba(1, 1, 1, 0.22) }
                         GradientStop { position: 1.0;  color: "transparent" }
                     }
                 }
@@ -70,7 +73,7 @@ Item {
                     Image { anchors.fill: parent; source: Media.art; sourceSize: Qt.size(48, 48); fillMode: Image.PreserveAspectCrop; asynchronous: true; visible: status === Image.Ready }
                 }
                 // spindle hole
-                Rectangle { anchors.centerIn: parent; width: 2.5; height: 2.5; radius: 1.25; color: "#1c1c1c" }
+                Rectangle { anchors.centerIn: parent; width: 2.5; height: 2.5; radius: 1.25; color: disc.vinyl }
                 // 33⅓ rpm would be a blur at this size: one calm turn every 6 s; holds its angle on pause
                 RotationAnimation on rotation { running: Media.playing; from: 0; to: 360; duration: 6000; loops: Animation.Infinite }
             }
