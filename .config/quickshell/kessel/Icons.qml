@@ -98,6 +98,7 @@ Singleton {
     readonly property string repeatOne:  g(0xF0458)
     readonly property string repeatOff:  g(0xF0457)
     readonly property string album:      g(0xF0025)
+    readonly property string keyboard:   g(0xF030C)
     readonly property string calculator: g(0xF00EC)
     readonly property string web:        g(0xF059F)
     readonly property string openExt:    g(0xF03CC)

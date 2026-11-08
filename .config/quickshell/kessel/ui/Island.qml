@@ -342,6 +342,7 @@ PanelWindow {
                 case "power":     return "panels/PowerPanel.qml"
                 case "timer":     return "panels/TimerPanel.qml"
                 case "wallpaper": return "panels/WallpaperPanel.qml"
+                case "shortcuts": return "panels/ShortcutsPanel.qml"
                 default:          return ""
                 }
             }

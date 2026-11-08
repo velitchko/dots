@@ -70,6 +70,24 @@ function M.render_text(binds)
     return table.concat(out, "\n") .. "\n"
 end
 
+--- JSON view for the island's Shortcuts panel: [{group, keys, desc}], plain key
+--- names (the panel draws its own icons, at a readable size).
+local function jstr(v)
+    return '"' .. tostring(v):gsub('[%c"\\]', function(c)
+        return ({ ['"'] = '\\"', ['\\'] = '\\\\', ['\n'] = '\\n', ['\t'] = '\\t' })[c] or ("\\u%04x"):format(c:byte())
+    end) .. '"'
+end
+function M.render_json(binds)
+    local groups, order = grouped(binds)
+    local out = {}
+    for _, g in ipairs(order) do
+        for _, e in ipairs(groups[g] or {}) do
+            out[#out + 1] = ('{"group":%s,"keys":%s,"desc":%s}'):format(jstr(g), jstr(e.keys), jstr(e.desc))
+        end
+    end
+    return "[\n" .. table.concat(out, ",\n") .. "\n]\n"
+end
+
 --- Markdown view (docs/SHORTCUTS.md).
 function M.render_markdown(binds)
     local groups, order = grouped(binds)
@@ -127,7 +145,10 @@ function M.apply(registry)
     end
 
     local runtime = os.getenv("XDG_RUNTIME_DIR")
-    if runtime then write(runtime .. "/kessel-shortcuts.txt", M.render_text(registry.binds)) end
+    if runtime then
+        write(runtime .. "/kessel-shortcuts.txt", M.render_text(registry.binds))
+        write(runtime .. "/kessel-shortcuts.json", M.render_json(registry.binds))
+    end
     local md = os.getenv("KESSEL_SHORTCUTS_MD")
     if md then write(md, M.render_markdown(registry.binds)) end
 

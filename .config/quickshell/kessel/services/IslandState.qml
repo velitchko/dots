@@ -34,7 +34,7 @@ Singleton {
     property string osdLabel: ""
     property real osdValue: 0
 
-    readonly property var panels: ["launcher", "clipboard", "control", "notifications", "notes", "overview", "power", "timer", "wallpaper", "board", "media", "mixer"]
+    readonly property var panels: ["launcher", "clipboard", "control", "notifications", "notes", "overview", "power", "timer", "wallpaper", "board", "media", "mixer", "shortcuts"]
 
     readonly property string layer: Polkit.active ? "polkit"
         : Alarm.ringing ? "alarm"

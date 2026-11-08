@@ -38,7 +38,7 @@
 | `CTRL + SUPER + T` | Wallpaper & theme picker |
 | `CTRL + SUPER + SHIFT + D` | Toggle light / dark theme |
 | `CTRL + SUPER + R` | Refresh: reload Hyprland + restart the island |
-| `SUPER + slash` | Shortcuts (this list) |
+| `SUPER + slash` | Shortcuts (this list; fallback: fuzzel) |
 
 ## Utilities
 

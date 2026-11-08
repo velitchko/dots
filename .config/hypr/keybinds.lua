@@ -81,7 +81,7 @@ add { group = "Island", keys = "CTRL + SUPER + T",  exec = island("open wallpape
 add { group = "Island", keys = "CTRL + SUPER + SHIFT + D", exec = S .. "theme.sh mode toggle", desc = "Toggle light / dark theme" }
 add { group = "Island", keys = "SUPER + J",         exec = "qs -c kessel ipc call island toggle", desc = "Show / hide the island", hidden = true }
 add { group = "Island", keys = "CTRL + SUPER + R",  exec = "hyprctl reload; " .. S .. "island.sh restart", desc = "Refresh: reload Hyprland + restart the island" }
-add { group = "Island", keys = "SUPER + slash",     exec = S .. "shortcuts.sh", desc = "Shortcuts (this list)" }
+add { group = "Island", keys = "SUPER + slash",     exec = island("open shortcuts", S .. "shortcuts.sh"), desc = "Shortcuts (this list; fallback: fuzzel)" }
 
 -- Utilities --------------------------------------------------------------------
 add { group = "Utilities", keys = "SUPER + SHIFT + S", exec = S .. "screenshot.sh region", desc = "Screenshot region → clipboard + file" }

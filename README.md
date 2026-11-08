@@ -19,6 +19,8 @@ My Arch Linux desktop: **Hyprland** (Lua config), **Quickshell**, and a dynamic 
 | ![Launcher](docs/screenshots/launcher.png) | ![Notifications](docs/screenshots/notifications.png) |
 | **Wallpaper & theme** | **Timer** |
 | ![Wallpaper picker](docs/screenshots/wallpaper.png) | ![Timer](docs/screenshots/timer.png) |
+| **Shortcuts** (`SUPER+/`) | **Shortcuts** in light mode |
+| ![Shortcuts](docs/screenshots/shortcuts.png) | ![Shortcuts in light mode](docs/screenshots/shortcuts-light.png) |
 
 <sub>Screenshots are the real island components rendered offscreen on a VM (no Wi-Fi or audio hardware there; the battery is simulated).</sub>
 
@@ -129,7 +131,7 @@ Enter copies the result. More languages: `translate.sh available`, then e.g. `tr
 | `SUPER + L` / `SUPER + SHIFT + L` | Lock / suspend |
 | `CTRL + ALT + Delete` | Session menu |
 | `CTRL + SUPER + R` | Reload Hyprland + restart the island |
-| `SUPER + /` | All shortcuts |
+| `SUPER + /` | All shortcuts (searchable panel; fuzzel if the island is down) |
 
 Full list: [`docs/SHORTCUTS.md`](docs/SHORTCUTS.md) (generated from `.config/hypr/keybinds.lua`, the single source of truth).
 
