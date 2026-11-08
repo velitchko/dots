@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
-# island-or.sh <ipc-function> [arg] -- <fallback command...>
-# Ask the Quickshell island to do something; if it is not running (or hidden),
-# run the fallback instead. Keeps every bind usable without Quickshell.
+# island-or.sh <ipc-function> [arg] -- <fallback command...> — ask the island, else run a fallback.
+# If the Quickshell island is not running (or hidden), the fallback runs instead,
+# so every bind stays usable without Quickshell.
 #   island-or.sh open launcher -- fuzzel
 fn=$1; shift
 args=()

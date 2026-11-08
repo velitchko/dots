@@ -16,12 +16,12 @@ Personal Arch Linux + **Hyprland (Lua config, 0.57+)** + **Quickshell** desktop 
 | `.config/hypr/hyprland.lua` | Tiny loader. Modules: `monitors` `env` `general` `input` `workspaces` `exec` `keybinds` `custom` |
 | `.config/hypr/keybinds.lua` | **The single keybind registry** (data only). `lib/binder.lua` turns it into binds + the `SUPER+/` list + `docs/SHORTCUTS.md` |
 | `.config/hypr/lib/` | `safety.lua` (protected module loading, rescue binds), `binder.lua`, `floatmode.lua` |
-| `.config/hypr/scripts/` | Shell helpers used by binds/island: `island.sh` (start/stop/restart), `island-or.sh` (island IPC with fallback), `theme.sh` (**all theming**), `lock.sh`, `translate.sh`, screenshot/clipboard/… |
+| `.config/hypr/scripts` | **Symlink** to `../../scripts/desktop` (old path, still used by binds, the island and docs) |
 | `.config/quickshell/kessel/` | The island. `shell.qml` → `ui/Island.qml`. `services/` = singletons without UI (state, D-Bus, PipeWire, processes). `ui/` = views, `ui/panels/` = expanded panels, `ui/perspectives/` = resting views. `components/` = reusable widgets. `Theme.qml`, `Icons.qml`, `Config.qml` |
 | `.config/quickshell/kessel-lock/` | Separate Quickshell config for the lock screen (runs only while locked) |
 | `.config/nvim/` | LazyVim. `lazyvim.json` = enabled extras; `lua/plugins/*.lua` = our additions; `lua/kessel/theme.lua` = colors from theme.sh. `lazy-lock.json` pins plugin versions (commit it after `:Lazy update`) |
 | `sddm-theme/kessel/` | Qt6 SDDM theme (installed by `scripts/sddm-theme.sh`, needs sudo) |
-| `scripts/` | `~/Scripts`: install/update/uninstall/backup, `gen-shortcuts.sh`, `sddm-theme.sh` |
+| `scripts/` | `~/Scripts`, every script in one place. Top level = tools you run: install/update/uninstall/backup, `sddm-theme.sh`, `fingerprint.sh`, `root-prompt.sh`, `gen-shortcuts.sh`. `scripts/desktop/` = what binds and the island run: `island.sh`, `island-or.sh` (island IPC with fallback), `theme.sh` (**all theming**), `lock.sh`, `translate.sh`, `bt-pair.sh`, screenshot/clipboard/…, `scripts-index.sh` (feeds the Scripts tab of `SUPER+/`). **Each script's header comment is its documentation**: first line `name — purpose`, then indented `name args   what` usage lines; the Scripts tab is generated from them |
 | `services/` | **Future** systemd units. Nothing here is deployed or enabled |
 | `docs/` | `DESIGN.md` (decisions + why), `SHORTCUTS.md` (generated), `THEME.md`, `DESKTOP.md` (lock/login, scripts, deployment), `NEOVIM.md`, `screenshots/` (offscreen renders used by the README), `backlog/` |
 | `INSPIRATIONS.md` | Projects that informed the design |
@@ -42,7 +42,7 @@ Personal Arch Linux + **Hyprland (Lua config, 0.57+)** + **Quickshell** desktop 
 ```sh
 KESSEL_STRICT=1 Hyprland --verify-config -c ~/.config/hypr/hyprland.lua   # must print: config ok
 scripts/gen-shortcuts.sh                                                  # after any keybinds.lua change
-bash -n install.sh installer/*.sh scripts/*.sh .config/hypr/scripts/*.sh
+bash -n install.sh installer/*.sh scripts/*.sh scripts/desktop/*.sh
 fish -n .config/fish/config.fish .config/fish/conf.d/*.fish
 STARSHIP_CONFIG=.config/starship.toml starship print-config >/dev/null
 ./install.sh --dry-run --with-aur --apply-config                         # must change nothing

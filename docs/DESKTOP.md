@@ -56,7 +56,19 @@ Running `install` again replaces its own block instead of adding a second one. *
 
 ## ~/Scripts
 
-`~/Scripts` is a symlink to this repo's `scripts/`, so you can edit it in either place. Every script supports `--dry-run`.
+Every script lives in one place, `~/Scripts` (a symlink to this repo's `scripts/`):
+
+- **`~/Scripts/`**: tools you run yourself (below). Every one supports `--dry-run`.
+- **`~/Scripts/desktop/`**: what keybinds and the island run (`theme.sh`, `lock.sh`, `island.sh`, `translate.sh`, `bt-pair.sh`, screenshots…). You can run them too. The old path `~/.config/hypr/scripts/` still works: it's a symlink to this folder.
+
+**`SUPER + /` → Scripts tab** lists all of them with their location, purpose and usage, read straight from each script's header comment (`scripts/desktop/scripts-index.sh`), so it never goes stale. Click one to copy its path. A new script shows up there automatically; give it a header like:
+
+```sh
+# myscript.sh — what it's for, in one line.
+#
+#   myscript.sh run        what this does
+#   myscript.sh --dry-run  what that does
+```
 
 | Script | What it does |
 | --- | --- |

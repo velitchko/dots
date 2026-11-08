@@ -20,6 +20,22 @@ Singleton {
         onLoaded: { try { root.entries = JSON.parse(text()) } catch (e) {} }
     }
 
+    // Scripts tab: ~/Scripts and ~/Scripts/desktop, read from each script's header
+    // by scripts-index.sh (loaded when the tab opens, so it's always current).
+    property var scripts: []          // [{ name, group, path, purpose, usage: [{cmd, what}] }]
+    function refreshScripts() { if (!indexer.running) indexer.running = true }
+    Process {
+        id: indexer
+        command: [Quickshell.env("HOME") + "/Scripts/desktop/scripts-index.sh"]
+        stdout: StdioCollector { onStreamFinished: { try { root.scripts = JSON.parse(text) } catch (e) {} } }
+    }
+    function matchesScript(sc, q) {
+        q = q.toLowerCase()
+        return q === "" || sc.name.toLowerCase().includes(q) || sc.purpose.toLowerCase().includes(q)
+            || sc.usage.some(u => (u.cmd + " " + u.what).toLowerCase().includes(q))
+    }
+    function copyPath(sc) { Quickshell.execDetached(["wl-copy", "--", Quickshell.env("HOME") + sc.path.slice(1)]) }
+
     // Key name → keycap content: an icon (g) or a short label (t). Codepoints were
     // checked by name against Nerd Fonts' glyphnames.json.
     function g(cp) { return String.fromCodePoint(cp) }

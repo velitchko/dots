@@ -6,7 +6,7 @@
 #
 #   translate.sh setup [pairs…]   runtime + models (default: en-de de-en en-bg bg-en)
 #   translate.sh available        every downloadable model (browsermt + opus)
-#   translate.sh add <pair|code>… download more, e.g.  add en-fr   or  add deu-ukr-tiny
+#   translate.sh add <pair|code>…  download more, e.g. add en-fr or add deu-ukr-tiny
 #   translate.sh installed        downloaded models
 #   translate.sh remove <code>    delete a downloaded model
 #   translate.sh repair           fix models the bergamot downloader left half-installed
