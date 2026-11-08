@@ -63,24 +63,24 @@ Singleton {
     // every icon has a 0.6em advance but many draw up to ~1em wide, spilling right,
     // so anything centred by its box sat up to 18% of the icon size off (Wi-Fi).
     readonly property string iconFont: "JetBrainsMono Nerd Font Propo"
-    // Small bump from 10/11/9.5/22: monitor scale dropped from 1.25 to 1 for
-    // sharpness (see monitors.lua), and the island read a bit small afterward.
-    readonly property real fontUi: 10.5
-    readonly property real fontMono: 11.5
-    readonly property real fontSmall: 10
-    readonly property real fontBig: 23
+    // Two small nudges (10/11/9.5/22 -> 10.5/11.5/10/23, islandHeight 36 -> 39)
+    // weren't visible at all -- too small a step. This is the decisive version:
+    // every value here times 1.25, the exact factor monitor scale dropped by
+    // (1.25 -> 1, see monitors.lua) when switching to integer scale for
+    // sharpness. Restores the pre-scale-change physical size exactly, rather
+    // than guessing at another small increment.
+    readonly property real fontUi: 12.5
+    readonly property real fontMono: 13.75
+    readonly property real fontSmall: 11.9
+    readonly property real fontBig: 27.5
 
-    // islandHeight is the real driver of "the island looks small" -- everything
-    // else sizes against it, far more than the font constants above. Same
-    // scale-1.25-to-1 story: bumped a little along with radius/pad to stay
-    // proportional rather than just taller with the old tight padding.
-    readonly property int islandHeight: 39
+    readonly property int islandHeight: 45
     readonly property int screenCornerRadius: 14      // 0 disables the rounded screen corners
-    readonly property int islandMargin: 6
-    readonly property int radius: 19
-    readonly property int radiusPanel: 26
-    readonly property int radiusCard: 14
-    readonly property int pad: 15
+    readonly property int islandMargin: 8
+    readonly property int radius: 23
+    readonly property int radiusPanel: 33
+    readonly property int radiusCard: 18
+    readonly property int pad: 18
 
     readonly property int animMs: 320
 
