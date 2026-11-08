@@ -5,7 +5,7 @@
 #   update.sh              pull dot-files (if a remote exists), re-apply config,
 #                          regenerate shortcuts, reload Hyprland, restart the island
 #   update.sh --system     …and update packages: sudo pacman -Syu
-#   update.sh --aur        …and AUR packages via yay (implies --system)
+#   update.sh --aur        …and AUR packages via yay, -git ones included (implies --system)
 #   update.sh --dry-run    show what would happen
 set -euo pipefail
 repo="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
@@ -39,7 +39,7 @@ if (( SYSTEM )); then
     step "System packages"
     run sudo pacman -Syu
     if (( AUR )); then
-        command -v yay >/dev/null && run yay -Sua || warn "yay not installed"
+        command -v yay >/dev/null && run yay -Sua --devel || warn "yay not installed"   # --devel: -git packages (hyprmoncfg-git) too
     fi
 fi
 
