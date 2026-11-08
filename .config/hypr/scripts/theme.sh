@@ -11,7 +11,7 @@
 # Base colours are fixed per mode (pitch black / eggshell); only the ACCENTS
 # come from the wallpaper (matugen, if installed; cached per wallpaper).
 # Outputs live in ~/.local/state/kessel/theme/ and are read by:
-#   kitty (include; reloaded with SIGUSR1) → fish + starship follow its palette
+#   kitty (pushed over its socket, else SIGUSR1) → fish + starship follow its palette
 #   fuzzel (include), Hyprland borders (hyprland.lua, hyprctl reload),
 #   the Quickshell island (colors.json, watched live), GTK (gsettings).
 set -euo pipefail
@@ -516,13 +516,26 @@ EOG
 
     # ── reload consumers (each optional) ──
     # kitty: push the colours to every running instance and window (smooth, no
-    # restart). Kittys started before remote control was enabled get SIGUSR1 instead.
-    local sock pushed=0
-    for sock in "$XDG_RUNTIME_DIR"/kitty-*.sock; do
-        [[ -S $sock ]] || continue
-        kitten @ --to "unix:$sock" set-colors --all --configured "$STATE/kitty.conf" >/dev/null 2>&1 && pushed=1
+    # restart). Decided PER PROCESS: before, one successful push skipped the
+    # fallback for all the others, so a second kitty without a working socket
+    # kept the old colours. Each kitty listens on kitty-<pid>.sock (kitty.conf);
+    # one that doesn't (or doesn't answer within 3 s) gets SIGUSR1 (config reload).
+    # Pushed in parallel; outcomes go to kitty.log for diagnosis.
+    local pid sock klog="$STATE/kitty.log"
+    : > "$klog"
+    for pid in $(pgrep -x kitty 2>/dev/null); do
+        sock="$XDG_RUNTIME_DIR/kitty-$pid.sock"
+        (
+            if [[ -S $sock ]] && timeout 3 env -u KITTY_WINDOW_ID -u KITTY_LISTEN_ON \
+                   kitten @ --to "unix:$sock" set-colors --all --configured "$STATE/kitty.conf" >/dev/null 2>>"$klog"; then
+                echo "kitty $pid: pushed" >> "$klog"
+            else
+                echo "kitty $pid: $([[ -S $sock ]] && echo 'push failed' || echo 'no socket') -> SIGUSR1" >> "$klog"
+                kill -USR1 "$pid" 2>/dev/null || true
+            fi
+        ) &
     done
-    (( pushed )) || pkill -USR1 -x kitty 2>/dev/null || true
+    wait
     if command -v gsettings >/dev/null; then
         gsettings set org.gnome.desktop.interface color-scheme "$GTK_SCHEME" 2>/dev/null || true
         gsettings set org.gnome.desktop.interface gtk-theme "$GTK_THEME" 2>/dev/null || true
