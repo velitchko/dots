@@ -2,8 +2,11 @@
 # Fingerprint-only PAM stack for the lock screen. It runs alongside the password
 # check (service "hyprlock"), so either one unlocks. Loaded by LockContext.qml
 # through PamContext.configDirectory: no file in /etc/pam.d is touched.
-# pam_fprintd waits up to `timeout` seconds and allows `max-tries` scans; the
-# lock restarts it after that, for as long as it's showing.
-auth     sufficient  pam_fprintd.so max-tries=3 timeout=30
+# pam_fprintd waits up to `timeout` seconds and allows `max-tries` scans before
+# giving up -- both set high so it just waits, quietly, for as long as the lock
+# is up, instead of cycling "Verification timed out" every 30s. The restart
+# logic in LockContext.qml stays as a safety net (fprintd service hiccups,
+# hardware unplugged) but shouldn't fire in normal idle use any more.
+auth     sufficient  pam_fprintd.so max-tries=100 timeout=86400
 auth     required    pam_deny.so
 account  required    pam_permit.so
