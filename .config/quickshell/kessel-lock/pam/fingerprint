@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Fingerprint-only PAM stack for the lock screen. It runs alongside the password
+# check (service "hyprlock"), so either one unlocks. Loaded by LockContext.qml
+# through PamContext.configDirectory: no file in /etc/pam.d is touched.
+# pam_fprintd waits up to `timeout` seconds and allows `max-tries` scans; the
+# lock restarts it after that, for as long as it's showing.
+auth     sufficient  pam_fprintd.so max-tries=3 timeout=30
+auth     required    pam_deny.so
+account  required    pam_permit.so

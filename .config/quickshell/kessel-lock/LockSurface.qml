@@ -283,8 +283,11 @@ MouseArea {
                     : root.context.failed ? "Incorrect password"
                     : root.context.targetAction === LockContext.Action.Poweroff ? "Password to shut down"
                     : root.context.targetAction === LockContext.Action.Reboot ? "Password to restart"
+                    : root.context.fingerprintReady && root.context.fingerprintFailed && root.context.fingerprintMessage !== ""
+                        ? root.context.fingerprintMessage
+                    : root.context.fingerprintReady ? "Password or fingerprint"
                     : "Enter password"
-                color: root.context.failed ? Style.red : Style.faint
+                color: root.context.failed || (root.context.fingerprintReady && root.context.fingerprintFailed) ? Style.red : Style.faint
                 font.family: Style.mono
                 font.pixelSize: 15
             }

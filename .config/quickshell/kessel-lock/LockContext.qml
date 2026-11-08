@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Authentication state shared by every monitor's lock surface.
 // Passwords are checked by PAM (service "hyprlock" → includes "login"), exactly
-// like hyprlock; nothing is stored or logged.
+// like hyprlock; nothing is stored or logged. A fingerprint (fprintd) can unlock
+// too, in parallel with the password field.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -60,6 +61,45 @@ Scope {
             }
         }
         onError: root.fail()
+    }
+
+    // ── fingerprint (optional) ───────────────────────────────────────────────
+    // Runs in parallel with the password: a fingerprint-only PAM stack shipped in
+    // ./pam (no /etc/pam.d change). Active only when fprintd is installed and this
+    // user has enrolled fingers; restarted after each timeout while the lock shows.
+    property bool fingerprintReady: false        // fprintd + enrolled finger
+    property string fingerprintMessage: ""       // e.g. "Place your finger on the sensor"
+    property bool fingerprintFailed: false
+    Process {
+        running: true
+        command: ["sh", "-c", 'command -v fprintd-list >/dev/null && fprintd-list "$USER" 2>/dev/null | grep -qi "finger"']
+        onExited: code => { root.fingerprintReady = code === 0; if (root.fingerprintReady) fpRestart.start() }
+    }
+    PamContext {
+        id: fp
+        config: "fingerprint"
+        configDirectory: Quickshell.shellDir + "/pam"
+        onPamMessage: {
+            // pam_fprintd only informs ("Place your finger…", "Failed to match");
+            // it never asks for a typed response
+            if (responseRequired) respond("")
+            else { root.fingerprintMessage = message; root.fingerprintFailed = messageIsError }
+        }
+        onCompleted: result => {
+            if (result === PamResult.Success && !root.unlockInProgress) {
+                root.currentText = ""
+                root.unlocked(root.targetAction)
+            } else {
+                root.fingerprintFailed = true
+                fpRestart.start()          // timed out / no match: listen again
+            }
+        }
+        onError: { root.fingerprintFailed = true; fpRestart.interval = 3000; fpRestart.start() }
+    }
+    Timer {
+        id: fpRestart
+        interval: 600
+        onTriggered: if (root.fingerprintReady && !root.exiting && !fp.active) { interval = 600; fp.start() }
     }
 
     // Test hook for the non-locking preview only. In a real lock there is no IPC

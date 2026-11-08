@@ -67,7 +67,7 @@ The installer never enables services, never touches SSH, network or firewall, an
 ## Laptop
 
 ```sh
-./install.sh --with-laptop                            # bluez, power-profiles-daemon, sof-firmware, alsa-ucm-conf
+./install.sh --with-laptop                            # bluez, power-profiles-daemon, fprintd, sof-firmware, alsa-ucm-conf
 sudo systemctl enable --now bluetooth                 # the installer never enables services
 sudo systemctl enable --now power-profiles-daemon     # Saver / Balanced / Performance in quick settings
 systemctl --user restart wireplumber                  # once, so Bluetooth audio devices show up
@@ -77,6 +77,7 @@ systemctl --user restart wireplumber                  # once, so Bluetooth audio
 - **Wi-Fi:** click the row to see networks. Open networks connect directly, others ask for a password. Hover a saved network to forget it. "Hidden network, VPN, more…" opens NetworkManager's editor.
 - **Bluetooth:** "Nearby" devices pair with one click, then connect. Pairing runs through `~/.config/hypr/scripts/bt-pair.sh` (BlueZ needs a pairing agent). Devices that need a typed PIN (some keyboards) still need `bluetoothctl`.
 - **Audio:** expand the output / microphone row to switch devices (Bluetooth headsets appear here once connected).
+- **Fingerprint reader:** `~/Scripts/fingerprint.sh enroll` (fprintd comes with `--with-laptop`). The lock screen then accepts the password *or* your finger. For the login screen too: `~/Scripts/fingerprint.sh sddm-on` (asks first, backs up `/etc/pam.d/sddm`), then `~/Scripts/sddm-theme.sh install`; at login, press Enter on an empty password and touch the sensor. A fingerprint login can't unlock a keyring.
 - **No sound devices at all?** Most laptops since ~2018 need `sof-firmware` (included in `--with-laptop`). Reboot after installing.
 - **Beeping in terminals / TTYs?** That's the PC speaker. Turn it off with:
   ```sh

@@ -19,6 +19,9 @@ Item {
     readonly property color fg: config.stringValue("text") || (dark ? "#e8e8e8" : "#1d1b16")
     readonly property color accent: config.stringValue("accent") || "#8aadf4"
     readonly property color red: config.stringValue("red") || "#e06c75"
+    // /etc/pam.d/sddm tries the password first, then the fingerprint reader:
+    // an empty password (just Enter) goes straight to the scan
+    readonly property bool fingerprint: config.stringValue("fingerprint") === "true"
     readonly property color subtext: a(fg, 0.68)
     readonly property color faint: a(fg, 0.45)
     readonly property color toolbarColor: a(base, dark ? 0.82 : 0.86)
@@ -54,7 +57,7 @@ Item {
         function onLoginSucceeded() { root.busy = false }
     }
     function login() {
-        if (busy || password.text.length === 0) return
+        if (busy || (password.text.length === 0 && !fingerprint)) return
         busy = true
         failed = false
         sddm.login(userName, password.text, sessionIndex)
@@ -261,7 +264,9 @@ Item {
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: password.text.length === 0
-                text: root.busy ? "Logging in…" : root.failed ? "Incorrect password" : "Enter password"
+                text: root.busy ? (root.fingerprint ? "Touch the fingerprint sensor…" : "Logging in…")
+                    : root.failed ? (root.fingerprint ? "Not recognised: try again" : "Incorrect password")
+                    : root.fingerprint ? "Password, or Enter + fingerprint" : "Enter password"
                 color: root.failed ? root.red : root.faint
                 font.family: root.mono
                 font.pixelSize: 15

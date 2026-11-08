@@ -61,6 +61,10 @@ case $cmd in
         done
         v="$(jq -r '.bg // empty' "$tc" 2>/dev/null || true)"; [[ -n $v ]] && sed -i "s|^base=.*|base=$v|" "$tmp/theme.conf"
         info "mode: $(grep '^mode=' "$tmp/theme.conf" | cut -d= -f2)  (re-run install after switching light/dark)"
+        # fingerprint login: on when /etc/pam.d/sddm uses pam_fprintd (scripts/fingerprint.sh sddm-on)
+        if grep -q '^[^#]*pam_fprintd' /etc/pam.d/sddm 2>/dev/null; then
+            sed -i "s|^fingerprint=.*|fingerprint=true|" "$tmp/theme.conf"; ok "fingerprint login: on"
+        fi
         run sudo install -d -m 755 "$dest"
         run sudo cp -r "$tmp/." "$dest/"
         run sudo chmod -R a+rX "$dest"

@@ -7,6 +7,9 @@
 bluez
 bluez-utils
 power-profiles-daemon
+# Fingerprint reader: unlock the lock screen (and optionally SDDM, see
+# scripts/fingerprint.sh). D-Bus activated, nothing to enable. Enroll: fprintd-enroll
+fprintd
 # Audio firmware: most laptops from ~2018 on (Intel SOF DSPs) show no sound
 # devices at all without these. Harmless on machines that don't need them.
 sof-firmware
