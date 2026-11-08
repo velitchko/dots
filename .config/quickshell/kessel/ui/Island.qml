@@ -32,7 +32,13 @@ PanelWindow {
     onNeedsTallChanged: { if (needsTall) { shrinkTimer.stop(); tall = true } else shrinkTimer.restart() }
     Timer { id: shrinkTimer; interval: 900; onTriggered: win.tall = win.needsTall }
     implicitHeight: tall ? tallHeight : Theme.islandHeight + 44   // room for the perspective tag
-    exclusiveZone: Theme.islandHeight + Theme.islandMargin
+    // Not + Theme.islandMargin: that coupled the screen-top gap and the
+    // island-to-window gap together (changing margin shifted both by the same
+    // amount, so they could never be made equal -- confirmed empirically,
+    // island-to-window was always exactly margin + gaps_out + border). Fixed
+    // at islandHeight alone so the two gaps are independent; islandMargin is
+    // tuned to split the remainder evenly between them (see Theme.qml).
+    exclusiveZone: Theme.islandHeight
     color: "transparent"
     mask: Region {
         item: pill

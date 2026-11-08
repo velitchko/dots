@@ -76,7 +76,13 @@ Singleton {
 
     readonly property int islandHeight: 45
     readonly property int screenCornerRadius: 14      // 0 disables the rounded screen corners
-    readonly property int islandMargin: 0
+    // With exclusiveZone = islandHeight alone (Island.qml), the gap from the
+    // island to a window is a fixed gaps_out + border = 12px, confirmed
+    // empirically and unaffected by this value (Hyprland adds the layer's own
+    // margin to exclusiveZone at the protocol level regardless of how the QML
+    // arithmetic is split). Setting this to that same 12 makes the screen-top
+    // gap match the island-to-window gap exactly, as asked.
+    readonly property int islandMargin: 12
     readonly property int radius: 23
     readonly property int radiusPanel: 33
     readonly property int radiusCard: 18
