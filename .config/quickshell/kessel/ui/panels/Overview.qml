@@ -3,6 +3,7 @@
 // Click a window to focus it, click a workspace to go there, drag a window
 // onto another workspace to move it. ←/→/↑/↓ + Enter work too.
 import QtQuick
+import Quickshell.Widgets
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
@@ -91,16 +92,22 @@ PanelBase {
                             color: Theme.overlay
                             border.width: wma.containsMouse ? 1 : 0
                             border.color: Theme.accent
-                            clip: true
                             Drag.active: wma.drag.active
                             Drag.hotSpot.x: width / 2
                             Drag.hotSpot.y: height / 2
 
-                            ScreencopyView {
+                            // live preview with rounded corners (clip: true only cuts square)
+                            ClippingRectangle {
                                 anchors.fill: parent
-                                captureSource: win.modelData.wayland
-                                live: true
-                                paintCursor: false
+                                anchors.margins: parent.border.width
+                                radius: Math.max(0, parent.radius - parent.border.width)
+                                color: "transparent"
+                                ScreencopyView {
+                                    anchors.fill: parent
+                                    captureSource: win.modelData.wayland
+                                    live: true
+                                    paintCursor: false
+                                }
                             }
                             Image {
                                 anchors.centerIn: parent

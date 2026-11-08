@@ -2,6 +2,7 @@
 // Tiny wallpaper previews (~/Pictures/Wallpapers first); click to apply.
 // Scroll horizontally; the last button opens the full picker.
 import QtQuick
+import Quickshell.Widgets
 import ".."
 import "../services"
 
@@ -28,17 +29,24 @@ Rectangle {
             readonly property bool active: modelData === Themes.current
             width: 84; height: 48
             radius: 8
-            clip: true
             color: Theme.overlay
             border.width: active ? 2 : (ma.containsMouse ? 1 : 0)
             border.color: active ? Theme.accent : Theme.a(Theme.text, 0.4)
-            Image {
+            // clip: true only cuts square, so the picture sat on the rounded frame
+            // with sharp corners. ClippingRectangle rounds it, just inside the border.
+            ClippingRectangle {
+                id: thumb
                 anchors.fill: parent
                 anchors.margins: parent.border.width
-                source: Themes.thumb(parent.modelData)
-                sourceSize: Qt.size(168, 96)
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
+                radius: Math.max(0, parent.radius - parent.border.width)
+                color: "transparent"
+                Image {
+                    anchors.fill: parent
+                    source: Themes.thumb(thumb.parent.modelData)
+                    sourceSize: Qt.size(168, 96)
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                }
             }
             MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Themes.setWallpaper(parent.modelData) }
         }

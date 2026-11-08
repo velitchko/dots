@@ -2,6 +2,7 @@
 // Wallpaper + theme (CTRL+SUPER+T). Accents follow the wallpaper; the base is
 // pitch black (dark) or eggshell (light). Drop images into ~/Pictures/Wallpapers.
 import QtQuick
+import Quickshell.Widgets
 import "../.."
 import "../../services"
 import "../../components"
@@ -75,16 +76,21 @@ PanelBase {
             width: root.thumbW; height: root.thumbH
             radius: 12
             color: Theme.card
-            clip: true
             border.width: active || root.sel === index ? 2 : 0
             border.color: active ? Theme.accent : Theme.a(Theme.text, 0.4)
-            Image {
+            // rounded crop just inside the border (clip: true only cuts square)
+            ClippingRectangle {
                 anchors.fill: parent
                 anchors.margins: parent.border.width
-                source: Themes.thumb(modelData)
-                sourceSize: Qt.size(340, 192)
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
+                radius: Math.max(0, parent.radius - parent.border.width)
+                color: "transparent"
+                Image {
+                    anchors.fill: parent
+                    source: Themes.thumb(modelData)
+                    sourceSize: Qt.size(340, 192)
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                }
             }
             Rectangle {
                 visible: active
