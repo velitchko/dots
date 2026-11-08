@@ -4,6 +4,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import ".."
 
 Singleton {
@@ -33,7 +34,10 @@ Singleton {
         if (region) {
             pick.running = true
         } else {
-            launch([])
+            // Name the output: with several outputs wf-recorder otherwise asks on
+            // stdin which one to record, and waits forever (nothing gets recorded).
+            const mon = Hyprland.focusedMonitor
+            launch(mon ? ["-o", mon.name] : [])
         }
     }
     function launch(extra) {
@@ -48,8 +52,28 @@ Singleton {
         command: ["slurp", "-d"]
         stdout: StdioCollector { onStreamFinished: { const g = text.trim(); if (g !== "") root.launch(["-g", g]) } }
     }
+    // Report failures instead of claiming "saved": wf-recorder's errors used to
+    // be thrown away, so a recorder that died at once looked like nothing happened.
+    property string lastError: ""
     Process {
         id: rec
-        onExited: Quickshell.execDetached(["notify-send", "-a", "Recorder", "Recording saved", root.file.replace(Quickshell.env("HOME"), "~")])
+        stderr: SplitParser { onRead: line => { if (/error|fail|cannot|unable|invalid|not supported/i.test(line)) root.lastError = line } }
+        onStarted: root.lastError = ""
+        onExited: code => {
+            check.command = ["sh", "-c", 'test -s "$1"', "sh", root.file]
+            check.failed = code !== 0 ? (root.lastError || ("wf-recorder exited with code " + code)) : ""
+            check.running = true
+        }
+    }
+    Process {
+        id: check
+        property string failed: ""
+        onExited: code => {
+            if (code === 0 && failed === "")
+                Quickshell.execDetached(["notify-send", "-a", "Recorder", "Recording saved", root.file.replace(Quickshell.env("HOME"), "~")])
+            else
+                Quickshell.execDetached(["notify-send", "-u", "critical", "-a", "Recorder", "Recording failed",
+                                         failed || root.lastError || "No video was written"])
+        }
     }
 }
