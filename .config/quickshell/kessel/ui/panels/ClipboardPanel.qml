@@ -37,8 +37,8 @@ PanelBase {
         placeholder: "Search clipboard"
         onTextChanged: list.currentIndex = 0
         onAccepted: root.copyCurrent()
-        onUp: list.decrementCurrentIndex()
-        onDown: list.incrementCurrentIndex()
+        onUp: { list.keyNav = true; keyNavTimer.restart(); list.decrementCurrentIndex() }
+        onDown: { list.keyNav = true; keyNavTimer.restart(); list.incrementCurrentIndex() }
         input.Keys.onDeletePressed: { const e = root.results[list.currentIndex]; if (e) Clipboard.remove(e) }
     }
 
@@ -54,6 +54,13 @@ PanelBase {
         highlightMoveDuration: 120
         boundsBehavior: Flickable.StopAtBounds
         highlight: Rectangle { radius: 12; color: Theme.cardHi }
+
+        // Arrow-key nav auto-scrolls the list to follow currentIndex; without this,
+        // whatever row scrolls under the (unmoved) mouse cursor fires onEntered and
+        // immediately steals currentIndex back, fighting the keyboard. 200ms covers
+        // highlightMoveDuration (120) plus the scroll settling.
+        property bool keyNav: false
+        Timer { id: keyNavTimer; interval: 200; onTriggered: list.keyNav = false }
 
         delegate: Item {
             id: d
@@ -104,7 +111,7 @@ PanelBase {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onEntered: list.currentIndex = d.index
+                onEntered: if (!list.keyNav) list.currentIndex = d.index
                 onClicked: { list.currentIndex = d.index; root.copyCurrent() }
             }
             IconButton {
