@@ -10,7 +10,8 @@
 # System files touched (only by install/uninstall):
 #   /usr/share/sddm/themes/kessel/        theme
 #   /usr/share/sddm/faces/$USER.face.icon avatar (from ~/.face, if present)
-#   /etc/sddm.conf.d/10-kessel.conf       [Theme] Current=kessel (+ cursor)
+#   /etc/sddm.conf.d/10-kessel.conf       [Theme] Current=kessel (+ cursor), and on HiDPI
+#                                         [General] GreeterEnvironment=QT_SCALE_FACTOR=<Hyprland's scale>
 # Existing files are backed up to /etc/sddm.conf.d/*.kessel-bak-<ts> first.
 # Recovery over SSH if the login screen ever misbehaves:
 #   sudo rm /etc/sddm.conf.d/10-kessel.conf   (takes effect at the next greeter start)
@@ -74,13 +75,30 @@ case $cmd in
         else
             info "no ~/.face — the theme shows a placeholder icon"
         fi
-        cursor=""; [[ -d /usr/share/icons/Bibata-Modern-Classic ]] && cursor=$'CursorTheme=Bibata-Modern-Classic\nCursorSize=24'
+        # HiDPI: Hyprland scales the desktop (and the lock screen) per display, but
+        # the greeter starts before Hyprland and drew at 1x, so it looked far
+        # smaller than the lock. Use the laptop panel's Hyprland scale (else the
+        # focused display's) for the greeter too. Override: SDDM_SCALE=1.5
+        scale="${SDDM_SCALE:-}"
+        if [[ -z $scale ]] && command -v hyprctl >/dev/null; then
+            scale="$(hyprctl monitors -j 2>/dev/null | jq -r '(map(select(.name | test("^(eDP|LVDS|DSI)"))) + map(select(.focused)))[0].scale // empty' 2>/dev/null || true)"
+        fi
+        [[ $scale =~ ^[0-9]+(\.[0-9]+)?$ ]] || scale=1
+        scale="$(awk -v s="$scale" 'BEGIN { printf "%g", s }')"
+        general=""
+        if [[ $scale != 1 ]]; then
+            # PassThrough keeps fractional scales (1.5, 1.6) instead of rounding to 2
+            general=$'[General]\nGreeterEnvironment=QT_SCALE_FACTOR='"$scale"$',QT_SCALE_FACTOR_ROUNDING_POLICY=PassThrough\n'
+        fi
+        info "greeter scale: ${scale}x (Hyprland's; override with SDDM_SCALE=…)"
+        csize="$(awk -v s="$scale" 'BEGIN { printf "%d", 24 * s + 0.5 }')"
+        cursor=""; [[ -d /usr/share/icons/Bibata-Modern-Classic ]] && cursor="CursorTheme=Bibata-Modern-Classic"$'\n'"CursorSize=$csize"
         if [[ -e $conf ]]; then run sudo cp -a "$conf" "$conf.kessel-bak-$ts"; info "backup: $conf.kessel-bak-$ts"; fi
         run sudo install -d -m 755 /etc/sddm.conf.d
         if (( DRY_RUN )); then
             info "[dry-run] would write $conf"
         else
-            printf '# written by ~/Scripts/sddm-theme.sh — remove to restore the default theme\n[Theme]\nCurrent=kessel\n%s\n' "$cursor" | sudo tee "$conf" >/dev/null
+            printf '# written by ~/Scripts/sddm-theme.sh — remove to restore the default theme\n%s[Theme]\nCurrent=kessel\n%s\n' "$general" "$cursor" | sudo tee "$conf" >/dev/null
         fi
         ok "selected; you'll see it at the next login screen (log out, or reboot)" ;;
     uninstall)
