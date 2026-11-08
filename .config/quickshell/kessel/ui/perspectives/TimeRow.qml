@@ -23,7 +23,7 @@ Item {
             visible: Weather.ok
             spacing: 6
             anchors.verticalCenter: parent.verticalCenter
-            Glyph { text: Weather.icon; color: Theme.yellow; size: Theme.fontUi + 3; anchors.verticalCenter: parent.verticalCenter }
+            Glyph { text: Weather.icon; color: Theme.yellow; size: Theme.fontUi + 3; optical: true; anchors.verticalCenter: parent.verticalCenter }
             Label { text: Weather.temp; font.bold: true; anchors.verticalCenter: parent.verticalCenter }
             Label { text: Weather.desc; color: Theme.subtext; size: Theme.fontSmall + 0.5; anchors.verticalCenter: parent.verticalCenter }
         }
@@ -40,7 +40,7 @@ Item {
                     required property var modelData
                     spacing: 4
                     Label { text: modelData.day; color: Theme.subtext; size: Theme.fontSmall; anchors.verticalCenter: parent.verticalCenter }
-                    Glyph { text: modelData.icon; color: Theme.yellow; size: Theme.fontSmall + 1; anchors.verticalCenter: parent.verticalCenter }
+                    Glyph { text: modelData.icon; color: Theme.yellow; size: Theme.fontSmall + 1; optical: true; anchors.verticalCenter: parent.verticalCenter }
                     Label { text: modelData.max; size: Theme.fontSmall; anchors.verticalCenter: parent.verticalCenter }
                 }
             }

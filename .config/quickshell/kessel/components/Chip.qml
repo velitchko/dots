@@ -22,7 +22,7 @@ Item {
         id: row
         anchors.verticalCenter: parent.verticalCenter
         spacing: 5
-        Glyph { text: chip.icon; color: chip.tint; size: Theme.fontUi + 1; anchors.verticalCenter: parent.verticalCenter }
+        Glyph { text: chip.icon; color: chip.tint; size: Theme.fontUi + 1; optical: true; anchors.verticalCenter: parent.verticalCenter }
         Label { text: chip.text; width: Math.max(implicitWidth, chip.reserve !== "" ? reserveTm.advanceWidth : 0); horizontalAlignment: Text.AlignLeft; color: chip.textColor; size: Theme.fontSmall + 0.5; visible: text !== ""; anchors.verticalCenter: parent.verticalCenter }
     }
     TextMetrics { id: reserveTm; font.family: Theme.font; font.pointSize: Theme.fontSmall + 0.5; text: chip.reserve }
