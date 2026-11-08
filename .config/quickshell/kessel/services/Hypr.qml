@@ -9,10 +9,13 @@ Singleton {
     id: root
     readonly property var workspaces: Hyprland.workspaces.values.filter(w => w.id > 0)
     readonly property int focusedId: Hyprland.focusedWorkspace?.id ?? 1
+    // Workspaces the island shows (dots, SUPER+Tab grid): at least 5, growing with
+    // the highest one in use. Keys reach 1–10; CTRL+SUPER+→ goes beyond, so the
+    // cap is 20 (the overview grid then just gets more rows).
     readonly property int maxId: {
         let m = 5
         for (let i = 0; i < workspaces.length; i++) m = Math.max(m, workspaces[i].id)
-        return Math.min(m, 10)
+        return Math.min(m, 20)
     }
     function occupied(id) {
         for (let i = 0; i < workspaces.length; i++)
