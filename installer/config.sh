@@ -95,6 +95,8 @@ GSETTINGS_WANT=(
     "org.gnome.desktop.interface icon-theme 'Papirus-Dark'"
     "org.gnome.desktop.interface cursor-theme 'Bibata-Modern-Classic'"
     "org.gnome.desktop.interface cursor-size 24"
+    "org.gnome.desktop.sound event-sounds false"              # no system / event sound effects
+    "org.gnome.desktop.sound input-feedback-sounds false"
 )
 
 step_gsettings() { # returns 0 if something changed
