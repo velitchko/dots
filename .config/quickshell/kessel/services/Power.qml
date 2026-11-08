@@ -13,29 +13,38 @@ Singleton {
     readonly property bool hasBattery: (battery?.isLaptopBattery ?? false) && (battery?.isPresent ?? false)
     readonly property real percent: hasBattery ? battery.percentage : 0     // 0..1
     readonly property bool charging: hasBattery && !UPower.onBattery
-    // Time left. UPower's timeToEmpty/timeToFull come from the *instantaneous*
-    // power draw, so they jump with every load spike (and were shown to the
-    // second). We average the draw (exponential moving average over ~2-3 min),
-    // restart when the charger is (un)plugged, wait for a few samples, and
-    // round the result: "3 h 15 min".
+    // Time left. UPower's timeToEmpty/timeToFull follow the *instantaneous*
+    // power draw, so they jump with every load spike. We average the draw
+    // (exponential moving average) and round the result ("3 h 15 min").
+    // Until the average has 3 readings (~20-30 s) UPower's own estimate is shown,
+    // so there's a number at once. Batteries that report no draw (changeRate 0)
+    // get it from how fast the stored energy changes instead.
     property real avgRate: 0        // W, smoothed
     property int samples: 0
+    property real lastEnergy: -1    // Wh, for batteries without changeRate
+    property real lastEnergyAt: 0
     function sample() {
         if (!hasBattery) return
-        const r = Math.abs(battery.changeRate ?? 0)
+        let r = Math.abs(battery.changeRate ?? 0)
+        const e = battery.energy ?? 0, now = Date.now()
+        if (r < 0.1 && lastEnergy >= 0 && now - lastEnergyAt >= 60000 && Math.abs(e - lastEnergy) > 0.01)
+            r = Math.abs(e - lastEnergy) / ((now - lastEnergyAt) / 3600000)
+        if (lastEnergy < 0 || now - lastEnergyAt >= 60000) { lastEnergy = e; lastEnergyAt = now }
         if (r < 0.1) return                       // no reading yet / idle full battery
-        avgRate = samples === 0 ? r : avgRate + 0.12 * (r - avgRate)
+        avgRate = samples === 0 ? r : avgRate + 0.15 * (r - avgRate)
         samples++
     }
-    onChargingChanged: { avgRate = 0; samples = 0; sample() }
+    onChargingChanged: { avgRate = 0; samples = 0; lastEnergy = -1; sample() }
     Connections { target: root.battery; ignoreUnknownSignals: true; function onChangeRateChanged() { root.sample() } }
-    Timer { interval: 15000; repeat: true; running: root.hasBattery; onTriggered: root.sample() }
-    readonly property bool settled: samples >= 4
+    Timer { interval: 10000; repeat: true; running: root.hasBattery; triggeredOnStart: true; onTriggered: root.sample() }
+    readonly property bool settled: samples >= 3
     readonly property real secondsLeft: {
-        if (!hasBattery || avgRate <= 0) return 0
-        const e = battery.energy ?? 0, cap = battery.energyCapacity ?? 0
-        const wh = charging ? Math.max(0, cap - e) : e
-        return wh / avgRate * 3600
+        if (!hasBattery) return 0
+        if (settled && avgRate > 0) {
+            const e = battery.energy ?? 0, cap = battery.energyCapacity ?? 0
+            return (charging ? Math.max(0, cap - e) : e) / avgRate * 3600
+        }
+        return charging ? (battery.timeToFull ?? 0) : (battery.timeToEmpty ?? 0)   // warm-up: UPower's
     }
     function duration(sec) {
         const min = Math.round(sec / 60)
@@ -46,8 +55,8 @@ Singleton {
         return m === 0 ? h + " h" : h + " h " + m + " min"
     }
     readonly property string timeLeft: !hasBattery ? ""
-        : charging ? (percent >= 0.995 ? "Full" : !settled || secondsLeft <= 0 ? "Charging" : duration(secondsLeft) + " to full")
-        : (!settled || secondsLeft <= 0 ? "Estimating…" : duration(secondsLeft) + " left")
+        : charging ? (percent >= 0.995 ? "Full" : secondsLeft > 0 ? duration(secondsLeft) + " to full" : "Charging")
+        : (secondsLeft > 0 ? duration(secondsLeft) + " left" : "Estimating…")
     readonly property string icon: charging ? Icons.batCharging
         : percent > 0.9 ? Icons.bat100 : percent > 0.6 ? Icons.bat70 : percent > 0.3 ? Icons.bat40
         : percent > 0.1 ? Icons.bat20 : Icons.batAlert
