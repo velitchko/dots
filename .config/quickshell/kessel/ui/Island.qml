@@ -379,7 +379,7 @@ PanelWindow {
         OsdView     { id: osdView;     shown: win.current === osdView }
         AlarmView { id: alarmView; shown: win.current === alarmView }
         PolkitView { id: polkitView; shown: win.current === polkitView }
-        NotificationView { id: notifView; shown: win.current === notifView; minWidth: restView.implicitWidth }
+        NotificationView { id: notifView; shown: win.current === notifView }
 
         Loader {
             id: panelLoader

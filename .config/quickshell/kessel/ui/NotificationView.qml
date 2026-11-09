@@ -6,8 +6,10 @@ import "../services"
 import "../components"
 
 View {
-    property real minWidth: 0
-    implicitWidth: Math.max(440, minWidth)
+    // Fixed, not tied to the resting perspective's width: that made the
+    // popup stretch to whatever perspective happened to be active (band-wide
+    // under Time, cramped under Minimal) instead of a size of its own.
+    implicitWidth: 520
     implicitHeight: Notifs.popup ? card.implicitHeight + 16 : Theme.islandHeight
     NotificationCard {
         id: card
