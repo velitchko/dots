@@ -73,7 +73,10 @@ Singleton {
         id: sendProcess
         property string payload: ""
         stdinEnabled: true
-        onStarted: sendProcess.write(sendProcess.payload + "\n")
+        onStarted: {
+            sendProcess.write(sendProcess.payload + "\n")
+            sendProcess.stdinEnabled = false // close the write end: ai_chat.py's stdin.read() blocks until EOF
+        }
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: data => {
@@ -92,7 +95,10 @@ Singleton {
         property string payload: ""
         command: ["python3", root.scriptPath, "--render"]
         stdinEnabled: true
-        onStarted: renderProcess.write(renderProcess.payload)
+        onStarted: {
+            renderProcess.write(renderProcess.payload)
+            renderProcess.stdinEnabled = false
+        }
         stdout: StdioCollector {
             onStreamFinished: {
                 try {

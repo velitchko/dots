@@ -26,6 +26,22 @@ Window {
     // true once the settings view (Task 10) wires a real toggle here
     property bool showSettings: false
 
+    // A fresh playful prompt each time the window opens, not the generic
+    // "Ask something..." -- picked once per open, not re-rolled on every
+    // binding re-evaluation.
+    readonly property var playfulPrompts: [
+        "What's up?", "What do you wanna know?", "What's on your mind?",
+        "Need a hand with something?", "Ask away…", "What are we figuring out today?"
+    ]
+    property string placeholderPhrase: playfulPrompts[Math.floor(Math.random() * playfulPrompts.length)]
+
+    // Chat content (not the UI chrome, which stays on Theme.font like every
+    // other kessel surface) matches the terminal exactly: same family, same
+    // point size -- kitty.conf: font_family JetBrainsMono Nerd Font Mono,
+    // font_size 11.
+    readonly property string contentFontFamily: "JetBrainsMono Nerd Font Mono"
+    readonly property real contentFontSize: 11
+
     Rectangle {
         anchors.fill: parent
         color: Theme.island
@@ -94,8 +110,8 @@ Window {
                             text: modelData.html || modelData.content
                             color: Theme.text
                             background: null
-                            font.family: Theme.font
-                            font.pointSize: Theme.fontUi
+                            font.family: win.contentFontFamily
+                            font.pointSize: win.contentFontSize
                         }
                     }
                 }
@@ -106,20 +122,19 @@ Window {
                 Layout.fillWidth: true
                 visible: !win.showSettings
                 spacing: 8
-                TextField {
+                SearchField {
                     id: input
                     Layout.fillWidth: true
+                    icon: ""
+                    placeholder: AiChat.streaming ? "Waiting for a response…" : win.placeholderPhrase
                     enabled: !AiChat.streaming
-                    placeholderText: AiChat.streaming ? "Waiting for a response…" : "Ask something…"
-                    color: Theme.text
-                    font.family: Theme.font
                     onAccepted: { AiChat.send(text); text = "" }
                 }
                 IconButton {
                     icon: Icons.send
                     size: 36
                     tint: Theme.accent
-                    onClicked: { input.accepted() }
+                    onClicked: input.accepted()
                 }
             }
         }
