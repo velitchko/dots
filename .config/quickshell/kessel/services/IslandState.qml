@@ -155,6 +155,9 @@ Singleton {
         function stayAwake(on: bool): string { Session.inhibitIdle = on; return "ok" }
         function reloadTheme(): string { Theme.reload(); return "ok" }
         function toggleTheme(): string { Themes.toggleMode(); return "ok" }
+        function aiChatToggle(): string { AiChat.toggle(); return AiChat.shown ? "shown" : "hidden" }
+        function aiChatOpen(): string { AiChat.open(); return "ok" }
+        function aiChatClose(): string { AiChat.close(); return "ok" }
         function status(): string {
             return JSON.stringify({
                 shown: root.shown, layer: root.layer, panel: root.panel, restWidth: root.restWidth, perspective: Perspectives.current, hyprLua: Hyprland.usingLua,

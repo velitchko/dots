@@ -75,6 +75,9 @@ add { group = "Island", keys = "SUPER + SHIFT + G", exec = island("open board"),
 add { group = "Island", keys = "SUPER + M",         exec = island("open media"), desc = "Media player" }
 add { group = "Island", keys = "SUPER + SHIFT + V", exec = island("open mixer", "pavucontrol"), desc = "Volume mixer: devices + per-app (fallback: pavucontrol)" }
 add { group = "Island", keys = "SUPER + ALT + T",   exec = island("open timer"), desc = "Timer / stopwatch" }
+-- No fallback: AI chat is a standalone floating window with its own markdown/math
+-- rendering, nothing else on the system can stand in for it when Quickshell isn't running.
+add { group = "Island", keys = "SUPER + I",         exec = island("aiChatToggle"), desc = "AI chat" }
 add { group = "Island", keys = "CTRL + ALT + Delete", exec = island("open power"), desc = "Session menu (lock, standby, logout, restart, shutdown)" }
 add { group = "Island", keys = "SUPER + Escape",    exec = island("open power"), desc = "Session menu", hidden = true }
 add { group = "Island", keys = "CTRL + SUPER + T",  exec = island("open wallpaper"), desc = "Wallpaper & theme picker" }

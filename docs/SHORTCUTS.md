@@ -34,6 +34,7 @@
 | `SUPER + M` | Media player |
 | `SUPER + SHIFT + V` | Volume mixer: devices + per-app (fallback: pavucontrol) |
 | `SUPER + ALT + T` | Timer / stopwatch |
+| `SUPER + I` | AI chat |
 | `CTRL + ALT + Delete` | Session menu (lock, standby, logout, restart, shutdown) |
 | `CTRL + SUPER + T` | Wallpaper & theme picker |
 | `CTRL + SUPER + SHIFT + D` | Toggle light / dark theme |
