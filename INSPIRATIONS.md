@@ -12,6 +12,7 @@ Projects that informed the design of this setup. Thank you to their authors.
 | [andreumassanet/impasto](https://github.com/andreumassanet/impasto) | Layered island state (panel > notification > OSD > glance > rest), privacy indicators, wallpaper-driven colors, the installer's structure |
 | [Brainitech/Brain_Shell](https://github.com/Brainitech/Brain_Shell) | Dashboard ideas: kanban board, metrics, quick sliders, timers (AGPL-3.0) |
 | [shantanubaddar/hyprwave](https://github.com/shantanubaddar/hyprwave) | A music control bar that turns into a visualizer: the island's Music perspective |
+| [devnullvoid/dms-ai-assistant](https://github.com/devnullvoid/dms-ai-assistant) (DankMaterialShell plugin) | Confirmed `Text.RichText` (not an embedded browser) is the right way to render markdown in a Quickshell-family chat UI without a WebEngineView |
 
 ## Built with
 
