@@ -23,7 +23,6 @@ Window {
     color: "transparent"
     flags: Qt.Window | Qt.FramelessWindowHint
 
-    // true once the settings view (Task 10) wires a real toggle here
     property bool showSettings: false
 
     // A fresh playful prompt each time the window opens, not the generic
@@ -45,9 +44,12 @@ Window {
     Rectangle {
         anchors.fill: parent
         color: Theme.island
-        radius: Theme.radiusPanel
-        border.width: Theme.borderWidth
-        border.color: Theme.a(Theme.text, 0.1)
+        // Matches general.lua's decoration.rounding (10) exactly -- Hyprland
+        // draws this window's actual border/corner decoration now (reverted
+        // the earlier rounding/border_size=0 override, see workspaces.lua),
+        // so this just needs to not visibly disagree with it. No border of
+        // its own: Hyprland's accent border is the border.
+        radius: 10
 
         ColumnLayout {
             anchors.fill: parent
@@ -94,18 +96,16 @@ Window {
                                 size: 22
                                 onClicked: Quickshell.execDetached(["wl-copy", modelData.content])
                             }
-                            Label {
-                                text: "Quote"
-                                color: Theme.subtext
-                                size: Theme.fontSmall
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        const quoted = modelData.content.split("\n").map(l => "> " + l).join("\n")
-                                        input.text = quoted + "\n\n" + input.text
-                                        input.focusInput()
-                                    }
+                            IconButton {
+                                // reply-style visual (left-pointing arrow); reuses the
+                                // already-verified Icons.back glyph rather than guessing
+                                // a new codepoint for "quote"/"reply"
+                                icon: Icons.back
+                                size: 22
+                                onClicked: {
+                                    const quoted = modelData.content.split("\n").map(l => "> " + l).join("\n")
+                                    input.text = quoted + "\n\n" + input.text
+                                    input.focusInput()
                                 }
                             }
                         }
@@ -144,6 +144,14 @@ Window {
                     tint: Theme.accent
                     onClicked: input.accepted()
                 }
+            }
+
+            ScrollView {
+                id: settingsScroll
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                visible: win.showSettings
+                AiChatSettings { width: settingsScroll.availableWidth }
             }
         }
     }

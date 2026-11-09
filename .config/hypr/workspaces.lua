@@ -36,16 +36,20 @@ hl.layer_rule({ name = "blur-fuzzel", match = { namespace = "^launcher$" }, blur
 
 -- AI chat window: floats and centers instead of tiling, like the other
 -- utility windows above. Matched by title, not class -- Quickshell windows
--- from the same process don't reliably get distinct app_ids. rounding/
--- bordersize 0: it draws its own Theme.radiusPanel corners and its own
--- border in QML (same material as every other kessel surface, all of
--- which are layer-shell and never touched by Hyprland's own decoration
--- in the first place) -- without this, Hyprland's general.rounding = 10
--- doubled up with the QML's own larger radius into visibly misaligned
--- corners, and the accent window border doubled with the QML border.
+-- from the same process don't reliably get distinct app_ids.
+--
+-- Earlier this drew its own corners/border in QML and set rounding/
+-- border_size to 0 here to stop them doubling with Hyprland's own
+-- general.rounding/border_size -- but border_size = 0 also removes the
+-- hitbox resize_on_border (general.lua) needs to detect "near the edge",
+-- so the window stopped being drag-resizable, and a borderless frameless
+-- window with only a faint inner QML line just reads as a flat square.
+-- Reverted: Hyprland draws its normal accent border/rounding like any
+-- other floating window (AiChatWindow.qml's own radius now matches
+-- general.rounding exactly instead of fighting it, and no longer draws
+-- a competing border at all).
 hl.window_rule({
     name  = "ai-chat-float",
     match = { title = "^Kessel AI Chat$" },
     float = true, center = true,
-    rounding = 0, border_size = 0,
 })
