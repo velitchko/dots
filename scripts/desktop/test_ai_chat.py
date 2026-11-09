@@ -93,3 +93,24 @@ def test_get_key_passes_secret_via_stdin_never_argv(monkeypatch):
     monkeypatch.setattr(sp, "run", fake_run)
     ai_chat.get_key("anthropic")
     assert "dummy-key-value" not in captured["args"]
+
+
+def test_store_key_passes_secret_via_stdin_not_argv(monkeypatch):
+    import ai_chat, subprocess as sp
+    captured = {}
+    def fake_run(args, **kwargs):
+        captured["args"] = args
+        captured["input"] = kwargs.get("input")
+        return sp.CompletedProcess(args, 0, "", "")
+    monkeypatch.setattr(sp, "run", fake_run)
+    ai_chat.store_key("anthropic", "sk-super-secret-value")
+    assert "sk-super-secret-value" not in captured["args"]
+    assert captured["input"] == "sk-super-secret-value"
+
+
+def test_delete_key_calls_secret_tool_clear(monkeypatch):
+    import ai_chat, subprocess as sp
+    captured = {}
+    monkeypatch.setattr(sp, "run", lambda args, **k: captured.setdefault("args", args) or sp.CompletedProcess(args, 0, "", ""))
+    ai_chat.delete_key("anthropic")
+    assert captured["args"][:2] == ["secret-tool", "clear"]

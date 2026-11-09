@@ -133,6 +133,21 @@ def get_key(provider):
     return result.stdout.strip() or None
 
 
+def store_key(provider, key):
+    """Admin action, not part of the chat loop: the secret is passed via
+    stdin, never as a subprocess argv element, so it never appears in a
+    `ps aux` listing."""
+    subprocess.run(
+        ["secret-tool", "store", "--label", f"kessel-ai-{provider}",
+         "service", "kessel-ai", "provider", provider],
+        input=key, text=True,
+    )
+
+
+def delete_key(provider):
+    subprocess.run(["secret-tool", "clear", "service", "kessel-ai", "provider", provider])
+
+
 def render_mode(text):
     """ai-chat.py --render: render a single complete message's raw text."""
     math_dir = os.path.expanduser("~/.local/state/kessel/ai/math/")
@@ -241,10 +256,20 @@ def main():
     parser.add_argument("--provider", choices=sorted(PROVIDERS))
     parser.add_argument("--model")
     parser.add_argument("--render", action="store_true")
+    parser.add_argument("--store-key", metavar="PROVIDER")
+    parser.add_argument("--delete-key", metavar="PROVIDER")
     args = parser.parse_args()
 
     if args.render:
         print(render_mode(sys.stdin.read()))
+        return
+
+    if args.store_key:
+        store_key(args.store_key, sys.stdin.readline().rstrip("\n"))
+        return
+
+    if args.delete_key:
+        delete_key(args.delete_key)
         return
 
     if args.provider:
@@ -253,7 +278,7 @@ def main():
             print(json.dumps(chunk), flush=True)
         return
 
-    parser.error("either --render or --provider/--model is required")
+    parser.error("one of --render, --store-key, --delete-key, or --provider/--model is required")
 
 
 if __name__ == "__main__":
