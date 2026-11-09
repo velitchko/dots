@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// AI chat panel state: messages, streaming, provider calls, history.
-// Spawns scripts/desktop/ai_chat.py per request (one process per send, a
-// second one in --render mode once streaming finishes); see
-// docs/superpowers/specs/2026-11-09-ai-chat-panel-design.md.
+// AI chat panel state: sessions (each its own named thread of messages),
+// streaming, provider calls, settings. Spawns scripts/desktop/ai_chat.py per
+// request (one process per send, a second one in --render mode once
+// streaming finishes); see docs/superpowers/specs/2026-11-09-ai-chat-panel-design.md.
 pragma Singleton
 import QtQuick
 import Quickshell
@@ -19,8 +19,16 @@ Singleton {
     property var providerModels: ({})   // { "ollama": "qwen2.5:0.5b", ... }
     readonly property string model: root.providerModels[root.provider] || ""
     property string baseUrl: ""   // only used when provider === "openai-compatible"
-    property var messages: []     // [{role, content, html, provider, ts}]
     property bool streaming: false
+
+    // Sessions: separate named threads, switchable/creatable/deletable. There
+    // is always at least one (ensureSession() guarantees it) -- the window
+    // always has somewhere to send into, never a null-session state to guard
+    // against everywhere else.
+    property var sessions: []              // [{id, name, messages: [...]}]
+    property string activeSessionId: ""
+    readonly property var activeSession: root.sessions.find(s => s.id === root.activeSessionId) || null
+    readonly property var messages: root.activeSession ? root.activeSession.messages : []
 
     readonly property string scriptPath: Quickshell.env("HOME") + "/.config/hypr/scripts/ai_chat.py"
     readonly property string historyPath: Quickshell.env("HOME") + "/.local/state/kessel/ai/history.json"
@@ -39,9 +47,63 @@ Singleton {
     function setBaseUrl(url) { root.baseUrl = url; root.saveSettings() }
     function setProvider(p) { root.provider = p; root.saveSettings() }
 
-    function clearConversation() {
-        root.messages = []
+    function _newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8) }
+
+    // Guarantees at least one session exists and activeSessionId points at a
+    // real one. Called after loading (or failing to load) history, and
+    // whenever deleting a session could otherwise leave zero.
+    function ensureSession() {
+        if (root.sessions.length === 0) {
+            const id = root._newId()
+            root.sessions = [{ id: id, name: "New chat", messages: [] }]
+            root.activeSessionId = id
+        } else if (!root.sessions.some(s => s.id === root.activeSessionId)) {
+            root.activeSessionId = root.sessions[0].id
+        }
+    }
+
+    function newSession(name) {
+        const id = root._newId()
+        root.sessions = root.sessions.concat([{ id: id, name: (name || "").trim() || "New chat", messages: [] }])
+        root.activeSessionId = id
         root.saveHistory()
+    }
+
+    function deleteSession(id) {
+        root.sessions = root.sessions.filter(s => s.id !== id)
+        root.ensureSession()
+        root.saveHistory()
+    }
+
+    function renameSession(id, name) {
+        if ((name || "").trim() === "") return
+        const idx = root.sessions.findIndex(s => s.id === id)
+        if (idx === -1) return
+        const sess = root.sessions.slice()
+        sess[idx] = Object.assign({}, sess[idx], { name: name.trim() })
+        root.sessions = sess
+        root.saveHistory()
+    }
+
+    function switchSession(id) {
+        if (root.streaming) return // don't switch away from a reply in flight
+        if (root.sessions.some(s => s.id === id)) root.activeSessionId = id
+    }
+
+    // Clears the *active* session's messages in place (same session, same
+    // name, empty thread) -- distinct from newSession(), which creates a new
+    // named one. Both are exposed; this is the quick "start over" action.
+    function clearConversation() {
+        root._setMessages([])
+        root.saveHistory()
+    }
+
+    function _setMessages(newMessages) {
+        const idx = root.sessions.findIndex(s => s.id === root.activeSessionId)
+        if (idx === -1) return
+        const sess = root.sessions.slice()
+        sess[idx] = Object.assign({}, sess[idx], { messages: newMessages })
+        root.sessions = sess
     }
 
     function send(text) {
@@ -54,10 +116,10 @@ Singleton {
             .filter(m => !m.isError && m.content.trim() !== "")
             .map(m => ({ role: m.role, content: m.content }))
         payload.push({ role: "user", content: text })
-        root.messages = root.messages.concat([
+        root._setMessages(root.messages.concat([
             { role: "user", content: text, html: "", provider: root.provider, ts: Date.now() },
             { role: "assistant", content: "", html: "", provider: root.provider, ts: Date.now() }
-        ])
+        ]))
         root.streaming = true
         sendProcess.gotFinalChunk = false
         sendProcess.payload = JSON.stringify(payload)
@@ -70,7 +132,7 @@ Singleton {
         const msgs = root.messages.slice()
         const last = msgs[msgs.length - 1]
         msgs[msgs.length - 1] = Object.assign({}, last, { content: last.content + delta })
-        root.messages = msgs
+        root._setMessages(msgs)
     }
 
     // errorText undefined = clean completion (kick off the render pass, and
@@ -88,7 +150,7 @@ Singleton {
             const last = msgs[msgs.length - 1]
             const sep = last.content ? "\n\n" : ""
             msgs[msgs.length - 1] = Object.assign({}, last, { content: last.content + sep + "⚠ " + errorText, isError: true })
-            root.messages = msgs
+            root._setMessages(msgs)
             root.saveHistory()
             return
         }
@@ -101,7 +163,7 @@ Singleton {
         root.streaming = false
         const msgs = root.messages.slice()
         msgs[msgs.length - 1] = Object.assign({}, msgs[msgs.length - 1], { html: htmlText })
-        root.messages = msgs
+        root._setMessages(msgs)
         root.saveHistory()
     }
 
@@ -161,11 +223,19 @@ Singleton {
     }
 
     function loadHistory() {
-        try { root.messages = JSON.parse(historyFile.text()) } catch (e) { root.messages = [] }
+        try {
+            const data = JSON.parse(historyFile.text())
+            root.sessions = data.sessions || []
+            root.activeSessionId = data.activeSessionId || ""
+        } catch (e) {
+            root.sessions = []
+            root.activeSessionId = ""
+        }
+        root.ensureSession()
     }
 
     function saveHistory() {
-        historyFile.setText(JSON.stringify(root.messages))
+        historyFile.setText(JSON.stringify({ sessions: root.sessions, activeSessionId: root.activeSessionId }))
     }
 
     // provider/model/baseUrl -- previously in-memory only, so every shell
@@ -194,7 +264,7 @@ Singleton {
         watchChanges: false
         printErrors: false
         onLoaded: root.loadHistory()
-        onLoadFailed: { /* no history yet (first run) -- messages stays [] */ }
+        onLoadFailed: root.ensureSession() // no history yet (first run) -- still need a session to send into
     }
 
     FileView {

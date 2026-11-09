@@ -30,6 +30,7 @@ Window {
     onClosing: AiChat.close()
 
     property bool showSettings: false
+    property bool showSessions: false
 
     // A fresh playful prompt each time the window opens, not the generic
     // "Ask something..." -- picked once per open, not re-rolled on every
@@ -65,16 +66,38 @@ Window {
             // header
             RowLayout {
                 Layout.fillWidth: true
-                Label { text: "AI Chat"; font.bold: true; size: Theme.fontUi + 1; Layout.fillWidth: true }
+                Label {
+                    text: win.showSettings ? "Settings" : win.showSessions ? "Sessions" : (AiChat.activeSession ? AiChat.activeSession.name : "AI Chat")
+                    font.bold: true
+                    size: Theme.fontUi + 1
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                }
+                Label {
+                    // no verified "list/menu" glyph to reuse safely, so this is
+                    // text, same as how Quote started before a safe icon turned up
+                    text: "Sessions"
+                    visible: !win.showSettings && !win.showSessions
+                    color: Theme.subtext
+                    size: Theme.fontSmall
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.showSessions = true }
+                }
                 IconButton {
                     icon: Icons.trash
                     size: 30
-                    visible: !win.showSettings && AiChat.messages.length > 0
+                    visible: !win.showSettings && !win.showSessions && AiChat.messages.length > 0
                     onClicked: AiChat.clearConversation()
+                }
+                IconButton {
+                    icon: Icons.back
+                    size: 30
+                    visible: win.showSettings || win.showSessions
+                    onClicked: { win.showSettings = false; win.showSessions = false }
                 }
                 IconButton {
                     icon: Icons.settings
                     size: 30
+                    visible: !win.showSessions
                     onClicked: win.showSettings = !win.showSettings
                 }
             }
@@ -84,7 +107,7 @@ Window {
                 id: list
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                visible: !win.showSettings
+                visible: !win.showSettings && !win.showSessions
                 spacing: 8
                 clip: true
                 model: AiChat.messages
@@ -159,7 +182,7 @@ Window {
             // input row
             RowLayout {
                 Layout.fillWidth: true
-                visible: !win.showSettings
+                visible: !win.showSettings && !win.showSessions
                 spacing: 8
                 SearchField {
                     id: input
@@ -183,6 +206,14 @@ Window {
                 Layout.fillHeight: true
                 visible: win.showSettings
                 AiChatSettings { width: settingsScroll.availableWidth }
+            }
+
+            ScrollView {
+                id: sessionsScroll
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                visible: win.showSessions
+                AiChatSessions { width: sessionsScroll.availableWidth }
             }
         }
     }
