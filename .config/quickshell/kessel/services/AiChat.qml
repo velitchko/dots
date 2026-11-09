@@ -25,6 +25,14 @@ Singleton {
     // correct than a frontier one does. Editable in Settings either way.
     property string systemPrompt: "You are a terminal assistant for Arch Linux, specializing in Bash and Fish shell scripting. Give direct, correct, copy-pasteable commands with minimal preamble. Prefer pacman/official repos over AUR unless the user needs an AUR package, and say so when it's AUR. Match the user's shell when they specify one; otherwise assume fish, this system's default. Briefly explain any non-obvious flag. Clearly flag destructive commands (rm -rf, dd, mkfs, etc.) before giving them."
     property bool streaming: false
+    // Accumulates the in-flight reply without touching `sessions` (so
+    // `messages` keeps one stable array identity for the whole reply --
+    // reassigning it per token used to reset the ListView's model and snap
+    // scroll position back to 0 on every single delta, which Qt.callLater
+    // then corrected a frame later: a visible top/bottom flicker on every
+    // token, confirmed on screen recording). The in-flight message's real
+    // `content` field stays "" until _finishStreaming commits it once.
+    property string streamingText: ""
 
     // Sessions: separate named threads, switchable/creatable/deletable. There
     // is always at least one (ensureSession() guarantees it) -- the window
@@ -140,6 +148,7 @@ Singleton {
             { role: "assistant", content: "", html: "", provider: root.provider, model: root.model, ts: Date.now() }
         ]))
         root.streaming = true
+        root.streamingText = ""
         sendProcess.gotFinalChunk = false
         sendProcess.payload = JSON.stringify(payload)
         sendProcess.command = ["python3", root.scriptPath, "--provider", root.provider, "--model", root.model]
@@ -149,10 +158,7 @@ Singleton {
     }
 
     function _appendDelta(delta) {
-        const msgs = root.messages.slice()
-        const last = msgs[msgs.length - 1]
-        msgs[msgs.length - 1] = Object.assign({}, last, { content: last.content + delta })
-        root._setMessages(msgs)
+        root.streamingText += delta
     }
 
     // errorText undefined = clean completion (kick off the render pass, and
@@ -163,19 +169,29 @@ Singleton {
     // errorText set = append it to whatever streamed before the failure
     // (Review Focus: a reasonable person expects the partial reply to stay
     // visible with a clear error appended, not replaced by just the error).
+    // Either way this is the single point that commits streamingText into
+    // the real message array -- the only `messages` reassignment that
+    // happens during a whole reply, besides the one at send() that adds
+    // the two new rows.
     function _finishStreaming(errorText) {
+        const msgs = root.messages.slice()
+        const last = msgs[msgs.length - 1]
+        let content = root.streamingText
+        let isError = false
+        if (errorText !== undefined) {
+            const sep = content ? "\n\n" : ""
+            content = content + sep + "⚠ " + errorText
+            isError = true
+        }
+        msgs[msgs.length - 1] = Object.assign({}, last, { content: content, isError: isError })
+        root._setMessages(msgs)
+        root.streamingText = ""
         if (errorText !== undefined) {
             root.streaming = false
-            const msgs = root.messages.slice()
-            const last = msgs[msgs.length - 1]
-            const sep = last.content ? "\n\n" : ""
-            msgs[msgs.length - 1] = Object.assign({}, last, { content: last.content + sep + "⚠ " + errorText, isError: true })
-            root._setMessages(msgs)
             root.saveHistory()
             return
         }
-        const last = root.messages[root.messages.length - 1]
-        renderProcess.payload = last.content
+        renderProcess.payload = content
         renderProcess.running = true
     }
 

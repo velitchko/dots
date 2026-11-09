@@ -68,7 +68,31 @@ Window {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 8
-                Label { text: "✨"; visible: !win.showSettings && !win.showSessions; size: Theme.fontUi + 1 }
+                // A small drawn mark instead of an emoji: three connected
+                // nodes read as "network/intelligence" without leaning on
+                // a brain/robot cliché or an emoji's inconsistent look
+                // across fonts. Plain Canvas, same as WavyBar.qml.
+                Canvas {
+                    id: mark
+                    width: 16; height: 16
+                    visible: !win.showSettings && !win.showSessions
+                    onPaint: {
+                        const ctx = getContext("2d")
+                        ctx.reset()
+                        const top = [8, 3], left = [3, 13], right = [13, 13]
+                        ctx.strokeStyle = Theme.a(Theme.accent, 0.5)
+                        ctx.lineWidth = 1.2
+                        ctx.beginPath()
+                        ctx.moveTo(top[0], top[1]); ctx.lineTo(left[0], left[1])
+                        ctx.moveTo(top[0], top[1]); ctx.lineTo(right[0], right[1])
+                        ctx.moveTo(left[0], left[1]); ctx.lineTo(right[0], right[1])
+                        ctx.stroke()
+                        ctx.fillStyle = Theme.accent
+                        for (const [x, y, r] of [[top[0], top[1], 2], [left[0], left[1], 1.5], [right[0], right[1], 1.5]]) {
+                            ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill()
+                        }
+                    }
+                }
                 Label {
                     // the session's real name once it has one (auto-titled from
                     // the first message, or renamed by hand) -- "New chat" is
@@ -119,16 +143,29 @@ Window {
                 spacing: 8
                 clip: true
                 model: AiChat.messages
-                // AiChat.messages is reassigned wholesale on every streamed
-                // token (simplest correct state shape for now -- a ListModel
-                // with in-place row updates would avoid rebuilding every
-                // delegate per token, a real cost worth revisiting, but not
-                // in this pass), which resets contentY to 0 each time unless
-                // something actively re-pins it to the bottom.
-                onCountChanged: positionViewAtEnd()
-                onModelChanged: Qt.callLater(positionViewAtEnd)
+                // AiChat.messages only gets a new array identity twice per
+                // reply now (send(), _finishStreaming()) -- streamed tokens
+                // land in AiChat.streamingText instead, a plain string the
+                // in-flight delegate binds to directly, so the model (and
+                // this view's scroll position) stays untouched while a
+                // reply is actively streaming in.
+                //
+                // "Stick to bottom" while content grows: positionViewAtEnd
+                // on every contentHeight change (each streamed token resizes
+                // the last delegate) would also fight a user who scrolled up
+                // to reread something, so it only fires while the view was
+                // already at the end; scrolling away turns it off until the
+                // view either returns to the end on its own or a new
+                // message starts (which always re-pins, same as before).
+                property bool stickToBottom: true
+                onCountChanged: { list.stickToBottom = true; positionViewAtEnd() }
+                onContentHeightChanged: if (list.stickToBottom) Qt.callLater(list.positionViewAtEnd)
+                onMovementEnded: list.stickToBottom = list.atYEnd
                 delegate: Rectangle {
+                    id: delegateRoot
                     required property var modelData
+                    required property int index
+                    readonly property bool isStreamingTarget: AiChat.streaming && index === list.count - 1 && modelData.role === "assistant"
                     width: list.width
                     height: body.implicitHeight + 44
                     radius: Theme.radiusCard
@@ -185,7 +222,7 @@ Window {
                                 // message starting with "-" (any markdown bullet list) gets
                                 // parsed by wl-copy as an option and fails, and a long enough
                                 // message can exceed a single argv element's size limit.
-                                onClicked: Quickshell.clipboardText = modelData.content
+                                onClicked: Quickshell.clipboardText = delegateRoot.isStreamingTarget ? AiChat.streamingText : modelData.content
                             }
                             IconButton {
                                 // reply-style visual (left-pointing arrow); reuses the
@@ -194,7 +231,8 @@ Window {
                                 icon: Icons.back
                                 size: 22
                                 onClicked: {
-                                    const quoted = modelData.content.split("\n").map(l => "> " + l).join("\n")
+                                    const src = delegateRoot.isStreamingTarget ? AiChat.streamingText : modelData.content
+                                    const quoted = src.split("\n").map(l => "> " + l).join("\n")
                                     input.text = quoted + "\n\n" + input.text
                                     input.focusInput()
                                 }
@@ -212,8 +250,10 @@ Window {
                             // markup with none of ai_chat.py's sanitization in between.
                             // PlainText never interprets anything, so it's safe regardless, and
                             // (unlike RichText without <br>) correctly preserves newlines.
-                            textFormat: modelData.html ? Text.RichText : Text.PlainText
-                            text: modelData.html || modelData.content
+                            // The in-flight reply reads from AiChat.streamingText directly
+                            // (always plain -- it never gets an html pass until it's done).
+                            textFormat: (!delegateRoot.isStreamingTarget && modelData.html) ? Text.RichText : Text.PlainText
+                            text: delegateRoot.isStreamingTarget ? AiChat.streamingText : (modelData.html || modelData.content)
                             color: Theme.text
                             background: null
                             font.family: win.contentFontFamily
