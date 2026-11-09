@@ -169,6 +169,8 @@ MouseArea {
                     anchors.fill: parent
                     radius: width / 2
                     color: "transparent"
+                    border.width: 2
+                    border.color: Style.accent
                     Image {
                         id: avatar
                         anchors.fill: parent

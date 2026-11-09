@@ -172,6 +172,14 @@ Item {
                         font.pixelSize: parent.s
                         color: root.subtext
                     }
+                    // stroke, drawn over the masked photo/fallback either way
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: width / 2
+                        color: "transparent"
+                        border.width: 2
+                        border.color: root.accent
+                    }
                 }
                 Text {
                     visible: userModel.count > 1
@@ -293,9 +301,9 @@ Item {
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: password.text.length === 0
-                text: root.busy ? (root.fingerprint ? "Touch the fingerprint sensor…" : "Logging in…")
+                text: root.busy ? (root.fingerprint ? "Touch the sensor…" : "Logging in…")
                     : root.failed ? (root.fingerprint ? "Not recognised: try again" : "Incorrect password")
-                    : root.fingerprint ? "Password, or Enter + fingerprint" : "Enter password"
+                    : root.fingerprint ? "Password or fingerprint" : "Enter password"
                 color: root.failed ? root.red : root.faint
                 font.family: root.mono
                 font.pixelSize: 15
