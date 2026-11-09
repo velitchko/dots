@@ -45,7 +45,45 @@ def test_unmatched_dollar_is_left_as_text(tmp_path):
 
 
 def test_unclosed_code_fence_does_not_raise(tmp_path):
-    render_markdown("```python\ndef f():\n    pass", math_dir=str(tmp_path))  # must not raise
+    html = render_markdown("```python\ndef f():\n    pass\n<script>x</script>", math_dir=str(tmp_path))
+    assert "<script>x" not in html  # must not raise, AND must still come out escaped
+
+
+def test_stray_backtick_does_not_leak_raw_html_across_paragraphs(tmp_path):
+    # a single unmatched backtick used to make CODE_FENCE_RE's `[^`]*` (DOTALL)
+    # "stash" everything up to the next backtick -- including unrelated later
+    # paragraphs -- as code, skipping escaping for all of it. Real markdown
+    # inline code never spans a blank line (paragraph break); matching that.
+    html = render_markdown(
+        "Use the `key.\n\n<img src=\"http://attacker.example/x.png\">\n\n"
+        "<a href=\"x\">and</a>` again",
+        math_dir=str(tmp_path),
+    )
+    # the URL/tag text is fine to show as inert escaped text (the user did
+    # type it); what must never happen is a *live* tag.
+    assert "<img" not in html
+    assert "<a " not in html
+    assert "&lt;img" in html and "&lt;a" in html
+
+
+def test_remote_image_single_quoted_attr_is_stripped(tmp_path):
+    # a regex allowlist that only matches `src="..."` (double-quoted) is a
+    # parser differential: markdown's own output happens to always double-
+    # quote, but asserting that is fragile. Prove the filter is a real
+    # parser, not a regex, by feeding it formatting a regex would miss.
+    html = render_markdown("![x](http://attacker.example/x.png 'title')", math_dir=str(tmp_path))
+    assert "attacker.example" not in html
+
+
+def test_blockquote_is_not_double_escaped(tmp_path):
+    html = render_markdown("> a quoted line", math_dir=str(tmp_path))
+    assert "<blockquote>" in html
+    assert "&gt; a quoted" not in html
+
+
+def test_autolink_renders_as_real_link(tmp_path):
+    html = render_markdown("<https://example.com>", math_dir=str(tmp_path))
+    assert '<a href="https://example.com">' in html
 
 
 def test_table_renders_with_visible_borders(tmp_path):

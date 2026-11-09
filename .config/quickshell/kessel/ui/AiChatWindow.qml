@@ -114,7 +114,14 @@ Window {
                             Layout.fillWidth: true
                             readOnly: true
                             wrapMode: Text.Wrap
-                            textFormat: Text.RichText
+                            // RichText only once the sanitized render lands (modelData.html) --
+                            // modelData.content is the model's raw, un-sanitized text (streaming
+                            // deltas, user messages, which never get an html pass, and error
+                            // text), and Text.RichText would interpret raw angle brackets as
+                            // markup with none of ai_chat.py's sanitization in between.
+                            // PlainText never interprets anything, so it's safe regardless, and
+                            // (unlike RichText without <br>) correctly preserves newlines.
+                            textFormat: modelData.html ? Text.RichText : Text.PlainText
                             text: modelData.html || modelData.content
                             color: Theme.text
                             background: null

@@ -11,11 +11,18 @@ import os
 import re
 import subprocess
 import sys
+from html.parser import HTMLParser
 import markdown
 import requests
 
 MATH_INLINE_RE = re.compile(r"\$\$(.+?)\$\$|\$([^\s$](?:[^$\n]*[^\s$])?)\$", re.DOTALL)
-CODE_FENCE_RE = re.compile(r"```.*?```|`[^`]*`", re.DOTALL)
+# Triple-backtick fences legitimately span multiple lines (DOTALL); a single
+# backtick span must not -- real markdown inline code never crosses a blank
+# line, and allowing it here once let an unmatched stray backtick "stash"
+# everything up to the next backtick, including unrelated later paragraphs,
+# out of the math-protection pass (see render_markdown's docstring for why
+# that stopped being a security issue but was still a correctness one).
+CODE_FENCE_RE = re.compile(r"```.*?```|`[^`\n]*`", re.DOTALL)
 
 
 def _render_math_png(expr, text_color, math_dir):
@@ -43,9 +50,10 @@ def _render_math_png(expr, text_color, math_dir):
 
 
 def _stash_code(text):
-    """Replace fenced/inline code spans with NUL placeholders so the rest of
-    the pipeline (math extraction, HTML escaping) can treat the remainder as
-    plain prose without disturbing code content. Returns (stashed_text, spans)."""
+    """Replace fenced/inline code spans with NUL placeholders so math
+    extraction doesn't treat a literal '$' inside code as a math delimiter.
+    (Escaping is no longer this function's concern -- see render_markdown.)
+    Returns (stashed_text, spans)."""
     spans = []
 
     def stash(m):
@@ -87,59 +95,106 @@ def _extract_math(prose_text, text_color, math_dir):
     return MATH_INLINE_RE.sub(replace_math, prose_text), placeholders
 
 
-def _strip_unsafe_images(rendered_html, math_dir):
-    """Only let through <img> tags this module itself generated (a file://
-    path under math_dir). Markdown's native ![alt](url) syntax turns into a
-    real <img src="..."> during md.convert() -- *after* the prose-escaping
-    pass below, so html.escape() never sees it -- and Qt's Text.RichText
-    auto-fetches an <img src> on render with no user interaction. A model's
-    own response (remote API or a message that echoes back untrusted text)
-    could otherwise embed a tracking-pixel URL and silently exfiltrate to
-    it, violating "no network call the user hasn't configured"."""
-    safe_prefix = "file://" + math_dir
+class _Sanitizer(HTMLParser):
+    """Real HTML parsing, not regex, so a quoting/casing variation a regex
+    wouldn't anticipate (single-quoted attrs, upper-case tags, no quotes at
+    all) can't slip past -- a regex allowlist only has to agree with
+    whichever formatting it was written against, which is exactly the
+    "parser differential" class of sanitizer bypass.
 
-    def strip(m):
-        return m.group(0) if m.group(1).startswith(safe_prefix) else ""
+    - <img>: only a src that is this module's own file://<math_dir> path
+      survives, by prefix match on the *parsed* attribute value. Markdown's
+      native ![alt](url) syntax turns into a real <img src="..."> during
+      md.convert(), and Qt's Text.RichText auto-fetches an <img src> on
+      render with no user interaction -- a model's own response could
+      otherwise embed a tracking-pixel URL and silently exfiltrate to it.
+    - <a>: only an http(s) href stays live; anything else (javascript:,
+      data:, file:, ...) is defanged to "#".
+    - every other tag/attribute is re-emitted as parsed (re-escaped), since
+      by this point the only tags in play are ones this module's own
+      markdown.Markdown instance generated (codehilite's styled <span>s,
+      <table>, headings, ...), not attacker-authored markup.
+    """
 
-    return re.sub(r'<img\b[^>]*\bsrc="([^"]*)"[^>]*/?>', strip, rendered_html)
+    VOID_TAGS = {"img", "br", "hr", "input", "meta", "link"}
+
+    def __init__(self, math_dir):
+        super().__init__(convert_charrefs=True)
+        self.safe_img_prefix = "file://" + math_dir
+        self.out = []
+
+    def _emit_tag(self, tag, attrs, self_closing):
+        attrs = dict(attrs)
+        if tag == "img":
+            src = attrs.get("src") or ""
+            if not src.startswith(self.safe_img_prefix):
+                return
+            attrs = {"src": src, "style": attrs.get("style", "")}
+        elif tag == "a":
+            href = attrs.get("href") or ""
+            if not (href.startswith("http://") or href.startswith("https://")):
+                attrs["href"] = "#"
+        attr_str = "".join(f' {k}="{html.escape(v or "", quote=True)}"' for k, v in attrs.items())
+        self.out.append(f"<{tag}{attr_str}{'/' if self_closing else ''}>")
+
+    def handle_starttag(self, tag, attrs):
+        self._emit_tag(tag, attrs, self_closing=tag in self.VOID_TAGS)
+
+    def handle_startendtag(self, tag, attrs):
+        self._emit_tag(tag, attrs, self_closing=True)
+
+    def handle_endtag(self, tag):
+        if tag not in self.VOID_TAGS:
+            self.out.append(f"</{tag}>")
+
+    def handle_data(self, data):
+        self.out.append(html.escape(data))
+
+    def get_html(self):
+        return "".join(self.out)
 
 
-def _neutralize_unsafe_links(rendered_html):
-    """Only http(s) link targets stay clickable; javascript:/data:/file:/
-    other schemes get their href dropped rather than left live."""
-    def neutralize(m):
-        href = m.group(1)
-        if href.startswith("http://") or href.startswith("https://"):
-            return m.group(0)
-        return m.group(0).replace(f'href="{href}"', 'href="#"')
-
-    return re.sub(r'<a\b[^>]*\bhref="([^"]*)"[^>]*>', neutralize, rendered_html)
+def _sanitize_html(rendered_html, math_dir):
+    parser = _Sanitizer(math_dir)
+    parser.feed(rendered_html)
+    parser.close()
+    return parser.get_html()
 
 
 def render_markdown(text, *, text_color="#e8e8e8", math_dir):
     """Convert a model response to Qt Text.RichText-safe HTML: markdown,
     pygments-highlighted fenced code, and matplotlib-rendered math images.
 
-    Code fence content is left untouched for markdown/codehilite to escape
-    and highlight itself (it already does this correctly); raw HTML in prose
-    is explicitly escaped here first, since python-markdown's default
-    behaviour -- passing raw HTML straight through, per the original
-    Markdown spec -- would otherwise let a model's response inject markup.
+    Raw HTML handling is disabled in the markdown instance itself (not
+    pre-escaped by hand): python-markdown passes raw HTML straight through
+    by default, per the original Markdown spec, which would let a model's
+    response inject markup -- but hand-escaping first (an earlier version
+    of this function did) also breaks legitimate markdown that happens to
+    use angle brackets (blockquotes' own rendering, autolinks) and, worse,
+    is only as good as the code-span regex protecting it: a stray unmatched
+    backtick could "stash" an unrelated later paragraph as code and skip
+    the escaping pass entirely. Disabling raw HTML at the source means
+    every angle bracket in the model's text is just text, unconditionally,
+    regardless of where it falls.
+
+    The one thing markdown *can* still produce that reaches out to the
+    network is its own native ![alt](url) image syntax -- real HTML, not
+    something "raw HTML disabled" suppresses, since the <img> tag comes
+    from markdown's own renderer, not from the input text. _sanitize_html
+    is a real HTML parser (not regex) allowlist pass for exactly that.
     """
     stashed, code_spans = _stash_code(text)
     stashed, math_html = _extract_math(stashed, text_color, math_dir)
-    escaped_prose = html.escape(stashed)
-    # html.escape() also escapes the NUL-byte placeholder markers' literal
-    # text content is unaffected (they contain no &/</>), so this is safe.
-    with_code = _restore_code(escaped_prose, code_spans)
+    with_code = _restore_code(stashed, code_spans)
 
     md = markdown.Markdown(
         extensions=["fenced_code", "codehilite", "tables"],
         extension_configs={"codehilite": {"noclasses": True, "pygments_style": "monokai"}},
     )
+    md.preprocessors.deregister("html_block")
+    md.inlinePatterns.deregister("html")
     rendered = md.convert(with_code)
-    rendered = _strip_unsafe_images(rendered, math_dir)
-    rendered = _neutralize_unsafe_links(rendered)
+    rendered = _sanitize_html(rendered, math_dir)
 
     for key, img_html in math_html.items():
         rendered = rendered.replace(key, img_html)
