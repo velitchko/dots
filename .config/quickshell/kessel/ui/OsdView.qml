@@ -10,7 +10,18 @@ View {
     Row {
         anchors.centerIn: parent
         spacing: 12
-        Glyph { text: IslandState.osdIcon; size: Theme.fontUi + 4; anchors.verticalCenter: parent.verticalCenter }
+        // Fixed-size icon slot, not the glyph's own implicit width: different
+        // OSDs (volume vs. brightness vs. mic...) show different icons with
+        // different natural advance widths, which otherwise changes the
+        // Row's total width and visibly shifts the bar/label left or right
+        // depending which icon is showing. optical: true centres the ink
+        // inside that fixed slot (see Theme.iconFont's comment on this).
+        Item {
+            width: 28
+            height: Theme.fontUi + 4
+            anchors.verticalCenter: parent.verticalCenter
+            Glyph { text: IslandState.osdIcon; size: Theme.fontUi + 4; optical: true; anchors.centerIn: parent }
+        }
         Bar { visible: IslandState.osdValue >= 0; width: 170; value: IslandState.osdValue; anchors.verticalCenter: parent.verticalCenter }
         Label { text: IslandState.osdLabel; width: 64; size: Theme.fontSmall; color: Theme.subtext; anchors.verticalCenter: parent.verticalCenter }
     }
