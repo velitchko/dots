@@ -10,8 +10,13 @@
 # System files touched (only by install/uninstall):
 #   /usr/share/sddm/themes/kessel/        theme
 #   /usr/share/sddm/faces/$USER.face.icon avatar (from ~/.face, if present)
-#   /etc/sddm.conf.d/10-kessel.conf       [Theme] Current=kessel (+ cursor), and on HiDPI
-#                                         [General] GreeterEnvironment=QT_SCALE_FACTOR=<Hyprland's scale>
+#   /etc/sddm.conf.d/10-kessel.conf       [Theme] Current=kessel (+ cursor), [General]
+#                                         GreeterEnvironment=QT_SCALE_FACTOR=<Hyprland's scale>,
+#                                         and [X11]/[Wayland] EnableHiDPI=false (the greeter's
+#                                         own session starts before Hyprland and otherwise
+#                                         auto-detects DPI on its own -- fractional and blurry
+#                                         on this panel, same class of issue monitors.lua
+#                                         documents and avoids for Hyprland's own compositing)
 #   /etc/sddm.conf                        [Theme] Current=kessel, only if the key is already
 #                                         present — some SDDM builds let this file outrank
 #                                         /etc/sddm.conf.d/*.conf (seen on 0.21: a theme
@@ -92,12 +97,20 @@ case $cmd in
         fi
         [[ $scale =~ ^[0-9]+(\.[0-9]+)?$ ]] || scale=1
         scale="$(awk -v s="$scale" 'BEGIN { printf "%g", s }')"
-        general=""
-        if [[ $scale != 1 ]]; then
-            # PassThrough keeps fractional scales (1.5, 1.6) instead of rounding to 2
-            general=$'[General]\nGreeterEnvironment=QT_SCALE_FACTOR='"$scale"$',QT_SCALE_FACTOR_ROUNDING_POLICY=PassThrough\n'
-        fi
-        info "greeter scale: ${scale}x (Hyprland's; override with SDDM_SCALE=…)"
+        # Always pin an explicit scale, even at 1x (previously skipped as "no
+        # override needed" when scale==1) -- SDDM's own greeter session starts
+        # before Hyprland, in its own X11 (or Wayland) session with no idea
+        # monitors.lua pinned this panel to scale=1. Left alone, SDDM/Qt's
+        # own HiDPI auto-detection (X11's EnableHiDPI=true default) reads the
+        # panel's physical DPI directly -- 168 DPI here, which rounds to a
+        # *fractional* ~1.75x -- and fractional scale renders visibly soft on
+        # this same Qt6 stack, the exact reason monitors.lua avoids it for
+        # Hyprland's own compositing too. EnableHiDPI=false turns that
+        # auto-detection off in both backends so QT_SCALE_FACTOR is the only
+        # scale actually in effect. (PassThrough keeps a fractional
+        # SDDM_SCALE override, e.g. 1.5, instead of rounding it to 2.)
+        general=$'[General]\nGreeterEnvironment=QT_SCALE_FACTOR='"$scale"$',QT_SCALE_FACTOR_ROUNDING_POLICY=PassThrough\n[X11]\nEnableHiDPI=false\n[Wayland]\nEnableHiDPI=false\n'
+        info "greeter scale: ${scale}x, HiDPI auto-detection off (Hyprland's scale; override with SDDM_SCALE=…)"
         csize="$(awk -v s="$scale" 'BEGIN { printf "%d", 24 * s + 0.5 }')"
         cursor=""; [[ -d /usr/share/icons/Bibata-Modern-Classic ]] && cursor="CursorTheme=Bibata-Modern-Classic"$'\n'"CursorSize=$csize"
         if [[ -e $conf ]]; then run sudo cp -a "$conf" "$conf.kessel-bak-$ts"; info "backup: $conf.kessel-bak-$ts"; fi
