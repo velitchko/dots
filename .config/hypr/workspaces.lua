@@ -33,3 +33,12 @@ hl.window_rule({
 -- Blur behind fuzzel. Not behind the island: it is fully opaque, and blurring its
 -- (mostly transparent) surface only smeared a gradient around open panels.
 hl.layer_rule({ name = "blur-fuzzel", match = { namespace = "^launcher$" }, blur = true, ignore_alpha = 0.3 })
+
+-- AI chat window: floats and centers instead of tiling, like the other
+-- utility windows above. Matched by title, not class -- Quickshell windows
+-- from the same process don't reliably get distinct app_ids.
+hl.window_rule({
+    name  = "ai-chat-float",
+    match = { title = "^Kessel AI Chat$" },
+    float = true, center = true,
+})
