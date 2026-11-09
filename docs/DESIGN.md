@@ -27,6 +27,10 @@ Each entry in `profiles/minimal.links` is a symlink from `~` into the repository
 
 The desktop uses one morphing surface rather than a conventional bar. It has resting perspectives (Overview, Time, Music, Metrics, Minimal) and panels that expand from it. Logic belongs in `services/` singletons; visuals belong in `ui/` and `components/`. The surface stays small at rest because a large transparent layer is costly without a GPU. The island owns notifications while it is running; Dunst activates through D-Bus when it is not, so there is one notification server at a time.
 
+## AI chat
+
+A floating `QtQuick.Window` (not a panel), because the point is it stays open and moves independently of the island while you work, instead of living inside the pill's morph animation. Markdown and LaTeX math render server-side (`scripts/desktop/ai_chat.py`: python-markdown + pygments + matplotlib, real `html.parser.HTMLParser`-based sanitization) rather than in an embedded browser engine — a `WebEngineView` spike crashed Quickshell outright (`QtWebEngineQuick::initialize()` has to run before `QGuiApplication`, which isn't how Quickshell starts). API keys only: Anthropic's and OpenAI's own terms don't let a third-party app route requests through a Claude.ai/ChatGPT plan, so subscription login was investigated and ruled out, not just left undone. Full history and open questions: `docs/superpowers/specs/2026-11-09-ai-chat-panel-design.md`.
+
 ## Lock and login
 
 The lock screen is a separate Quickshell config (`kessel-lock`) that runs only while locked, so an island crash can't take the lock down with it. `lock.sh` falls back to hyprlock if a secure lock isn't confirmed within 3 s. The SDDM theme mirrors the lock screen and is installed only by an explicit script (sudo).

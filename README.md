@@ -21,14 +21,15 @@ My Arch Linux desktop: **Hyprland** (Lua config), **Quickshell**, and a dynamic 
 | ![Wallpaper picker](docs/screenshots/wallpaper.png) | ![Timer](docs/screenshots/timer.png) |
 | **Shortcuts** (`SUPER+/`) | **Shortcuts** in light mode |
 | ![Shortcuts](docs/screenshots/shortcuts.png) | ![Shortcuts in light mode](docs/screenshots/shortcuts-light.png) |
-| **Scripts** (`SUPER+/`, Tab) | |
-| ![Scripts tab](docs/screenshots/scripts.png) | |
+| **Scripts** (`SUPER+/`, Tab) | **AI chat** (`SUPER+I`) |
+| ![Scripts tab](docs/screenshots/scripts.png) | ![AI chat](docs/screenshots/ai-chat.png) |
 
 <sub>Screenshots are the real island components rendered offscreen on a VM (no Wi-Fi or audio hardware there; the battery is simulated).</sub>
 
 ## What's in it
 
 - **Island** (Quickshell): workspaces, time, weather, media, system stats, battery. Scroll over it to switch view (Overview · Time · Music · Metrics · Minimal). It morphs into panels: quick settings, notifications, launcher, clipboard, workspace overview, notes, media, mixer, timer, wallpaper, shortcuts. Small pills beside it show a running countdown, mic/camera/screen use (click to mute the mic) and pending updates.
+- **AI chat** (`SUPER+I`): a floating, resizable window — Ollama (local), Anthropic, OpenAI, or any self-hosted OpenAI-compatible server. Real markdown + syntax highlighting + LaTeX math, named/switchable sessions, a per-reply system prompt for steering a small local model. API keys only (no subscription login), stored in the system keyring.
 - **Terminal:** kitty + fish + Starship. **Editor:** Neovim (LazyVim).
 - **Launchers:** island launcher (`SUPER+R` or tap `SUPER`) and fuzzel (`SUPER+SHIFT+Space`) as fallback.
 - **Theme:** one script recolors everything from the wallpaper (island, Hyprland, kitty, fish, GTK, Qt/KDE, Neovim, lock, login).
@@ -148,6 +149,7 @@ Enter copies the result. More languages: `translate.sh available`, then e.g. `tr
 | `SUPER + Tab` | Workspace overview (click to focus, drag to move) |
 | `SUPER + V` · `SUPER + .` | Clipboard history · emoji picker |
 | `SUPER + G` / `SUPER + SHIFT + G` | Notes (`~/Notes`) / kanban board |
+| `SUPER + I` | AI chat (floating window) |
 | `SUPER + M` / `SUPER + SHIFT + V` | Media player / volume mixer |
 | `SUPER + ALT + T` | Timer + stopwatch (a pill shows the countdown beside the island) |
 | `CTRL + SUPER + T` / `CTRL + SUPER + SHIFT + D` | Wallpaper picker / toggle light-dark |
@@ -177,6 +179,18 @@ Full list: [`docs/SHORTCUTS.md`](docs/SHORTCUTS.md) (generated from `.config/hyp
 **Wallpapers:** drop images into `~/Pictures/Wallpapers`, pick one from quick settings or `CTRL+SUPER+T`. Accents follow the wallpaper; details in [`docs/THEME.md`](docs/THEME.md).
 
 **Profile picture:** `~/.face` (shown round in the island, lock and login screen).
+
+### AI chat
+
+`SUPER + I` opens a floating window (drag/resize like any other window) with real markdown rendering — syntax-highlighted code, tables, and LaTeX math — not just plain text. It's off by default: no network traffic unless you configure a provider.
+
+- **Providers:** Ollama (local, no key needed), Anthropic, OpenAI, or any self-hosted OpenAI-compatible server (llama.cpp, LM Studio, vLLM, …). Pick one per message from the gear icon; each remembers its own model name.
+- **API keys** go straight into the system keyring (`secret-tool`) via stdin, never typed into a file or logged — no subscription login, Anthropic's and OpenAI's own terms don't allow a third-party app to route through a Claude.ai/ChatGPT plan.
+- **System prompt:** one global prompt sent with every request, editable in Settings. The default steers a small local model toward terse, correct Arch/bash/fish answers — most useful there, since a small model needs more steering than a frontier one to stay on-topic. `qwen2.5-coder:3b` (`ollama pull qwen2.5-coder:3b`) is a reasonable default for this on a laptop without a GPU; the smaller `qwen2.5-coder:1.5b` is faster but noticeably more likely to hallucinate flags — treat anything it gives you as a draft, not gospel, especially destructive commands.
+- **Sessions:** named, creatable, deletable, switchable from the Sessions view — a session auto-titles itself from its first message until you rename it.
+- Copy or quote any message (the reply icon prefixes it with `>` and drops it into the input box). History lives in `~/.local/state/kessel/ai/`.
+
+![AI chat settings: provider cards, system prompt](docs/screenshots/ai-chat-settings.png)
 
 ## Update
 
