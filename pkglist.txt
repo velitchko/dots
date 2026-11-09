@@ -103,3 +103,8 @@ htop
 jq
 git
 curl
+# AI chat panel (scripts/desktop/ai_chat.py): markdown/syntax-highlight/math rendering
+python
+python-markdown
+python-pygments
+python-matplotlib
