@@ -47,16 +47,20 @@ View {
     Slot { on: root.cur === minimal; width: minimal.implicitWidth; height: minimal.implicitHeight
            MinimalRow { id: minimal } }
 
-    // music progress along the bottom edge of the pill
+    // music progress along the bottom edge of the pill. leftMargin starts the
+    // bar partway through the pill's rounded cap (half its inset at this
+    // height: cap radius 22.5, bar center 19.5px from mid-height → curve ends
+    // at inset ≈11.3px, halved ≈6) instead of past it, so it reads as flowing
+    // out of the curve rather than appearing cut off at the flat edge.
     Rectangle {
         visible: root.cur === music && Media.length > 0
         anchors.left: parent.left
         anchors.bottom: parent.bottom
-        anchors.leftMargin: 18
+        anchors.leftMargin: 6
         anchors.bottomMargin: 2
         height: 2
         radius: 1
-        width: (parent.width - 36) * Media.progress
+        width: (parent.width - 12) * Media.progress
         color: Theme.accent
         Behavior on width { NumberAnimation { duration: 900 } }
     }
