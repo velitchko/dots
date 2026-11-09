@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""ai_chat.py — AI chat panel backend: markdown/math rendering and (later
-tasks) provider streaming + secret storage. Spawned by services/AiChat.qml;
-see docs/superpowers/specs/2026-11-09-ai-chat-panel-design.md.
+"""ai_chat.py — AI chat panel backend: markdown/math rendering, provider
+streaming, and secret storage. Spawned by services/AiChat.qml; see
+docs/superpowers/specs/2026-11-09-ai-chat-panel-design.md.
 """
 import argparse
 import hashlib
@@ -235,7 +235,7 @@ def delete_key(provider):
 
 
 def render_mode(text):
-    """ai-chat.py --render: render a single complete message's raw text."""
+    """ai_chat.py --render: render a single complete message's raw text."""
     math_dir = os.path.expanduser("~/.local/state/kessel/ai/math/")
     os.makedirs(math_dir, exist_ok=True)
     return json.dumps({"html": render_markdown(text, math_dir=math_dir)})

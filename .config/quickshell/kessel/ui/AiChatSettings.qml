@@ -31,6 +31,7 @@ ColumnLayout {
         onStarted: {
             keyProcess.write(keyProcess.payload)
             keyProcess.stdinEnabled = false
+            keyProcess.payload = "" // don't keep the key in memory after it's been written
         }
     }
 
