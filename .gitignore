@@ -13,3 +13,7 @@ sddm-theme/kessel/background.*
 # hyprmoncfg writes its layout next to the Hyprland config (~/.config/hypr → this repo)
 .config/hypr/hyprmoncfg-monitors.lua
 .config/hypr/hyprmoncfg-monitors.conf
+# Python test/bytecode cache (scripts/desktop/ai_chat.py + its tests)
+__pycache__/
+*.pyc
+.pytest_cache/
