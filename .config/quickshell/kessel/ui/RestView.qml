@@ -80,7 +80,7 @@ View {
             height: root.height
             radius: height / 2
             color: "transparent"
-            border.width: 2
+            border.width: Theme.borderWidth
             border.color: Theme.accent
         }
     }

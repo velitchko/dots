@@ -17,6 +17,21 @@ PanelWindow {
     readonly property string layer: live ? IslandState.layer : "rest"
     readonly property bool panelOpen: layer === "panel" && !IslandState.quitting
 
+    // Fixed Catppuccin Mocha, deliberately *not* Theme.* (which follows the
+    // wallpaper/accent): these three mean the same thing regardless of theme,
+    // so they stay the same colour regardless of theme.
+    readonly property color catGreen:  "#a6e3a1"
+    readonly property color catYellow: "#f9e2af"
+    readonly property color catPeach:  "#fab387"
+    readonly property color catRed:    "#f38ba8"
+    // Quartiles of time left in the running countdown: plenty (green) down to
+    // critical (red). cdLeft already covers the paused case (see Timers.qml).
+    readonly property real timerFrac: Timers.cdTotal > 0 ? Timers.cdLeft / Timers.cdTotal : 1
+    readonly property color timerColor: timerFrac > 0.75 ? catGreen
+        : timerFrac > 0.5 ? catYellow
+        : timerFrac > 0.25 ? catPeach
+        : catRed
+
     visible: IslandState.shown
     anchors.top: true
     margins.top: Theme.islandMargin
@@ -118,9 +133,10 @@ PanelWindow {
         height: Theme.islandHeight
         width: Math.max(height, timerRow.implicitWidth + 24)
         radius: height / 2
-        color: tma.containsMouse ? Qt.tint(Theme.island, Theme.a(Theme.purple, 0.22)) : Theme.island
+        color: tma.containsMouse ? Qt.tint(Theme.island, Theme.a(win.timerColor, 0.22)) : Theme.island
         border.width: pill.border.width
-        border.color: Theme.a(Theme.purple, tma.containsMouse ? 0.75 : 0.5)
+        border.color: Theme.a(win.timerColor, tma.containsMouse ? 0.75 : 0.5)
+        Behavior on border.color { ColorAnimation { duration: 300 } }
         opacity: on ? 1 : 0
         visible: opacity > 0.01
         scale: on ? 1 : 0.6
@@ -131,7 +147,8 @@ PanelWindow {
             id: timerRow
             anchors.centerIn: parent
             spacing: 6
-            Glyph { text: Timers.cdRunning ? Icons.sand : Icons.pause; color: Theme.purple; size: Theme.fontSmall + 1; optical: true; anchors.verticalCenter: parent.verticalCenter }
+            Glyph { text: Timers.cdRunning ? Icons.sand : Icons.pause; color: win.timerColor; size: Theme.fontSmall + 1; optical: true; anchors.verticalCenter: parent.verticalCenter
+                    Behavior on color { ColorAnimation { duration: 300 } } }
             Label {
                 text: Time.hms(Timers.cdLeft)
                 color: Timers.cdRunning ? Theme.text : Theme.subtext
@@ -164,10 +181,11 @@ PanelWindow {
         height: Theme.islandHeight
         width: Math.max(height, privRow.implicitWidth + 22)
         radius: height / 2
-        // Same material as the island (opaque), tinted with the theme's error colour.
-        color: Qt.tint(Theme.island, Theme.a(Theme.red, 0.16))
+        // Same material as the island (opaque), tinted with a fixed red (not
+        // Theme.red -- a privacy indicator shouldn't change colour with the wallpaper).
+        color: Qt.tint(Theme.island, Theme.a(win.catRed, 0.16))
         border.width: pill.border.width
-        border.color: Theme.a(Theme.red, 0.6)
+        border.color: Theme.a(win.catRed, 0.6)
         opacity: Privacy.any ? 1 : 0
         visible: opacity > 0.01
         scale: Privacy.any ? 1 : 0.6
@@ -185,7 +203,7 @@ PanelWindow {
                 Rectangle {
                     anchors.centerIn: parent
                     width: 22; height: 22; radius: 11
-                    color: Theme.red
+                    color: win.catRed
                     opacity: Audio.micMuted ? 0 : Math.min(0.45, MicLevel.level * 0.8)
                     scale: 0.7 + Math.min(1, MicLevel.level) * 0.5
                     Behavior on opacity { NumberAnimation { duration: 90 } }
@@ -194,7 +212,7 @@ PanelWindow {
                 Glyph {
                     anchors.centerIn: parent
                     text: Audio.micMuted ? Icons.micOff : Icons.mic
-                    color: Audio.micMuted ? Theme.subtext : Theme.red
+                    color: Audio.micMuted ? Theme.subtext : win.catRed
                     size: Theme.fontSmall + 1
                     optical: true
                     scale: Audio.micMuted ? 1 : 1 + Math.min(1, MicLevel.level) * 0.18
@@ -206,13 +224,13 @@ PanelWindow {
             Item {
                 visible: Privacy.camera
                 width: 24; height: 24
-                Glyph { anchors.centerIn: parent; text: Icons.camera; color: Theme.red; size: Theme.fontSmall + 1; optical: true }
+                Glyph { anchors.centerIn: parent; text: Icons.camera; color: win.catRed; size: Theme.fontSmall + 1; optical: true }
                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Privacy.focusCamera() }
             }
             Item {
                 visible: Privacy.screen
                 width: 24; height: 24
-                Glyph { anchors.centerIn: parent; text: Icons.screenShare; color: Theme.red; size: Theme.fontSmall + 1; optical: true }
+                Glyph { anchors.centerIn: parent; text: Icons.screenShare; color: win.catRed; size: Theme.fontSmall + 1; optical: true }
             }
         }
         HoverHandler { id: privHover }
@@ -232,10 +250,11 @@ PanelWindow {
         height: Theme.islandHeight
         width: Math.max(height, updRow.implicitWidth + 22)
         radius: height / 2
-        // Same material as the island (opaque), in the wallpaper accent.
-        color: uma.containsMouse ? Qt.tint(Theme.island, Theme.a(Theme.accent, 0.22)) : Theme.island
+        // Same material as the island (opaque), tinted with a fixed green (not
+        // Theme.accent -- "updates pending" shouldn't change colour with the wallpaper).
+        color: uma.containsMouse ? Qt.tint(Theme.island, Theme.a(win.catGreen, 0.22)) : Theme.island
         border.width: pill.border.width
-        border.color: Theme.a(Theme.accent, uma.containsMouse ? 0.7 : 0.45)
+        border.color: Theme.a(win.catGreen, uma.containsMouse ? 0.7 : 0.45)
         opacity: Updates.count > 0 ? 1 : 0
         visible: opacity > 0.01
         scale: Updates.count > 0 ? 1 : 0.6
@@ -246,7 +265,7 @@ PanelWindow {
             id: updRow
             anchors.centerIn: parent
             spacing: 5
-            Glyph { text: Icons.packageUp; color: Theme.accent; size: Theme.fontSmall + 1; optical: true; anchors.verticalCenter: parent.verticalCenter }
+            Glyph { text: Icons.packageUp; color: win.catGreen; size: Theme.fontSmall + 1; optical: true; anchors.verticalCenter: parent.verticalCenter }
             Label { text: Updates.count; color: Theme.text; size: Theme.fontSmall; font.bold: true; anchors.verticalCenter: parent.verticalCenter }
         }
         MouseArea { id: uma; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Updates.runUpdate() }
@@ -265,7 +284,7 @@ PanelWindow {
         height: 24
         radius: 12
         color: Theme.island
-        border.width: 1
+        border.width: Theme.borderWidth
         border.color: Theme.a(Theme.text, 0.08)
         opacity: on ? 1 : 0
         visible: opacity > 0.01
@@ -300,7 +319,7 @@ PanelWindow {
         height: Math.max(Theme.islandHeight, win.current.implicitHeight)
         radius: win.layer === "rest" || win.layer === "osd" ? height / 2 : Theme.radiusPanel
         color: Theme.island
-        border.width: win.layer === "alarm" ? 2 : 1
+        border.width: win.layer === "alarm" ? Theme.borderWidth * 2 : Theme.borderWidth
         border.color: win.layer === "alarm" ? Theme.a(Theme.red, alarmPulse.v) : Theme.a(Theme.text, hover.hovered || win.panelOpen ? 0.12 : 0.06)
         Item {
             id: alarmPulse

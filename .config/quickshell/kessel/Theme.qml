@@ -76,6 +76,11 @@ Singleton {
     readonly property real fontSmall: 10.4
     readonly property real fontBig: 26
 
+    // The one border width used everywhere in the shell -- cards, buttons,
+    // inputs, the island pill and its side pills, the music progress ring.
+    // Emphasis states (selected, alarm) double it rather than picking their
+    // own number, so they stay a multiple of whatever this is.
+    readonly property int borderWidth: 1
     readonly property int islandHeight: 45
     readonly property int screenCornerRadius: 14      // 0 disables the rounded screen corners
     // With exclusiveZone = islandHeight alone (Island.qml), the gap from the
