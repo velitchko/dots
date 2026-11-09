@@ -92,13 +92,21 @@ Window {
                             IconButton {
                                 icon: Icons.clipboard
                                 size: 22
-                                onClicked: {} // wired in Task 9
+                                onClicked: Quickshell.execDetached(["wl-copy", modelData.content])
                             }
                             Label {
                                 text: "Quote"
                                 color: Theme.subtext
                                 size: Theme.fontSmall
-                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: {} /* wired in Task 9 */ }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        const quoted = modelData.content.split("\n").map(l => "> " + l).join("\n")
+                                        input.text = quoted + "\n\n" + input.text
+                                        input.focusInput()
+                                    }
+                                }
                             }
                         }
                         TextArea {
