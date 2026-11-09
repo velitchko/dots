@@ -37,7 +37,7 @@ PanelBase {
                 readonly property bool on: (modelData.m === "dark") === Themes.dark
                 width: 190; height: 36; radius: 18
                 color: on ? Theme.a(Theme.accent, 0.22) : (mm.containsMouse ? Theme.cardHi : Theme.card)
-                border.width: on ? 1 : 0
+                border.width: on ? Theme.borderWidth : 0
                 border.color: Theme.accent
                 Row {
                     anchors.centerIn: parent
@@ -76,7 +76,7 @@ PanelBase {
             width: root.thumbW; height: root.thumbH
             radius: 12
             color: Theme.card
-            border.width: active || root.sel === index ? 2 : 0
+            border.width: active || root.sel === index ? Theme.borderWidth * 2 : 0
             border.color: active ? Theme.a(Theme.accent, pulse) : Theme.a(Theme.text, 0.4)
             // pulses while the switch is being applied
             property real pulse: 1

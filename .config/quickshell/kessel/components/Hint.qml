@@ -11,7 +11,7 @@ Rectangle {
     height: label.implicitHeight + 8
     radius: 8
     color: Theme.island
-    border.width: 1
+    border.width: Theme.borderWidth
     border.color: Theme.a(Theme.text, 0.12)
     z: 50
     Label { id: label; anchors.centerIn: parent; size: Theme.fontSmall - 0.5 }

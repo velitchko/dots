@@ -16,7 +16,7 @@ Rectangle {
     implicitHeight: 58
     radius: Theme.radiusCard
     color: active ? Theme.a(tint, 0.2) : (ma.containsMouse ? Theme.cardHi : Theme.card)
-    border.width: active ? 1 : 0
+    border.width: active ? Theme.borderWidth : 0
     border.color: Theme.a(tint, 0.6)
     Behavior on color { ColorAnimation { duration: Theme.fadeMs } }
 

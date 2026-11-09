@@ -48,7 +48,7 @@ PanelBase {
                 width: 104; height: 110
                 radius: 22
                 color: isArmed ? Theme.a(Theme.red, 0.25) : (root.sel === index || ma.containsMouse ? Theme.cardHi : Theme.card)
-                border.width: root.sel === index ? 1 : 0
+                border.width: root.sel === index ? Theme.borderWidth : 0
                 border.color: isArmed ? Theme.red : Theme.a(Theme.accent, 0.6)
                 Behavior on color { ColorAnimation { duration: Theme.fadeMs } }
                 // Labels are held to the card's width (centred, wrapping): the old

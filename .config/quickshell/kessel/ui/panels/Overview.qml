@@ -59,7 +59,7 @@ PanelBase {
                     radius: 10
                     color: drop.containsDrag ? Theme.a(Theme.accent, 0.18) : Theme.card
                     // border drawn by an overlay above the window previews (below)
-                    readonly property real borderW: root.sel === ws.index || Hypr.focusedId === ws.wsId ? 2 : 1
+                    readonly property real borderW: root.sel === ws.index || Hypr.focusedId === ws.wsId ? Theme.borderWidth * 2 : Theme.borderWidth
                     readonly property color borderC: root.sel === ws.index ? Theme.accent
                         : Hypr.focusedId === ws.wsId ? Theme.a(Theme.accent, 0.5) : Theme.a(Theme.text, 0.06)
 
@@ -97,7 +97,7 @@ PanelBase {
                                 height: Math.max(10, (ipc?.size?.[1] ?? 80) * root.k)
                                 radius: 4
                                 color: Theme.overlay
-                                border.width: wma.containsMouse ? 1 : 0
+                                border.width: wma.containsMouse ? Theme.borderWidth : 0
                                 border.color: Theme.accent
                                 Drag.active: wma.drag.active
                                 Drag.hotSpot.x: width / 2

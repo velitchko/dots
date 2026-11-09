@@ -280,7 +280,7 @@ PanelBase {
                             // to spare for three pills that size).
                             width: Math.max(72, content.implicitWidth + 24); height: 32; radius: 16
                             color: on ? Theme.a(Theme.green, 0.2) : (pm.containsMouse ? Theme.cardHi : "transparent")
-                            border.width: on ? 1 : 0
+                            border.width: on ? Theme.borderWidth : 0
                             border.color: Theme.green
                             Row {
                                 id: content

@@ -242,7 +242,7 @@ PanelBase {
                     height: board.height
                     radius: Theme.radiusCard
                     color: drop.containsDrag ? Theme.a(Theme.accent, 0.12) : Theme.card
-                    border.width: drop.containsDrag ? 1 : 0
+                    border.width: drop.containsDrag ? Theme.borderWidth : 0
                     border.color: Theme.a(Theme.accent, 0.6)
 
                     Row {
@@ -285,7 +285,7 @@ PanelBase {
                             height: Math.max(40, (editing ? editInput.implicitHeight : cardText.implicitHeight) + 20)
                             radius: 10
                             color: cma.containsMouse || editing ? Theme.cardHi : Theme.a(Theme.text, 0.05)
-                            border.width: 1
+                            border.width: Theme.borderWidth
                             border.color: Theme.a(Theme.text, 0.06)
                             opacity: colRect.colId === "done" ? 0.7 : 1
                             Drag.active: cma.drag.active

@@ -19,7 +19,7 @@ Rectangle {
     implicitHeight: Math.max(64, body.implicitHeight + 24)
     radius: Theme.radiusCard
     color: ma.containsMouse ? Theme.cardHi : (inList ? Theme.card : "transparent")
-    border.width: critical ? 1 : 0
+    border.width: critical ? Theme.borderWidth : 0
     border.color: Theme.red
 
     MouseArea {

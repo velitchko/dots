@@ -27,7 +27,7 @@ PanelBase {
                 readonly property bool on: root.tab === modelData.id
                 height: 26; width: tabLabel.implicitWidth + 22; radius: 13
                 color: on ? Theme.a(Theme.accent, 0.22) : (tabMa.containsMouse ? Theme.cardHi : "transparent")
-                border.width: on ? 1 : 0
+                border.width: on ? Theme.borderWidth : 0
                 border.color: Theme.a(Theme.accent, 0.6)
                 Label { id: tabLabel; anchors.centerIn: parent; text: modelData.label; size: Theme.fontSmall; font.bold: parent.on; color: parent.on ? Theme.accent : Theme.text }
                 MouseArea { id: tabMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.tab = parent.modelData.id }
@@ -116,7 +116,7 @@ PanelBase {
                         width: Math.max(height, inner.implicitWidth + 14)
                         radius: 7
                         color: Theme.a(Theme.text, Theme.dark ? 0.08 : 0.07)
-                        border.width: 1
+                        border.width: Theme.borderWidth
                         border.color: Theme.a(Theme.text, 0.10)
                         opacity: modelData.optional ? 0.55 : 1
                         anchors.verticalCenter: parent.verticalCenter

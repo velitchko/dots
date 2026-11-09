@@ -15,7 +15,7 @@ Rectangle {
     implicitHeight: 40
     radius: 12
     color: Theme.card
-    border.width: 1
+    border.width: Theme.borderWidth
     border.color: input.activeFocus ? Theme.a(Theme.accent, 0.6) : "transparent"
 
     Glyph { id: ic; text: root.icon; color: Theme.subtext; anchors.left: parent.left; anchors.leftMargin: 12; anchors.verticalCenter: parent.verticalCenter }

@@ -16,7 +16,7 @@ Rectangle {
     radius: height / 2
     // Opaque like the pill: tints are mixed into the island colour, never see-through.
     color: active ? Qt.tint(Theme.island, Theme.a(tint, 0.25)) : (ma.containsMouse ? Qt.tint(Theme.island, Theme.a(Theme.text, 0.08)) : Theme.island)
-    border.width: 1
+    border.width: Theme.borderWidth
     border.color: active ? Theme.a(tint, 0.7) : Theme.a(Theme.text, ma.containsMouse ? 0.14 : 0.06)
     Behavior on color { ColorAnimation { duration: Theme.fadeMs } }
 

@@ -30,7 +30,7 @@ Rectangle {
             width: 84; height: 48
             radius: 8
             color: Theme.overlay
-            border.width: active ? 2 : (ma.containsMouse ? 1 : 0)
+            border.width: active ? Theme.borderWidth * 2 : (ma.containsMouse ? Theme.borderWidth : 0)
             border.color: active ? Theme.a(Theme.accent, pulse) : Theme.a(Theme.text, 0.4)
             // pulses while the switch is being applied
             property real pulse: 1
