@@ -27,6 +27,15 @@ ShellRoot {
         ThemeFade { required property var modelData; screen: modelData }
     }
 
+    // AI chat: a real floating window, not a layer-shell panel -- constructed
+    // only on first SUPER+I, not at shell startup (WebEngine was ruled out
+    // entirely, but this still avoids paying for Python/subprocess machinery
+    // for a feature off by default).
+    LazyLoader {
+        active: AiChat.shown
+        AiChatWindow {}
+    }
+
     // Graceful quit (island.sh stop): give the windows a moment to drop focus
     // and unload panels, then exit normally.
     Timer {

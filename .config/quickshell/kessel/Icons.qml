@@ -45,6 +45,7 @@ Singleton {
     readonly property string chevronL:   g(0xF0141)
     readonly property string chevronR:   g(0xF0142)
     readonly property string settings:   g(0xF0493)
+    readonly property string send:       g(0xF0054)   // md-arrow_right_circle (same glyph verified working in the SDDM theme's login button)
 
     // devices / network / power
     readonly property string mic:        g(0xF036C)
