@@ -20,28 +20,18 @@ PanelWindow {
     visible: IslandState.shown
     anchors.top: true
     margins.top: Theme.islandMargin
-    // 1100 covers the pill (≤ ~800) + the two side buttons (gear, bell) alone.
-    // When the timer / privacy / updates pills ride along too, the chain can
-    // need more than that -- grow to fit them, same grow-now/shrink-later
-    // hysteresis as tallHeight below (a layer surface narrower than its own
-    // content hard-clips whatever pokes past the edge -- that's invisible,
-    // not just off-screen, since the surface itself ends there). Never wider
-    // than the screen: a layer surface wider than its output can't be
-    // centred (narrow / high-scale laptops).
-    readonly property real sideLeft: Theme.islandHeight + 8
-        + ((Timers.cdActive && !Alarm.ringing) ? timerPill.width + 8 : 0)
-    readonly property real sideRight: Theme.islandHeight + 8
-        + (Privacy.any ? privacyPill.width + 8 : 0)
-        + (Updates.count > 0 ? updatesPill.width + 8 : 0)
-    // +8: the exact sum leaves zero slack, and the surface rounds to whole
-    // device pixels while the QML layout above stays sub-pixel -- with no
-    // margin that rounding alone was enough to shave a sliver off the
-    // trailing edge, clipping it the same way an undersized total did.
-    readonly property real neededWidth: Math.max(Theme.islandHeight * 2, win.current.implicitWidth) + sideLeft + sideRight + 8
-    property real wideWidth: 1100
-    onNeededWidthChanged: { if (neededWidth > wideWidth) { widthShrinkTimer.stop(); wideWidth = neededWidth } else widthShrinkTimer.restart() }
-    Timer { id: widthShrinkTimer; interval: 900; onTriggered: win.wideWidth = Math.max(1100, win.neededWidth) }
-    implicitWidth: Math.min(wideWidth, screen ? screen.width : wideWidth)
+    // A tight sum of pill + side-chain widths kept drifting out of sync with
+    // reality (subpixel rounding past the exact total, and a QML gotcha: a
+    // property seeded with a plain initial value never sees an onXChanged
+    // for whatever X already held at creation, so a reload landing with the
+    // timer already running started undersized and let the pill overlap it
+    // until the next tick nudged the sum). A layer surface narrower than its
+    // content hard-clips whatever pokes past the edge -- invisible, not just
+    // off-screen -- so undersizing it is never safe. Blur isn't applied to
+    // this layer (see workspaces.lua's blur-fuzzel rule, the only one), so a
+    // surface sized to the full screen costs nothing extra to composite:
+    // just use all of it instead of re-deriving how much is "enough".
+    implicitWidth: screen ? screen.width : 1100
     // Keep the surface a small strip while resting (the compositor blurs behind the
     // whole surface every frame — expensive without a GPU). Grow at once when
     // something tall opens; shrink only after the closing spring has settled.
@@ -129,7 +119,7 @@ PanelWindow {
         width: Math.max(height, timerRow.implicitWidth + 24)
         radius: height / 2
         color: tma.containsMouse ? Qt.tint(Theme.island, Theme.a(Theme.purple, 0.22)) : Theme.island
-        border.width: 1
+        border.width: pill.border.width
         border.color: Theme.a(Theme.purple, tma.containsMouse ? 0.75 : 0.5)
         opacity: on ? 1 : 0
         visible: opacity > 0.01
@@ -176,7 +166,7 @@ PanelWindow {
         radius: height / 2
         // Same material as the island (opaque), tinted with the theme's error colour.
         color: Qt.tint(Theme.island, Theme.a(Theme.red, 0.16))
-        border.width: 1
+        border.width: pill.border.width
         border.color: Theme.a(Theme.red, 0.6)
         opacity: Privacy.any ? 1 : 0
         visible: opacity > 0.01
@@ -244,7 +234,7 @@ PanelWindow {
         radius: height / 2
         // Same material as the island (opaque), in the wallpaper accent.
         color: uma.containsMouse ? Qt.tint(Theme.island, Theme.a(Theme.accent, 0.22)) : Theme.island
-        border.width: 1
+        border.width: pill.border.width
         border.color: Theme.a(Theme.accent, uma.containsMouse ? 0.7 : 0.45)
         opacity: Updates.count > 0 ? 1 : 0
         visible: opacity > 0.01
