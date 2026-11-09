@@ -18,9 +18,10 @@ ColumnLayout {
     spacing: 14
 
     readonly property var providers: [
-        { id: "ollama", label: "Ollama (local)", needsKey: false },
-        { id: "anthropic", label: "Anthropic", needsKey: true },
-        { id: "openai", label: "OpenAI", needsKey: true }
+        { id: "ollama", label: "Ollama (local)", needsKey: false, needsUrl: false, optionalKey: false },
+        { id: "anthropic", label: "Anthropic", needsKey: true, needsUrl: false, optionalKey: false },
+        { id: "openai", label: "OpenAI", needsKey: true, needsUrl: false, optionalKey: false },
+        { id: "openai-compatible", label: "Local / self-hosted (OpenAI-compatible)", needsKey: false, needsUrl: true, optionalKey: true }
     ]
 
     Process {
@@ -76,20 +77,30 @@ ColumnLayout {
                     id: modelField
                     Layout.fillWidth: true
                     icon: ""
-                    placeholder: "Model name (e.g. " + (modelData.id === "ollama" ? "qwen2.5:0.5b" : modelData.id === "anthropic" ? "claude-sonnet-5-5" : "gpt-5") + ")"
+                    placeholder: "Model name (e.g. " + (modelData.id === "ollama" ? "qwen2.5:0.5b" : modelData.id === "anthropic" ? "claude-sonnet-5-5" : modelData.id === "openai" ? "gpt-5" : "whatever your server calls it") + ")"
                     text: active ? AiChat.model : ""
                     onAccepted: { AiChat.provider = modelData.id; AiChat.model = text }
                 }
 
+                SearchField {
+                    id: urlField
+                    visible: modelData.needsUrl
+                    Layout.fillWidth: true
+                    icon: ""
+                    placeholder: "Base URL (e.g. http://localhost:8080/v1/chat/completions)"
+                    text: active ? AiChat.baseUrl : ""
+                    onAccepted: { AiChat.provider = modelData.id; AiChat.baseUrl = text }
+                }
+
                 RowLayout {
-                    visible: modelData.needsKey
+                    visible: modelData.needsKey || modelData.optionalKey
                     Layout.fillWidth: true
                     spacing: 8
                     SearchField {
                         id: keyField
                         Layout.fillWidth: true
                         icon: ""
-                        placeholder: "API key"
+                        placeholder: modelData.optionalKey ? "API key (optional -- most local servers don't need one)" : "API key"
                         input.echoMode: TextInput.Password
                     }
                     Label {

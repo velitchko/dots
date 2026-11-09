@@ -15,6 +15,7 @@ Singleton {
     property bool shown: false
     property string provider: "ollama"
     property string model: ""
+    property string baseUrl: ""   // only used when provider === "openai-compatible"
     property var messages: []     // [{role, content, html, provider, ts}]
     property bool streaming: false
 
@@ -36,6 +37,7 @@ Singleton {
         root.streaming = true
         sendProcess.payload = JSON.stringify(payload)
         sendProcess.command = ["python3", root.scriptPath, "--provider", root.provider, "--model", root.model]
+            .concat(root.provider === "openai-compatible" ? ["--base-url", root.baseUrl] : [])
         sendProcess.running = true
     }
 

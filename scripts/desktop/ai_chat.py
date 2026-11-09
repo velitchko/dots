@@ -216,23 +216,21 @@ def stream_anthropic(*, model, messages):
     yield {"done": True}
 
 
-def stream_openai(*, model, messages):
-    key = get_key("openai")
-    if key is None:
-        yield {"error": "No API key configured for openai — add one in Settings"}
+def stream_openai(*, model, messages, base_url="https://api.openai.com/v1/chat/completions", key_provider="openai", require_key=True):
+    key = get_key(key_provider)
+    if key is None and require_key:
+        yield {"error": f"No API key configured for {key_provider} — add one in Settings"}
         return
+    headers = {"content-type": "application/json"}
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
     try:
-        response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={"Authorization": f"Bearer {key}", "content-type": "application/json"},
-            json={"model": model, "messages": messages, "stream": True},
-            stream=True,
-        )
+        response = requests.post(base_url, headers=headers, json={"model": model, "messages": messages, "stream": True}, stream=True)
     except requests.ConnectionError:
-        yield {"error": "Could not reach the OpenAI API"}
+        yield {"error": f"Could not reach {base_url}"}
         return
     if response.status_code != 200:
-        yield {"error": f"OpenAI API error ({response.status_code}): {response.text[:200]}"}
+        yield {"error": f"API error ({response.status_code}): {response.text[:200]}"}
         return
     for line in response.iter_lines(decode_unicode=True):
         if not line or not line.startswith("data: "):
@@ -248,13 +246,21 @@ def stream_openai(*, model, messages):
     yield {"done": True}
 
 
-PROVIDERS = {"ollama": stream_ollama, "anthropic": stream_anthropic, "openai": stream_openai}
+def stream_openai_compatible(*, model, messages, base_url):
+    """Self-hosted/local server speaking the OpenAI chat-completions format
+    (llama.cpp, LM Studio, vLLM, text-generation-webui, ...). A key is
+    optional -- most local servers don't check one -- not required."""
+    yield from stream_openai(model=model, messages=messages, base_url=base_url, key_provider="openai-compatible", require_key=False)
+
+
+PROVIDERS = {"ollama": stream_ollama, "anthropic": stream_anthropic, "openai": stream_openai, "openai-compatible": stream_openai_compatible}
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--provider", choices=sorted(PROVIDERS))
     parser.add_argument("--model")
+    parser.add_argument("--base-url", help="required for --provider openai-compatible")
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--store-key", metavar="PROVIDER")
     parser.add_argument("--delete-key", metavar="PROVIDER")
@@ -274,7 +280,10 @@ def main():
 
     if args.provider:
         messages = json.loads(sys.stdin.read())
-        for chunk in PROVIDERS[args.provider](model=args.model, messages=messages):
+        kwargs = {"model": args.model, "messages": messages}
+        if args.provider == "openai-compatible":
+            kwargs["base_url"] = args.base_url
+        for chunk in PROVIDERS[args.provider](**kwargs):
             print(json.dumps(chunk), flush=True)
         return
 

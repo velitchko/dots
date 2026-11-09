@@ -114,3 +114,30 @@ def test_delete_key_calls_secret_tool_clear(monkeypatch):
     monkeypatch.setattr(sp, "run", lambda args, **k: captured.setdefault("args", args) or sp.CompletedProcess(args, 0, "", ""))
     ai_chat.delete_key("anthropic")
     assert captured["args"][:2] == ["secret-tool", "clear"]
+
+
+def test_openai_compatible_hits_custom_url_without_requiring_a_key(monkeypatch):
+    import ai_chat, requests as req
+
+    class FakeResponse:
+        status_code = 200
+        def iter_lines(self, decode_unicode=False):
+            yield 'data: {"choices":[{"delta":{"content":"hi"}}]}'
+            yield 'data: [DONE]'
+
+    captured = {}
+    def fake_post(url, **kwargs):
+        captured["url"] = url
+        captured["headers"] = kwargs.get("headers", {})
+        return FakeResponse()
+
+    monkeypatch.setattr(req, "post", fake_post)
+    monkeypatch.setattr(ai_chat, "get_key", lambda provider: None)
+    chunks = list(ai_chat.stream_openai_compatible(
+        model="local-model",
+        messages=[{"role": "user", "content": "hi"}],
+        base_url="http://localhost:8080/v1/chat/completions",
+    ))
+    assert captured["url"] == "http://localhost:8080/v1/chat/completions"
+    assert "Authorization" not in captured["headers"]
+    assert any(c.get("delta") == "hi" for c in chunks)
