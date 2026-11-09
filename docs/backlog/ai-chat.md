@@ -1,6 +1,9 @@
 # AI chat panel
 
-> Tracked as issue #2 in this repo's tracker.
+> Tracked as issue #2 in this repo's tracker. **Shipped** — see
+> `docs/superpowers/specs/2026-11-09-ai-chat-panel-design.md` and the
+> commits on `main` from that date. Kept here as a record of the original
+> ask and the decisions made building it, not as an open item.
 
 **Type:** feature · **Priority:** maybe later
 
@@ -14,6 +17,6 @@ A floating/hovering chat window, opened with a dedicated keybind (candidate: `SU
 - Off by default. No network traffic unless a provider is explicitly configured.
 - Short history kept in `~/.local/state/kessel/ai/`
 
-**Resolved:** this is a standalone panel, not folded into the launcher's input. Subscription auth is out of scope (see above) — API keys + local/self-hosted models only.
+**Resolved:** this is a standalone panel, not folded into the launcher's input. Subscription auth is out of scope (see above) — API keys + local/self-hosted models only. Keybind: `SUPER + I`. Syntax-highlighted code and real LaTeX math both shipped (server-side, via python-markdown/pygments/matplotlib — no browser engine; a `WebEngineView` spike crashed Quickshell outright, see the design doc).
 
-**Open questions:** which local models are realistic on a laptop without a GPU; exact keybind.
+**Open questions, as of shipping:** which local models are realistic on a laptop without a GPU is still genuinely open — tested against `qwen2.5:0.5b` only.
