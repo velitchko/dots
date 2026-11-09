@@ -87,6 +87,35 @@ def _extract_math(prose_text, text_color, math_dir):
     return MATH_INLINE_RE.sub(replace_math, prose_text), placeholders
 
 
+def _strip_unsafe_images(rendered_html, math_dir):
+    """Only let through <img> tags this module itself generated (a file://
+    path under math_dir). Markdown's native ![alt](url) syntax turns into a
+    real <img src="..."> during md.convert() -- *after* the prose-escaping
+    pass below, so html.escape() never sees it -- and Qt's Text.RichText
+    auto-fetches an <img src> on render with no user interaction. A model's
+    own response (remote API or a message that echoes back untrusted text)
+    could otherwise embed a tracking-pixel URL and silently exfiltrate to
+    it, violating "no network call the user hasn't configured"."""
+    safe_prefix = "file://" + math_dir
+
+    def strip(m):
+        return m.group(0) if m.group(1).startswith(safe_prefix) else ""
+
+    return re.sub(r'<img\b[^>]*\bsrc="([^"]*)"[^>]*/?>', strip, rendered_html)
+
+
+def _neutralize_unsafe_links(rendered_html):
+    """Only http(s) link targets stay clickable; javascript:/data:/file:/
+    other schemes get their href dropped rather than left live."""
+    def neutralize(m):
+        href = m.group(1)
+        if href.startswith("http://") or href.startswith("https://"):
+            return m.group(0)
+        return m.group(0).replace(f'href="{href}"', 'href="#"')
+
+    return re.sub(r'<a\b[^>]*\bhref="([^"]*)"[^>]*>', neutralize, rendered_html)
+
+
 def render_markdown(text, *, text_color="#e8e8e8", math_dir):
     """Convert a model response to Qt Text.RichText-safe HTML: markdown,
     pygments-highlighted fenced code, and matplotlib-rendered math images.
@@ -109,6 +138,8 @@ def render_markdown(text, *, text_color="#e8e8e8", math_dir):
         extension_configs={"codehilite": {"noclasses": True, "pygments_style": "monokai"}},
     )
     rendered = md.convert(with_code)
+    rendered = _strip_unsafe_images(rendered, math_dir)
+    rendered = _neutralize_unsafe_links(rendered)
 
     for key, img_html in math_html.items():
         rendered = rendered.replace(key, img_html)
