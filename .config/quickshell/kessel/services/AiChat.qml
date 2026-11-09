@@ -19,6 +19,11 @@ Singleton {
     property var providerModels: ({})   // { "ollama": "qwen2.5:0.5b", ... }
     readonly property string model: root.providerModels[root.provider] || ""
     property string baseUrl: ""   // only used when provider === "openai-compatible"
+    // Defaults to a shell/Arch assistant persona (this machine's default
+    // shell is fish, per AGENTS.md's own validation commands) -- tuned for
+    // a small local model, which needs more steering to stay terse and
+    // correct than a frontier one does. Editable in Settings either way.
+    property string systemPrompt: "You are a terminal assistant for Arch Linux, specializing in Bash and Fish shell scripting. Give direct, correct, copy-pasteable commands with minimal preamble. Prefer pacman/official repos over AUR unless the user needs an AUR package, and say so when it's AUR. Match the user's shell when they specify one; otherwise assume fish, this system's default. Briefly explain any non-obvious flag. Clearly flag destructive commands (rm -rf, dd, mkfs, etc.) before giving them."
     property bool streaming: false
 
     // Sessions: separate named threads, switchable/creatable/deletable. There
@@ -45,6 +50,7 @@ Singleton {
         root.saveSettings()
     }
     function setBaseUrl(url) { root.baseUrl = url; root.saveSettings() }
+    function setSystemPrompt(text) { root.systemPrompt = text; root.saveSettings() }
     function setProvider(p) { root.provider = p; root.saveSettings() }
 
     function _newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8) }
@@ -55,7 +61,7 @@ Singleton {
     function ensureSession() {
         if (root.sessions.length === 0) {
             const id = root._newId()
-            root.sessions = [{ id: id, name: "New chat", messages: [] }]
+            root.sessions = [{ id: id, name: root.defaultSessionName, messages: [] }]
             root.activeSessionId = id
         } else if (!root.sessions.some(s => s.id === root.activeSessionId)) {
             root.activeSessionId = root.sessions[0].id
@@ -64,7 +70,7 @@ Singleton {
 
     function newSession(name) {
         const id = root._newId()
-        root.sessions = root.sessions.concat([{ id: id, name: (name || "").trim() || "New chat", messages: [] }])
+        root.sessions = root.sessions.concat([{ id: id, name: (name || "").trim() || root.defaultSessionName, messages: [] }])
         root.activeSessionId = id
         root.saveHistory()
     }
@@ -106,8 +112,21 @@ Singleton {
         root.sessions = sess
     }
 
+    // "New chat" is the only name a session ever gets automatically, so it's
+    // also the only one safe to silently overwrite -- anything else means
+    // the person (or an earlier call to this) already named it on purpose.
+    readonly property string defaultSessionName: "New chat"
+
+    function _autoTitle(firstMessage) {
+        const oneLine = firstMessage.trim().split("\n")[0]
+        return oneLine.length > 40 ? oneLine.slice(0, 40).trim() + "…" : oneLine
+    }
+
     function send(text) {
         if (root.streaming || text.trim() === "") return
+        if (root.messages.length === 0 && root.activeSession && root.activeSession.name === root.defaultSessionName) {
+            root.renameSession(root.activeSessionId, root._autoTitle(text))
+        }
         // Error turns were never a real assistant reply, and an empty turn
         // (a reply that produced no deltas before erroring, or a stream
         // still being rebuilt) makes some providers reject every later
@@ -117,14 +136,15 @@ Singleton {
             .map(m => ({ role: m.role, content: m.content }))
         payload.push({ role: "user", content: text })
         root._setMessages(root.messages.concat([
-            { role: "user", content: text, html: "", provider: root.provider, ts: Date.now() },
-            { role: "assistant", content: "", html: "", provider: root.provider, ts: Date.now() }
+            { role: "user", content: text, html: "", provider: root.provider, model: root.model, ts: Date.now() },
+            { role: "assistant", content: "", html: "", provider: root.provider, model: root.model, ts: Date.now() }
         ]))
         root.streaming = true
         sendProcess.gotFinalChunk = false
         sendProcess.payload = JSON.stringify(payload)
         sendProcess.command = ["python3", root.scriptPath, "--provider", root.provider, "--model", root.model]
             .concat(root.provider === "openai-compatible" ? ["--base-url", root.baseUrl] : [])
+            .concat(root.systemPrompt.trim() !== "" ? ["--system-prompt", root.systemPrompt] : [])
         sendProcess.running = true
     }
 
@@ -247,11 +267,12 @@ Singleton {
             root.provider = s.provider || "ollama"
             root.providerModels = s.providerModels || {}
             root.baseUrl = s.baseUrl || ""
+            if (s.systemPrompt !== undefined) root.systemPrompt = s.systemPrompt
         } catch (e) { /* defaults already set */ }
     }
 
     function saveSettings() {
-        settingsFile.setText(JSON.stringify({ provider: root.provider, providerModels: root.providerModels, baseUrl: root.baseUrl }))
+        settingsFile.setText(JSON.stringify({ provider: root.provider, providerModels: root.providerModels, baseUrl: root.baseUrl, systemPrompt: root.systemPrompt }))
     }
 
     Component.onCompleted: {

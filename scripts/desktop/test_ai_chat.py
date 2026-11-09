@@ -241,6 +241,64 @@ def test_requests_have_a_timeout(monkeypatch):
     assert captured and all("timeout" in k for k in captured)
 
 
+def test_ollama_system_prompt_is_prepended_as_a_message(monkeypatch):
+    import ai_chat, requests as req
+    captured = {}
+
+    class FakeResponse:
+        status_code = 200
+        def iter_lines(self, decode_unicode=False):
+            return iter([])
+
+    def fake_post(url, **kwargs):
+        captured["json"] = kwargs["json"]
+        return FakeResponse()
+
+    monkeypatch.setattr(req, "post", fake_post)
+    list(ai_chat.stream_ollama(model="x", messages=[{"role": "user", "content": "hi"}], system_prompt="be terse"))
+    assert captured["json"]["messages"][0] == {"role": "system", "content": "be terse"}
+
+
+def test_anthropic_system_prompt_uses_dedicated_field_not_a_message(monkeypatch):
+    # Anthropic's Messages API rejects a "system" role inside the messages
+    # array -- it's a separate top-level parameter.
+    import ai_chat, requests as req
+    monkeypatch.setattr(ai_chat, "get_key", lambda p: "fake-key")
+    captured = {}
+
+    class FakeResponse:
+        status_code = 200
+        def iter_lines(self, decode_unicode=False):
+            return iter([])
+
+    def fake_post(url, **kwargs):
+        captured["json"] = kwargs["json"]
+        return FakeResponse()
+
+    monkeypatch.setattr(req, "post", fake_post)
+    list(ai_chat.stream_anthropic(model="x", messages=[{"role": "user", "content": "hi"}], system_prompt="be terse"))
+    assert captured["json"]["system"] == "be terse"
+    assert all(m.get("role") != "system" for m in captured["json"]["messages"])
+
+
+def test_no_system_prompt_means_no_system_field_or_message(monkeypatch):
+    import ai_chat, requests as req
+    captured = {}
+
+    class FakeResponse:
+        status_code = 200
+        def iter_lines(self, decode_unicode=False):
+            return iter([])
+
+    def fake_post(url, **kwargs):
+        captured["json"] = kwargs["json"]
+        return FakeResponse()
+
+    monkeypatch.setattr(req, "post", fake_post)
+    list(ai_chat.stream_ollama(model="x", messages=[{"role": "user", "content": "hi"}]))
+    assert captured["json"]["messages"][0]["role"] == "user"
+
+
 def test_openai_compatible_hits_custom_url_without_requiring_a_key(monkeypatch):
     import ai_chat, requests as req
 

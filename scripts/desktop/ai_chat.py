@@ -241,7 +241,9 @@ def render_mode(text):
     return json.dumps({"html": render_markdown(text, math_dir=math_dir)})
 
 
-def stream_ollama(*, model, messages):
+def stream_ollama(*, model, messages, system_prompt=None):
+    if system_prompt:
+        messages = [{"role": "system", "content": system_prompt}] + list(messages)
     try:
         response = requests.post(
             "http://localhost:11434/api/chat",
@@ -272,11 +274,16 @@ def stream_ollama(*, model, messages):
             return
 
 
-def stream_anthropic(*, model, messages):
+def stream_anthropic(*, model, messages, system_prompt=None):
     key = get_key("anthropic")
     if key is None:
         yield {"error": "No API key configured for anthropic — add one in Settings"}
         return
+    body = {"model": model, "max_tokens": 4096, "messages": messages, "stream": True}
+    if system_prompt:
+        # Anthropic's Messages API takes this as its own top-level field, not
+        # a {"role": "system"} entry in messages (which it rejects outright).
+        body["system"] = system_prompt
     try:
         response = requests.post(
             "https://api.anthropic.com/v1/messages",
@@ -285,7 +292,7 @@ def stream_anthropic(*, model, messages):
                 "anthropic-version": "2023-06-01",
                 "content-type": "application/json",
             },
-            json={"model": model, "max_tokens": 4096, "messages": messages, "stream": True},
+            json=body,
             stream=True, timeout=(10, 120),
         )
     except requests.ConnectionError:
@@ -314,11 +321,13 @@ def stream_anthropic(*, model, messages):
     yield {"done": True}
 
 
-def stream_openai(*, model, messages, base_url="https://api.openai.com/v1/chat/completions", key_provider="openai", require_key=True):
+def stream_openai(*, model, messages, base_url="https://api.openai.com/v1/chat/completions", key_provider="openai", require_key=True, system_prompt=None):
     key = get_key(key_provider)
     if key is None and require_key:
         yield {"error": f"No API key configured for {key_provider} — add one in Settings"}
         return
+    if system_prompt:
+        messages = [{"role": "system", "content": system_prompt}] + list(messages)
     headers = {"content-type": "application/json"}
     if key:
         headers["Authorization"] = f"Bearer {key}"
@@ -350,11 +359,11 @@ def stream_openai(*, model, messages, base_url="https://api.openai.com/v1/chat/c
     yield {"done": True}
 
 
-def stream_openai_compatible(*, model, messages, base_url):
+def stream_openai_compatible(*, model, messages, base_url, system_prompt=None):
     """Self-hosted/local server speaking the OpenAI chat-completions format
     (llama.cpp, LM Studio, vLLM, text-generation-webui, ...). A key is
     optional -- most local servers don't check one -- not required."""
-    yield from stream_openai(model=model, messages=messages, base_url=base_url, key_provider="openai-compatible", require_key=False)
+    yield from stream_openai(model=model, messages=messages, base_url=base_url, key_provider="openai-compatible", require_key=False, system_prompt=system_prompt)
 
 
 PROVIDERS = {"ollama": stream_ollama, "anthropic": stream_anthropic, "openai": stream_openai, "openai-compatible": stream_openai_compatible}
@@ -379,6 +388,7 @@ def main():
     parser.add_argument("--provider", choices=sorted(PROVIDERS))
     parser.add_argument("--model")
     parser.add_argument("--base-url", help="required for --provider openai-compatible")
+    parser.add_argument("--system-prompt")
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--store-key", metavar="PROVIDER")
     parser.add_argument("--delete-key", metavar="PROVIDER")
@@ -401,6 +411,8 @@ def main():
         kwargs = {"model": args.model, "messages": messages}
         if args.provider == "openai-compatible":
             kwargs["base_url"] = args.base_url
+        if args.system_prompt:
+            kwargs["system_prompt"] = args.system_prompt
         for chunk in _safe_stream(PROVIDERS[args.provider](**kwargs)):
             print(json.dumps(chunk), flush=True)
         return

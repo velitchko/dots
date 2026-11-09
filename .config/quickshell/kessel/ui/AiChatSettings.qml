@@ -45,6 +45,66 @@ ColumnLayout {
         keyProcess.running = true
     }
 
+    // Global, not per-provider: the same persona applies regardless of which
+    // model answers it, though it matters most for a small local model (a
+    // frontier one needs far less steering to stay terse and correct).
+    Rectangle {
+        Layout.fillWidth: true
+        implicitHeight: promptBody.implicitHeight + 24
+        radius: Theme.radiusCard
+        color: Theme.card
+
+        ColumnLayout {
+            id: promptBody
+            anchors.fill: parent
+            anchors.margins: 12
+            spacing: 8
+
+            Label { text: "System prompt"; font.bold: true }
+            Label {
+                text: "Sent with every request, regardless of provider. Shapes tone and defaults -- most useful for a small local model, which needs more steering than a frontier one to stay terse and correct."
+                color: Theme.subtext
+                size: Theme.fontSmall
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 110
+                radius: 12
+                color: Theme.cardHi
+                border.width: Theme.borderWidth
+                border.color: promptInput.activeFocus ? Theme.a(Theme.accent, 0.6) : "transparent"
+                clip: true
+
+                ScrollView {
+                    anchors.fill: parent
+                    anchors.margins: 8
+                    TextArea {
+                        id: promptInput
+                        text: AiChat.systemPrompt
+                        color: Theme.text
+                        font.family: Theme.font
+                        font.pointSize: Theme.fontUi
+                        wrapMode: Text.Wrap
+                        background: null
+                        onEditingFinished: AiChat.setSystemPrompt(text)
+                    }
+                }
+            }
+            Label {
+                text: "Clear"
+                color: Theme.subtext
+                size: Theme.fontSmall
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: { promptInput.text = ""; AiChat.setSystemPrompt("") }
+                }
+            }
+        }
+    }
+
     Repeater {
         model: root.providers
         delegate: Rectangle {

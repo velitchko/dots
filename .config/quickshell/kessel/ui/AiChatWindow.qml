@@ -8,6 +8,7 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell.Widgets
 import ".."
 import "../services"
 import "../components"
@@ -15,8 +16,8 @@ import "../components"
 Window {
     id: win
     title: "Kessel AI Chat"
-    width: 480
-    height: 640
+    width: 680
+    height: 820
     minimumWidth: 360
     minimumHeight: 420
     visible: AiChat.shown
@@ -66,8 +67,15 @@ Window {
             // header
             RowLayout {
                 Layout.fillWidth: true
+                spacing: 8
+                Label { text: "✨"; visible: !win.showSettings && !win.showSessions; size: Theme.fontUi + 1 }
                 Label {
-                    text: win.showSettings ? "Settings" : win.showSessions ? "Sessions" : (AiChat.activeSession ? AiChat.activeSession.name : "AI Chat")
+                    // the session's real name once it has one (auto-titled from
+                    // the first message, or renamed by hand) -- "New chat" is
+                    // just the placeholder before that happens, not worth
+                    // stating out loud when it's the obvious default state
+                    text: win.showSettings ? "Settings" : win.showSessions ? "Sessions"
+                        : (AiChat.activeSession && AiChat.activeSession.name !== AiChat.defaultSessionName) ? AiChat.activeSession.name : "Intelligence"
                     font.bold: true
                     size: Theme.fontUi + 1
                     Layout.fillWidth: true
@@ -133,7 +141,43 @@ Window {
 
                         RowLayout {
                             Layout.fillWidth: true
-                            Label { text: modelData.role === "user" ? "You" : modelData.provider; color: Theme.subtext; size: Theme.fontSmall; Layout.fillWidth: true }
+                            spacing: 6
+                            // user: their own ~/.face if set (same source the lock
+                            // screen and SDDM theme already use), else a plain
+                            // initial. assistant: a robot glyph -- a real emoji
+                            // doesn't carry the "verify against glyphnames.json"
+                            // risk a Nerd Font codepoint would, it's a standard
+                            // widely-supported Unicode character.
+                            Item {
+                                width: 18; height: 18
+                                visible: modelData.role === "user"
+                                ClippingRectangle {
+                                    anchors.fill: parent
+                                    radius: width / 2
+                                    color: Theme.overlay
+                                    visible: User.hasFace
+                                    Image {
+                                        anchors.fill: parent
+                                        source: User.hasFace ? "file://" + User.face : ""
+                                        fillMode: Image.PreserveAspectCrop
+                                        asynchronous: true
+                                    }
+                                }
+                                Label {
+                                    anchors.centerIn: parent
+                                    visible: !User.hasFace
+                                    text: User.name.charAt(0).toUpperCase()
+                                    size: Theme.fontSmall
+                                    color: Theme.subtext
+                                }
+                            }
+                            Label { text: "🤖"; visible: modelData.role !== "user"; size: Theme.fontSmall }
+                            Label {
+                                text: modelData.role === "user" ? User.name : "ai (" + (modelData.model || modelData.provider) + ")"
+                                color: Theme.subtext
+                                size: Theme.fontSmall
+                                Layout.fillWidth: true
+                            }
                             IconButton {
                                 icon: Icons.clipboard
                                 size: 22
