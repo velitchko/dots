@@ -12,9 +12,15 @@
 #   /usr/share/sddm/faces/$USER.face.icon avatar (from ~/.face, if present)
 #   /etc/sddm.conf.d/10-kessel.conf       [Theme] Current=kessel (+ cursor), and on HiDPI
 #                                         [General] GreeterEnvironment=QT_SCALE_FACTOR=<Hyprland's scale>
-# Existing files are backed up to /etc/sddm.conf.d/*.kessel-bak-<ts> first.
+#   /etc/sddm.conf                        [Theme] Current=kessel, only if the key is already
+#                                         present — some SDDM builds let this file outrank
+#                                         /etc/sddm.conf.d/*.conf (seen on 0.21: a theme
+#                                         installed outside these dots had left Current=
+#                                         pointed elsewhere here, and it silently won)
+# Existing files are backed up to *.kessel-bak-<ts> first.
 # Recovery over SSH if the login screen ever misbehaves:
 #   sudo rm /etc/sddm.conf.d/10-kessel.conf   (takes effect at the next greeter start)
+#   also check /etc/sddm.conf's [Theme] Current= — it can override the above
 set -euo pipefail
 repo="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
 source "$repo/installer/common.sh"
@@ -67,6 +73,7 @@ case $cmd in
             sed -i "s|^fingerprint=.*|fingerprint=true|" "$tmp/theme.conf"; ok "fingerprint login: on"
         fi
         run sudo install -d -m 755 "$dest"
+        run sudo rm -f "$dest"/background.*   # prune a stale one left by cp -r if the extension changed
         run sudo cp -r "$tmp/." "$dest/"
         run sudo chmod -R a+rX "$dest"
         if [[ -s $HOME/.face ]]; then
@@ -100,10 +107,24 @@ case $cmd in
         else
             printf '# written by ~/Scripts/sddm-theme.sh — remove to restore the default theme\n%s[Theme]\nCurrent=kessel\n%s\n' "$general" "$cursor" | sudo tee "$conf" >/dev/null
         fi
+        # /etc/sddm.conf can outrank /etc/sddm.conf.d/*.conf on some SDDM builds.
+        # Only touch it if it already has a Current= line (e.g. a theme installed
+        # outside these dots left one there) — don't create or otherwise edit the
+        # file, and never touch any key besides Current=.
+        if grep -q '^Current=' /etc/sddm.conf 2>/dev/null && ! grep -q '^Current=kessel$' /etc/sddm.conf; then
+            run sudo cp -a /etc/sddm.conf "/etc/sddm.conf.kessel-bak-$ts"
+            run sudo sed -i 's/^Current=.*/Current=kessel/' /etc/sddm.conf
+            ok "/etc/sddm.conf: Current=kessel (was overriding the conf.d selection)"
+        fi
         ok "selected; you'll see it at the next login screen (log out, or reboot)" ;;
     uninstall)
         step "Remove SDDM theme"
         if [[ -e $conf ]]; then run sudo mv "$conf" "$conf.kessel-bak-$ts"; ok "deselected (kept as $conf.kessel-bak-$ts)"; else info "$conf not present"; fi
+        if grep -q '^Current=kessel$' /etc/sddm.conf 2>/dev/null; then
+            run sudo cp -a /etc/sddm.conf "/etc/sddm.conf.kessel-bak-$ts"
+            run sudo sed -i 's/^Current=kessel$/Current=/' /etc/sddm.conf
+            ok "/etc/sddm.conf: cleared Current="
+        fi
         run sudo rm -rf "$dest"
         ok "SDDM falls back to its default theme" ;;
     *) sed -n '3,19p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
