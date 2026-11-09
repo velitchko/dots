@@ -59,48 +59,43 @@ View {
     QtObject {
         id: progressGeo
         readonly property int inset: 2
-        readonly property int arcSteps: 6
+        readonly property int arcSamples: 6   // points per quarter-circle
+        // Fixed point count regardless of progress: samples beyond the
+        // current progress just collapse onto the frontier point instead of
+        // being dropped, so the polyline's length never changes frame to
+        // frame (a changing point count was tripping an occasional
+        // CurveRenderer tessellation glitch -- a stray line flashing in).
         function build(w, h, progress) {
             const r = h / 2, reff = r - inset
-            const cyL = h / 2
+            const cy = h / 2
             const arcLen = reff * Math.PI / 2, flatLen = Math.max(0, w - 2 * r)
             const total = 2 * arcLen + flatLen
             const target = Math.max(0, Math.min(1, progress)) * total
+            function at(len) {
+                len = Math.min(len, target)
+                if (len <= arcLen) {
+                    const t = (270 - 90 * len / arcLen) * Math.PI / 180
+                    return Qt.point(r + reff * Math.cos(t), cy + reff * Math.sin(t))
+                }
+                len -= arcLen
+                if (len <= flatLen) return Qt.point(r + len, h - inset)
+                len -= flatLen
+                const t = (270 + 90 * len / arcLen) * Math.PI / 180
+                return Qt.point(w - r + reff * Math.cos(t), cy + reff * Math.sin(t))
+            }
             const pts = []
-            // left cap: sweep 270° (bottom of arc) → 180° (leftmost point)
-            for (let i = 0; i <= arcSteps; i++) {
-                const len = i / arcSteps * arcLen
-                if (len > target) break
-                const t = (270 - 90 * i / arcSteps) * Math.PI / 180
-                pts.push(Qt.point(r + reff * Math.cos(t), cyL + reff * Math.sin(t)))
-            }
-            if (target <= arcLen) {
-                const t = (270 - 90 * target / arcLen) * Math.PI / 180
-                pts.push(Qt.point(r + reff * Math.cos(t), cyL + reff * Math.sin(t)))
-                return pts
-            }
-            // flat run along the bottom edge
-            const flatTarget = Math.min(flatLen, target - arcLen)
-            pts.push(Qt.point(r, h - inset), Qt.point(r + flatTarget, h - inset))
-            if (target <= arcLen + flatLen) return pts
-            // right cap: sweep 270° → 360°(0°), mirroring the left cap
-            const rightTarget = target - arcLen - flatLen
-            const cxR = w - r
-            for (let i = 0; i <= arcSteps; i++) {
-                const len = i / arcSteps * arcLen
-                if (len > rightTarget) break
-                const t = (270 + 90 * i / arcSteps) * Math.PI / 180
-                pts.push(Qt.point(cxR + reff * Math.cos(t), cyL + reff * Math.sin(t)))
-            }
-            const t = (270 + 90 * rightTarget / arcLen) * Math.PI / 180
-            pts.push(Qt.point(cxR + reff * Math.cos(t), cyL + reff * Math.sin(t)))
+            for (let i = 0; i <= arcSamples; i++) pts.push(at(i / arcSamples * arcLen))
+            pts.push(at(arcLen + flatLen))
+            for (let i = 1; i <= arcSamples; i++) pts.push(at(arcLen + flatLen + i / arcSamples * arcLen))
             return pts
         }
     }
     Shape {
         anchors.fill: parent
         visible: root.cur === music && Media.length > 0
-        preferredRendererType: Shape.CurveRenderer
+        // A polyline of straight segments, not true bezier curves: the
+        // GeometryRenderer default is the right (and more stable) fit, not
+        // CurveRenderer (meant for smooth curve primitives like PathArc/Cubic).
         property real animatedProgress: Media.progress
         Behavior on animatedProgress { NumberAnimation { duration: 900 } }
         ShapePath {
