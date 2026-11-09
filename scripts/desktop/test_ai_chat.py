@@ -178,6 +178,69 @@ def test_javascript_link_href_is_neutralized(tmp_path):
     assert "javascript:" not in html
 
 
+def test_safe_stream_catches_mid_stream_exception():
+    # a dropped connection, a malformed JSON line, anything -- must end the
+    # stream with a final error chunk, not raise out of main() and leave
+    # the QML side's `streaming` flag (and disabled input) stuck forever.
+    import ai_chat
+
+    def flaky():
+        yield {"delta": "partial"}
+        raise ConnectionError("boom")
+
+    chunks = list(ai_chat._safe_stream(flaky()))
+    assert chunks[0] == {"delta": "partial"}
+    assert "error" in chunks[-1]
+
+
+def test_ollama_in_stream_error_is_surfaced(monkeypatch):
+    import ai_chat, requests as req
+
+    class FakeResponse:
+        status_code = 200
+        def iter_lines(self, decode_unicode=False):
+            yield '{"error": "model requires more system memory"}'
+
+    monkeypatch.setattr(req, "post", lambda *a, **k: FakeResponse())
+    chunks = list(ai_chat.stream_ollama(model="x", messages=[]))
+    assert any("error" in c for c in chunks)
+
+
+def test_anthropic_sse_error_event_is_surfaced(monkeypatch):
+    import ai_chat, requests as req
+    monkeypatch.setattr(ai_chat, "get_key", lambda p: "fake-key")
+
+    class FakeResponse:
+        status_code = 200
+        def iter_lines(self, decode_unicode=False):
+            yield 'data: {"type": "error", "error": {"message": "overloaded_error"}}'
+
+    monkeypatch.setattr(req, "post", lambda *a, **k: FakeResponse())
+    chunks = list(ai_chat.stream_anthropic(model="x", messages=[]))
+    assert any("error" in c for c in chunks)
+
+
+def test_requests_have_a_timeout(monkeypatch):
+    import ai_chat, requests as req
+    captured = []
+
+    class FakeResponse:
+        status_code = 200
+        def iter_lines(self, decode_unicode=False):
+            return iter([])
+
+    def fake_post(*a, **k):
+        captured.append(k)
+        return FakeResponse()
+
+    monkeypatch.setattr(req, "post", fake_post)
+    monkeypatch.setattr(ai_chat, "get_key", lambda p: "fake-key")
+    list(ai_chat.stream_ollama(model="x", messages=[]))
+    list(ai_chat.stream_anthropic(model="x", messages=[]))
+    list(ai_chat.stream_openai_compatible(model="x", messages=[], base_url="http://x"))
+    assert captured and all("timeout" in k for k in captured)
+
+
 def test_openai_compatible_hits_custom_url_without_requiring_a_key(monkeypatch):
     import ai_chat, requests as req
 

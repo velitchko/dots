@@ -246,10 +246,13 @@ def stream_ollama(*, model, messages):
         response = requests.post(
             "http://localhost:11434/api/chat",
             json={"model": model, "messages": messages, "stream": True},
-            stream=True,
+            stream=True, timeout=(10, 120),
         )
     except requests.ConnectionError:
         yield {"error": "Ollama isn't running (localhost:11434)"}
+        return
+    except requests.Timeout:
+        yield {"error": "Ollama timed out"}
         return
     if response.status_code != 200:
         yield {"error": f"Ollama error ({response.status_code}): {response.text[:200]}"}
@@ -258,6 +261,9 @@ def stream_ollama(*, model, messages):
         if not line:
             continue
         obj = json.loads(line)
+        if "error" in obj:
+            yield {"error": f"Ollama: {obj['error']}"}
+            return
         content = obj.get("message", {}).get("content", "")
         if content:
             yield {"delta": content}
@@ -280,10 +286,13 @@ def stream_anthropic(*, model, messages):
                 "content-type": "application/json",
             },
             json={"model": model, "max_tokens": 4096, "messages": messages, "stream": True},
-            stream=True,
+            stream=True, timeout=(10, 120),
         )
     except requests.ConnectionError:
         yield {"error": "Could not reach the Anthropic API"}
+        return
+    except requests.Timeout:
+        yield {"error": "Anthropic API timed out"}
         return
     if response.status_code != 200:
         yield {"error": f"Anthropic API error ({response.status_code}): {response.text[:200]}"}
@@ -292,6 +301,9 @@ def stream_anthropic(*, model, messages):
         if not line or not line.startswith("data: "):
             continue
         obj = json.loads(line[len("data: "):])
+        if obj.get("type") == "error":
+            yield {"error": f"Anthropic: {obj.get('error', {}).get('message', 'stream error')}"}
+            return
         if obj.get("type") == "content_block_delta":
             text = obj.get("delta", {}).get("text", "")
             if text:
@@ -311,9 +323,12 @@ def stream_openai(*, model, messages, base_url="https://api.openai.com/v1/chat/c
     if key:
         headers["Authorization"] = f"Bearer {key}"
     try:
-        response = requests.post(base_url, headers=headers, json={"model": model, "messages": messages, "stream": True}, stream=True)
+        response = requests.post(base_url, headers=headers, json={"model": model, "messages": messages, "stream": True}, stream=True, timeout=(10, 120))
     except requests.ConnectionError:
         yield {"error": f"Could not reach {base_url}"}
+        return
+    except requests.Timeout:
+        yield {"error": f"{base_url} timed out"}
         return
     if response.status_code != 200:
         yield {"error": f"API error ({response.status_code}): {response.text[:200]}"}
@@ -326,6 +341,9 @@ def stream_openai(*, model, messages, base_url="https://api.openai.com/v1/chat/c
             yield {"done": True}
             return
         obj = json.loads(payload)
+        if "error" in obj:
+            yield {"error": str(obj["error"])}
+            return
         delta = (obj.get("choices") or [{}])[0].get("delta", {}).get("content")
         if delta:
             yield {"delta": delta}
@@ -340,6 +358,20 @@ def stream_openai_compatible(*, model, messages, base_url):
 
 
 PROVIDERS = {"ollama": stream_ollama, "anthropic": stream_anthropic, "openai": stream_openai, "openai-compatible": stream_openai_compatible}
+
+
+def _safe_stream(gen):
+    """Wrap a provider generator so a failure mid-stream -- a dropped
+    connection, a malformed JSON line the provider sent, anything -- still
+    ends the stream with a final {"error": ...} chunk. Without this, an
+    uncaught exception kills ai_chat.py mid-stream with no final line at
+    all, and the QML side (which only clears `streaming` on an explicit
+    done/error chunk) is left stuck: input disabled until the shell
+    restarts."""
+    try:
+        yield from gen
+    except Exception as e:
+        yield {"error": f"Connection lost: {e}"}
 
 
 def main():
@@ -369,7 +401,7 @@ def main():
         kwargs = {"model": args.model, "messages": messages}
         if args.provider == "openai-compatible":
             kwargs["base_url"] = args.base_url
-        for chunk in PROVIDERS[args.provider](**kwargs):
+        for chunk in _safe_stream(PROVIDERS[args.provider](**kwargs)):
             print(json.dumps(chunk), flush=True)
         return
 

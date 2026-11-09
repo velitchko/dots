@@ -69,7 +69,18 @@ ColumnLayout {
                         text: active ? "Active" : "Use this"
                         color: active ? Theme.accent : Theme.subtext
                         size: Theme.fontSmall
-                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: AiChat.provider = modelData.id }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            // save whatever's currently typed, not just whatever was
+                            // last confirmed with Enter -- "Use this" used to switch
+                            // provider without saving the model field at all.
+                            onClicked: {
+                                AiChat.setProviderModel(modelData.id, modelField.text)
+                                if (modelData.needsUrl) AiChat.setBaseUrl(urlField.text)
+                                AiChat.setProvider(modelData.id)
+                            }
+                        }
                     }
                 }
 
@@ -78,8 +89,12 @@ ColumnLayout {
                     Layout.fillWidth: true
                     icon: ""
                     placeholder: "Model name (e.g. " + (modelData.id === "ollama" ? "qwen2.5:0.5b" : modelData.id === "anthropic" ? "claude-sonnet-5-5" : modelData.id === "openai" ? "gpt-5" : "whatever your server calls it") + ")"
-                    text: active ? AiChat.model : ""
-                    onAccepted: { AiChat.provider = modelData.id; AiChat.model = text }
+                    // this card's own remembered model, regardless of which
+                    // provider is active -- was bound to the single shared
+                    // AiChat.model, so switching cards showed (and would send)
+                    // the previous provider's model name.
+                    text: AiChat.providerModels[modelData.id] || ""
+                    onAccepted: { AiChat.setProviderModel(modelData.id, text); AiChat.setProvider(modelData.id) }
                 }
 
                 SearchField {
@@ -88,8 +103,8 @@ ColumnLayout {
                     Layout.fillWidth: true
                     icon: ""
                     placeholder: "Base URL (e.g. http://localhost:8080/v1/chat/completions)"
-                    text: active ? AiChat.baseUrl : ""
-                    onAccepted: { AiChat.provider = modelData.id; AiChat.baseUrl = text }
+                    text: AiChat.baseUrl
+                    onAccepted: { AiChat.setBaseUrl(text); AiChat.setProvider(modelData.id) }
                 }
 
                 RowLayout {

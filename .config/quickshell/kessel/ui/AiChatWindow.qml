@@ -22,6 +22,12 @@ Window {
     visible: AiChat.shown
     color: "transparent"
     flags: Qt.Window | Qt.FramelessWindowHint
+    // Closing via the compositor's own close/kill bind only hides the Qt
+    // Window -- it doesn't touch AiChat.shown, which drives the LazyLoader
+    // that owns this window's existence. Without this, AiChat.shown stays
+    // true, so the next SUPER+I toggles it to false (no visible change,
+    // the window's already gone) and only the press after that reopens it.
+    onClosing: AiChat.close()
 
     property bool showSettings: false
 
@@ -61,6 +67,12 @@ Window {
                 Layout.fillWidth: true
                 Label { text: "AI Chat"; font.bold: true; size: Theme.fontUi + 1; Layout.fillWidth: true }
                 IconButton {
+                    icon: Icons.trash
+                    size: 30
+                    visible: !win.showSettings && AiChat.messages.length > 0
+                    onClicked: AiChat.clearConversation()
+                }
+                IconButton {
                     icon: Icons.settings
                     size: 30
                     onClicked: win.showSettings = !win.showSettings
@@ -76,6 +88,14 @@ Window {
                 spacing: 8
                 clip: true
                 model: AiChat.messages
+                // AiChat.messages is reassigned wholesale on every streamed
+                // token (simplest correct state shape for now -- a ListModel
+                // with in-place row updates would avoid rebuilding every
+                // delegate per token, a real cost worth revisiting, but not
+                // in this pass), which resets contentY to 0 each time unless
+                // something actively re-pins it to the bottom.
+                onCountChanged: positionViewAtEnd()
+                onModelChanged: Qt.callLater(positionViewAtEnd)
                 delegate: Rectangle {
                     required property var modelData
                     width: list.width
@@ -90,11 +110,15 @@ Window {
 
                         RowLayout {
                             Layout.fillWidth: true
-                            Label { text: modelData.role === "user" ? "You" : AiChat.provider; color: Theme.subtext; size: Theme.fontSmall; Layout.fillWidth: true }
+                            Label { text: modelData.role === "user" ? "You" : modelData.provider; color: Theme.subtext; size: Theme.fontSmall; Layout.fillWidth: true }
                             IconButton {
                                 icon: Icons.clipboard
                                 size: 22
-                                onClicked: Quickshell.execDetached(["wl-copy", modelData.content])
+                                // Quickshell.clipboardText, not wl-copy via execDetached: a
+                                // message starting with "-" (any markdown bullet list) gets
+                                // parsed by wl-copy as an option and fails, and a long enough
+                                // message can exceed a single argv element's size limit.
+                                onClicked: Quickshell.clipboardText = modelData.content
                             }
                             IconButton {
                                 // reply-style visual (left-pointing arrow); reuses the
