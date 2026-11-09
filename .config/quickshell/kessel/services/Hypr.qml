@@ -31,12 +31,16 @@ Singleton {
     function moveWindowTo(t, id) {
         Hyprland.dispatch(Hyprland.usingLua ? `hl.dsp.window.move({ workspace = ${id}, window = "address:${addr(t)}" })` : `movetoworkspacesilent ${id},address:${addr(t)}`)
     }
-    // Best-effort: focus a window belonging to an app (by desktop entry / app name).
+    // Letters/digits only, lowercased: lets "Telegram Desktop" (a notification's
+    // self-reported appName) match window class "org.telegram.desktop" despite
+    // the space-vs-dot mismatch. Shared with Apps.findByNames.
+    function normalize(s) { return (s || "").toLowerCase().replace(/[^a-z0-9]/g, "") }
+    // Best-effort: focus a window belonging to an app (by desktop entry / icon / app name).
     function focusApp(names) {
-        const want = names.filter(n => n).map(n => n.toLowerCase())
+        const want = names.filter(n => n).map(normalize).filter(n => n !== "")
         const t = toplevels.find(t => {
-            const c = (t.lastIpcObject?.class || "").toLowerCase()
-            return c !== "" && want.some(w => c === w || c.endsWith("." + w) || w.endsWith("." + c) || c.indexOf(w) >= 0)
+            const c = normalize(t.lastIpcObject?.class || "")
+            return c !== "" && want.some(w => c === w || c.indexOf(w) >= 0 || w.indexOf(c) >= 0)
         })
         if (t) focusWindow(t)
         return t !== undefined

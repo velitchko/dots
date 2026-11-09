@@ -41,6 +41,19 @@ Singleton {
             .map(x => x.app)
     }
 
+    // Best-effort: find a desktop entry for an app (by desktop entry id / icon /
+    // app name), for a "focus failed, launch it instead" fallback. Same
+    // normalized-substring matching as Hypr.focusApp.
+    function findByNames(names) {
+        const want = names.filter(n => n).map(Hypr.normalize).filter(n => n !== "")
+        if (want.length === 0) return undefined
+        return all.find(a => {
+            const id = Hypr.normalize(a.id), name = Hypr.normalize(a.name)
+            return want.some(w => id === w || id.indexOf(w) >= 0 || w.indexOf(id) >= 0 ||
+                                   name === w || name.indexOf(w) >= 0 || w.indexOf(name) >= 0)
+        })
+    }
+
     function launch(a) {
         const u = Object.assign({}, usage)
         u[a.id] = (u[a.id] || 0) + 1

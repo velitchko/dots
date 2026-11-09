@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // One notification: icon/image, app, summary, body, actions.
-// Click = focus the app (runs its default action, else focuses its window).
+// Click = focus the sender's window ourselves (reliable even when the app
+// doesn't react to its own "default" D-Bus action), launching it if it isn't
+// running, then still run its default action in case it does more than focus.
 import QtQuick
 import Quickshell
 import Quickshell.Services.Notifications
@@ -41,8 +43,14 @@ Rectangle {
             IslandState.closePanel()
             return
         }
-        const hasDefault = n.actions.some(a => a.identifier === "default")
-        if (!hasDefault) Hypr.focusApp([n.desktopEntry, n.appName])
+        // appIcon often carries the desktop-id-like string (e.g. Telegram's
+        // appName is "Telegram Desktop" but appIcon is "org.telegram.desktop",
+        // the actual window class) even when desktopEntry itself is unset.
+        const names = [n.desktopEntry, n.appIcon, n.appName]
+        if (!Hypr.focusApp(names)) {
+            const app = Apps.findByNames(names)
+            if (app) Apps.launch(app)
+        }
         Notifs.activate(n)
         IslandState.closePanel()
     }
