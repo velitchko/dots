@@ -59,17 +59,23 @@ View {
     // drawn outside that box -- the first version sat a few px outside on
     // purpose, as a halo -- gets cut off right at the edge instead of
     // showing as a halo. Border is inset, so it stays fully inside anyway.
+    // Only the bottom half shows: the reveal window is cropped to the
+    // pill's lower half, and the (full-height, correctly curved) Rectangle
+    // is shifted up by that same half-height so its own bottom half is what
+    // lands in the visible window.
     Item {
         id: progressReveal
         visible: root.cur === music && Media.length > 0
         anchors.left: parent.left
         anchors.top: parent.top
+        anchors.topMargin: root.height / 2
         property real animatedProgress: Media.progress
         Behavior on animatedProgress { NumberAnimation { duration: 900 } }
         width: root.width * animatedProgress
-        height: root.height
+        height: root.height / 2
         clip: true
         Rectangle {
+            y: -root.height / 2
             width: root.width
             height: root.height
             radius: height / 2
