@@ -23,6 +23,10 @@ View {
             Glyph { text: IslandState.osdIcon; size: Theme.fontUi + 4; optical: true; anchors.centerIn: parent }
         }
         Bar { visible: IslandState.osdValue >= 0; width: 170; value: IslandState.osdValue; anchors.verticalCenter: parent.verticalCenter }
-        Label { text: IslandState.osdLabel; width: 64; size: Theme.fontSmall; color: Theme.subtext; anchors.verticalCenter: parent.verticalCenter }
+        // Fixed width for the same reason as the icon slot (labels range from
+        // "73%" to "Floating" without resizing the row) -- centred within it,
+        // not left-aligned, so short labels don't look stranded against a
+        // slab of empty space before the next pill.
+        Label { text: IslandState.osdLabel; width: 64; horizontalAlignment: Text.AlignHCenter; size: Theme.fontSmall; color: Theme.subtext; anchors.verticalCenter: parent.verticalCenter }
     }
 }
