@@ -20,9 +20,28 @@ PanelWindow {
     visible: IslandState.shown
     anchors.top: true
     margins.top: Theme.islandMargin
-    // pill (≤ ~800) + the two side buttons, but never wider than the screen:
-    // a layer surface wider than its output can't be centred (narrow / high-scale laptops).
-    implicitWidth: Math.min(1100, screen ? screen.width : 1100)
+    // 1100 covers the pill (≤ ~800) + the two side buttons (gear, bell) alone.
+    // When the timer / privacy / updates pills ride along too, the chain can
+    // need more than that -- grow to fit them, same grow-now/shrink-later
+    // hysteresis as tallHeight below (a layer surface narrower than its own
+    // content hard-clips whatever pokes past the edge -- that's invisible,
+    // not just off-screen, since the surface itself ends there). Never wider
+    // than the screen: a layer surface wider than its output can't be
+    // centred (narrow / high-scale laptops).
+    readonly property real sideLeft: Theme.islandHeight + 8
+        + ((Timers.cdActive && !Alarm.ringing) ? timerPill.width + 8 : 0)
+    readonly property real sideRight: Theme.islandHeight + 8
+        + (Privacy.any ? privacyPill.width + 8 : 0)
+        + (Updates.count > 0 ? updatesPill.width + 8 : 0)
+    // +8: the exact sum leaves zero slack, and the surface rounds to whole
+    // device pixels while the QML layout above stays sub-pixel -- with no
+    // margin that rounding alone was enough to shave a sliver off the
+    // trailing edge, clipping it the same way an undersized total did.
+    readonly property real neededWidth: Math.max(Theme.islandHeight * 2, win.current.implicitWidth) + sideLeft + sideRight + 8
+    property real wideWidth: 1100
+    onNeededWidthChanged: { if (neededWidth > wideWidth) { widthShrinkTimer.stop(); wideWidth = neededWidth } else widthShrinkTimer.restart() }
+    Timer { id: widthShrinkTimer; interval: 900; onTriggered: win.wideWidth = Math.max(1100, win.neededWidth) }
+    implicitWidth: Math.min(wideWidth, screen ? screen.width : wideWidth)
     // Keep the surface a small strip while resting (the compositor blurs behind the
     // whole surface every frame — expensive without a GPU). Grow at once when
     // something tall opens; shrink only after the closing spring has settled.
