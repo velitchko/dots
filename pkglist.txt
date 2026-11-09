@@ -108,3 +108,4 @@ python
 python-markdown
 python-pygments
 python-matplotlib
+python-requests

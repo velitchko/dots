@@ -51,3 +51,45 @@ def test_unclosed_code_fence_does_not_raise(tmp_path):
 def test_table_renders_with_visible_borders(tmp_path):
     html = render_markdown("| a | b |\n|---|---|\n| 1 | 2 |", math_dir=str(tmp_path))
     assert "border" in html
+
+
+import json
+import subprocess
+import sys
+
+
+def run_cli(args, stdin_text):
+    return subprocess.run([sys.executable, "ai_chat.py", *args], input=stdin_text,
+                           capture_output=True, text=True)
+
+
+def test_render_mode_returns_html_json():
+    import ai_chat
+    out = ai_chat.render_mode("**bold**")
+    assert json.loads(out)["html"].count("<strong>") == 1
+
+
+def test_missing_key_emits_error_not_exception(monkeypatch):
+    import ai_chat
+    monkeypatch.setattr(ai_chat, "get_key", lambda provider: None)
+    chunks = list(ai_chat.stream_anthropic(model="claude-x", messages=[{"role": "user", "content": "hi"}]))
+    assert any("error" in c and "API key" in c["error"] for c in chunks)
+
+
+def test_get_key_returns_none_on_missing_secret(monkeypatch):
+    import ai_chat, subprocess as sp
+    monkeypatch.setattr(sp, "run", lambda *a, **k: sp.CompletedProcess(a, 1, "", ""))
+    assert ai_chat.get_key("anthropic") is None
+
+
+def test_get_key_passes_secret_via_stdin_never_argv(monkeypatch):
+    # storing/looking up must never put a key value in the argv list (ps aux exposure)
+    import ai_chat, subprocess as sp
+    captured = {}
+    def fake_run(args, **kwargs):
+        captured["args"] = args
+        captured["input"] = kwargs.get("input")
+        return sp.CompletedProcess(args, 0, "dummy-key-value\n", "")
+    monkeypatch.setattr(sp, "run", fake_run)
+    ai_chat.get_key("anthropic")
+    assert "dummy-key-value" not in captured["args"]

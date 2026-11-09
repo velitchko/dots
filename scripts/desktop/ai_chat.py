@@ -3,11 +3,16 @@
 tasks) provider streaming + secret storage. Spawned by services/AiChat.qml;
 see docs/superpowers/specs/2026-11-09-ai-chat-panel-design.md.
 """
+import argparse
 import hashlib
 import html
+import json
 import os
 import re
+import subprocess
+import sys
 import markdown
+import requests
 
 MATH_INLINE_RE = re.compile(r"\$\$(.+?)\$\$|\$([^\s$](?:[^$\n]*[^\s$])?)\$", re.DOTALL)
 CODE_FENCE_RE = re.compile(r"```.*?```|`[^`]*`", re.DOTALL)
@@ -114,3 +119,142 @@ def render_markdown(text, *, text_color="#e8e8e8", math_dir):
     rendered = re.sub(r"<(td|th)>", r'<\1 style="border:1px solid #555;padding:4px">', rendered)
 
     return rendered
+
+
+def get_key(provider):
+    """Look up a provider's API key from the system keyring. None means "not
+    configured yet" (expected state, not an error) — never raises for that."""
+    result = subprocess.run(
+        ["secret-tool", "lookup", "service", "kessel-ai", "provider", provider],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip() or None
+
+
+def render_mode(text):
+    """ai-chat.py --render: render a single complete message's raw text."""
+    math_dir = os.path.expanduser("~/.local/state/kessel/ai/math/")
+    os.makedirs(math_dir, exist_ok=True)
+    return json.dumps({"html": render_markdown(text, math_dir=math_dir)})
+
+
+def stream_ollama(*, model, messages):
+    try:
+        response = requests.post(
+            "http://localhost:11434/api/chat",
+            json={"model": model, "messages": messages, "stream": True},
+            stream=True,
+        )
+    except requests.ConnectionError:
+        yield {"error": "Ollama isn't running (localhost:11434)"}
+        return
+    if response.status_code != 200:
+        yield {"error": f"Ollama error ({response.status_code}): {response.text[:200]}"}
+        return
+    for line in response.iter_lines(decode_unicode=True):
+        if not line:
+            continue
+        obj = json.loads(line)
+        content = obj.get("message", {}).get("content", "")
+        if content:
+            yield {"delta": content}
+        if obj.get("done"):
+            yield {"done": True}
+            return
+
+
+def stream_anthropic(*, model, messages):
+    key = get_key("anthropic")
+    if key is None:
+        yield {"error": "No API key configured for anthropic — add one in Settings"}
+        return
+    try:
+        response = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={"model": model, "max_tokens": 4096, "messages": messages, "stream": True},
+            stream=True,
+        )
+    except requests.ConnectionError:
+        yield {"error": "Could not reach the Anthropic API"}
+        return
+    if response.status_code != 200:
+        yield {"error": f"Anthropic API error ({response.status_code}): {response.text[:200]}"}
+        return
+    for line in response.iter_lines(decode_unicode=True):
+        if not line or not line.startswith("data: "):
+            continue
+        obj = json.loads(line[len("data: "):])
+        if obj.get("type") == "content_block_delta":
+            text = obj.get("delta", {}).get("text", "")
+            if text:
+                yield {"delta": text}
+        elif obj.get("type") == "message_stop":
+            yield {"done": True}
+            return
+    yield {"done": True}
+
+
+def stream_openai(*, model, messages):
+    key = get_key("openai")
+    if key is None:
+        yield {"error": "No API key configured for openai — add one in Settings"}
+        return
+    try:
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {key}", "content-type": "application/json"},
+            json={"model": model, "messages": messages, "stream": True},
+            stream=True,
+        )
+    except requests.ConnectionError:
+        yield {"error": "Could not reach the OpenAI API"}
+        return
+    if response.status_code != 200:
+        yield {"error": f"OpenAI API error ({response.status_code}): {response.text[:200]}"}
+        return
+    for line in response.iter_lines(decode_unicode=True):
+        if not line or not line.startswith("data: "):
+            continue
+        payload = line[len("data: "):]
+        if payload == "[DONE]":
+            yield {"done": True}
+            return
+        obj = json.loads(payload)
+        delta = (obj.get("choices") or [{}])[0].get("delta", {}).get("content")
+        if delta:
+            yield {"delta": delta}
+    yield {"done": True}
+
+
+PROVIDERS = {"ollama": stream_ollama, "anthropic": stream_anthropic, "openai": stream_openai}
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--provider", choices=sorted(PROVIDERS))
+    parser.add_argument("--model")
+    parser.add_argument("--render", action="store_true")
+    args = parser.parse_args()
+
+    if args.render:
+        print(render_mode(sys.stdin.read()))
+        return
+
+    if args.provider:
+        messages = json.loads(sys.stdin.read())
+        for chunk in PROVIDERS[args.provider](model=args.model, messages=messages):
+            print(json.dumps(chunk), flush=True)
+        return
+
+    parser.error("either --render or --provider/--model is required")
+
+
+if __name__ == "__main__":
+    main()
