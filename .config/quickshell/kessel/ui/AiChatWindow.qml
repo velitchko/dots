@@ -166,8 +166,15 @@ Window {
                     required property var modelData
                     required property int index
                     readonly property bool isStreamingTarget: AiChat.streaming && index === list.count - 1 && modelData.role === "assistant"
+                    // Not just "streaming, no text yet" -- a reply that errored
+                    // before its first token (bad key, connection refused) also
+                    // has empty streamingText for one frame, right before
+                    // _finishStreaming's own messages update turns isStreamingTarget
+                    // false again. AiChat.streaming gates isStreamingTarget itself,
+                    // so this stays accurate without needing its own guard.
+                    readonly property bool isThinking: delegateRoot.isStreamingTarget && AiChat.streamingText.length === 0
                     width: list.width
-                    height: body.implicitHeight + 44
+                    height: (delegateRoot.isThinking ? typingDots.height : body.implicitHeight) + 44
                     radius: Theme.radiusCard
                     color: modelData.role === "user" ? Theme.cardHi : Theme.card
 
@@ -238,9 +245,35 @@ Window {
                                 }
                             }
                         }
+                        // Thinking indicator: the bubble otherwise has nothing
+                        // in it at all while a reply is in flight but no token
+                        // has landed yet (some prompts/models take a while to
+                        // produce the first one), which reads as stuck/broken
+                        // rather than working.
+                        RowLayout {
+                            id: typingDots
+                            visible: delegateRoot.isThinking
+                            spacing: 4
+                            Repeater {
+                                model: 3
+                                Rectangle {
+                                    required property int index
+                                    width: 6; height: 6; radius: 3
+                                    color: Theme.subtext
+                                    SequentialAnimation on opacity {
+                                        running: delegateRoot.isThinking
+                                        loops: Animation.Infinite
+                                        PauseAnimation { duration: index * 150 }
+                                        NumberAnimation { from: 0.3; to: 1; duration: 350 }
+                                        NumberAnimation { from: 1; to: 0.3; duration: 350 }
+                                    }
+                                }
+                            }
+                        }
                         TextArea {
                             id: body
                             Layout.fillWidth: true
+                            visible: !delegateRoot.isThinking
                             readOnly: true
                             wrapMode: Text.Wrap
                             // RichText only once the sanitized render lands (modelData.html) --
