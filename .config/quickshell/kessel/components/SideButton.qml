@@ -17,7 +17,13 @@ Rectangle {
     // Opaque like the pill: tints are mixed into the island colour, never see-through.
     color: active ? Qt.tint(Theme.island, Theme.a(tint, 0.25)) : (ma.containsMouse ? Qt.tint(Theme.island, Theme.a(Theme.text, 0.08)) : Theme.island)
     border.width: Theme.borderWidth
-    border.color: active ? Theme.a(tint, 0.7) : Theme.a(Theme.text, ma.containsMouse ? 0.14 : 0.06)
+    // Same stroke width as the rest of the shell (Theme.borderWidth) -- a
+    // pending badge gets a tinted ring too, so it's visible at a glance
+    // without reading the number, not just when active/hovered.
+    border.color: active ? Theme.a(tint, 0.7)
+        : badge > 0 ? Theme.a(tint, 0.5)
+        : Theme.a(Theme.text, ma.containsMouse ? 0.14 : 0.06)
+    Behavior on border.color { ColorAnimation { duration: Theme.fadeMs } }
     Behavior on color { ColorAnimation { duration: Theme.fadeMs } }
 
     Glyph {

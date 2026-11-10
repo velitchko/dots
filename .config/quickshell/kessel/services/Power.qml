@@ -34,7 +34,7 @@ Singleton {
         avgRate = samples === 0 ? r : avgRate + 0.15 * (r - avgRate)
         samples++
     }
-    onChargingChanged: { avgRate = 0; samples = 0; lastEnergy = -1; sample() }
+    onChargingChanged: { avgRate = 0; samples = 0; lastEnergy = -1; sample(); if (charging) lowBatteryNotified = false }
     Connections { target: root.battery; ignoreUnknownSignals: true; function onChangeRateChanged() { root.sample() } }
     Timer { interval: 10000; repeat: true; running: root.hasBattery; triggeredOnStart: true; onTriggered: root.sample() }
     readonly property bool settled: samples >= 3
@@ -60,6 +60,23 @@ Singleton {
     readonly property string icon: charging ? Icons.batCharging
         : percent > 0.9 ? Icons.bat100 : percent > 0.6 ? Icons.bat70 : percent > 0.3 ? Icons.bat40
         : percent > 0.1 ? Icons.bat20 : Icons.batAlert
+
+    // One reminder per discharge cycle, not one every poll tick: notified
+    // latches at the threshold and only clears once you're charging again
+    // or (unplugged without ever reaching a charger) back above threshold
+    // + 5 points, so it doesn't refire while hovering right at 20%.
+    readonly property int lowBatteryThreshold: 20
+    property bool lowBatteryNotified: false
+    onPercentChanged: {
+        const pct = Math.round(percent * 100)
+        if (!charging && pct <= lowBatteryThreshold && !lowBatteryNotified) {
+            lowBatteryNotified = true
+            Quickshell.execDetached(["notify-send", "-u", "critical", "-a", "Battery",
+                "Battery low", pct + "% left" + (timeLeft ? " — " + timeLeft : "")])
+        } else if (pct > lowBatteryThreshold + 5) {
+            lowBatteryNotified = false
+        }
+    }
 
     // power-profiles-daemon is optional (laptop profile). PowerProfiles.profile is
     // only meaningful when the daemon exists; we probe it over D-Bus.
