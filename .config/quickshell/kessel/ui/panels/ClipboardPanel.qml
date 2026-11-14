@@ -122,7 +122,7 @@ PanelBase {
                 size: 28
                 iconSize: Theme.fontSmall + 1
                 icon: Icons.openExt
-                onClicked: { Quickshell.execDetached(["xdg-open", d.url]); IslandState.closePanel() }
+                onClicked: { Quickshell.execDetached([Utils.scripts + "browser-open.sh", d.url]); IslandState.closePanel() }
             }
         }
         Label { visible: list.count === 0; anchors.centerIn: parent; text: "Clipboard history is empty"; color: Theme.subtext }

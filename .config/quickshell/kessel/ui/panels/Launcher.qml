@@ -44,7 +44,7 @@ PanelBase {
         const r = results[list.currentIndex]
         if (r.kind === "tr") { if (Translator.busy || Translator.result === "") return; Translator.copy() }
         else if (r.kind === "calc") Calc.copy(r.value)
-        else if (r.kind === "url") Quickshell.execDetached(["xdg-open", r.value])
+        else if (r.kind === "url") Quickshell.execDetached([Utils.scripts + "browser-open.sh", r.value])
         else Apps.launch(r.app)
         IslandState.closePanel()
     }
