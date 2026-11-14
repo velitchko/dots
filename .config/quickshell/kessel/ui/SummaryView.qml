@@ -8,7 +8,7 @@ import "../components"
 View {
     id: root
     property real minWidth: 0          // the resting island's width (never shrink under the cursor)
-    implicitWidth: Math.max(460, minWidth)
+    implicitWidth: Math.max(520, minWidth)
     implicitHeight: col.implicitHeight + 24
 
     MouseArea {
