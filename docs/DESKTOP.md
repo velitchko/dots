@@ -61,7 +61,7 @@ Every script lives in one place, `~/Scripts` (a symlink to this repo's `scripts/
 - **`~/Scripts/`**: tools you run yourself (below). Every one supports `--dry-run`.
 - **`~/Scripts/desktop/`**: what keybinds and the island run (`theme.sh`, `lock.sh`, `island.sh`, `translate.sh`, `bt-pair.sh`, screenshots…). You can run them too. The old path `~/.config/hypr/scripts/` still works: it's a symlink to this folder.
 
-**`SUPER + /` → Scripts tab** lists all of them with their location, purpose and usage, read straight from each script's header comment (`scripts/desktop/scripts-index.sh`), so it never goes stale. Click one to copy its path. A new script shows up there automatically; give it a header like:
+**`SUPER + /` → Scripts tab** lists all of them with their location, purpose and usage, read straight from each script's header comment (`scripts/desktop/scripts-index.sh`), so it never goes stale. Within each group they're ordered by importance (a `PRIORITY` list in that script), not alphabetically; an unranked script falls back to the end, alphabetical among the others there. Click one to copy its path. A new script shows up there automatically; give it a header like:
 
 ```sh
 # myscript.sh — what it's for, in one line.
@@ -77,10 +77,10 @@ Every script lives in one place, `~/Scripts` (a symlink to this repo's `scripts/
 | `~/Scripts/backup.sh` | `~/Backups/kessel/kessel-<ts>.tar.zst`: repo as a git bundle, package lists, theme/install state, notes, `~/.face`, wallpapers. Keeps 10 (`--keep N`). No secrets |
 | `~/Scripts/uninstall.sh` | Undo every deployment newest-first, restoring the original files. Asks first; `--purge` also removes generated state. Never removes packages |
 | `~/Scripts/sddm-theme.sh` | Login screen: `test` (window preview), `install` / `uninstall` (sudo) |
-| `~/Scripts/gen-shortcuts.sh` | Rebuild `docs/SHORTCUTS.md` from `keybinds.lua` |
-| `~/Scripts/root-prompt.sh` | `install` / `remove` (sudo): the themed Starship prompt in root shells (`sudo -i`, `sudo -s`), root shown as a red pill. Copies the config (root must not read a file your user can edit); re-run after a theme change |
 | `~/Scripts/fingerprint.sh` | `status`, `enroll [finger]`, `sddm-on` / `sddm-off` (sudo; fingerprint login at SDDM) |
+| `~/Scripts/root-prompt.sh` | `install` / `remove` (sudo): the themed Starship prompt in root shells (`sudo -i`, `sudo -s`), root shown as a red pill. Copies the config (root must not read a file your user can edit); re-run after a theme change |
 | `~/Scripts/ddc-brightness.sh` | `test` (list DDC-capable displays), `install` / `uninstall` (sudo): udev rule so the brightness slider can also reach external monitors |
+| `~/Scripts/gen-shortcuts.sh` | Rebuild `docs/SHORTCUTS.md` from `keybinds.lua` |
 
 ## How config deployment works
 

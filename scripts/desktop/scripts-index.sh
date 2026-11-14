@@ -3,7 +3,9 @@
 # scripts-index.sh — every script in ~/Scripts as JSON, read from each script's
 # header comment (the Scripts tab of the SUPER+/ panel). Nothing to maintain:
 # a script's first comment line is its purpose, indented "name args   what"
-# lines are its usage.
+# lines are its usage. Within each group, scripts are ordered by importance
+# (PRIORITY below); anything not listed there falls back to alphabetical, so
+# a new script still shows up without needing to be ranked first.
 #
 #   scripts-index.sh          JSON array: { name, group, path, purpose, usage: [{cmd, what}] }
 set -euo pipefail
@@ -12,9 +14,20 @@ exec python3 -I - "$dir" <<'PY'
 import json, os, re, sys
 root = sys.argv[1]
 out = []
+PRIORITY = {
+    "": ["install.sh", "update.sh", "backup.sh", "uninstall.sh", "sddm-theme.sh",
+         "fingerprint.sh", "root-prompt.sh", "ddc-brightness.sh", "gen-shortcuts.sh"],
+    "desktop": ["island.sh", "island-or.sh", "theme.sh", "lock.sh", "translate.sh",
+                "bt-pair.sh", "screenshot.sh", "record-pick.sh", "clipboard.sh",
+                "colorpicker.sh", "shortcuts.sh", "browser.sh", "editor.sh",
+                "obsidian.sh", "omniglyph.sh", "scripts-index.sh"],
+}
+def rank(sub, fn):
+    order = PRIORITY.get(sub, [])
+    return (order.index(fn), "") if fn in order else (len(order), fn)
 for group, sub, shown in (("Your tools", "", "~/Scripts/"), ("Desktop", "desktop", "~/Scripts/desktop/")):
     d = os.path.join(root, sub)
-    for fn in sorted(os.listdir(d)):
+    for fn in sorted(os.listdir(d), key=lambda fn: rank(sub, fn)):
         p = os.path.join(d, fn)
         if not fn.endswith(".sh") or not os.path.isfile(p):
             continue
