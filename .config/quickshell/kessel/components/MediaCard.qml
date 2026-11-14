@@ -48,7 +48,7 @@ Rectangle {
         spacing: 3
 
         Label { text: Media.title; font.bold: true; width: parent.width }
-        Label { text: Media.artist || Media.identity; color: Theme.subtext; size: Theme.fontSmall; width: parent.width }
+        Label { text: (Media.artist || Media.identity) + (Media.album ? " · " + Media.album : ""); color: Theme.subtext; size: Theme.fontSmall; width: parent.width }
         WavyBar {
             width: parent.width
             value: Media.progress

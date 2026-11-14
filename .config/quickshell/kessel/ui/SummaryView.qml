@@ -9,6 +9,7 @@ View {
     id: root
     implicitWidth: 520                 // matches NotificationView; fixed regardless of perspective
     implicitHeight: col.implicitHeight + 24
+    readonly property bool isMusic: Perspectives.current === "music"
 
     MouseArea {
         anchors.fill: parent
@@ -43,7 +44,7 @@ View {
         }
         MediaCard {
             visible: Media.active
-            compact: true
+            compact: !root.isMusic
             width: Math.min(460, parent.width)
             anchors.horizontalCenter: parent.horizontalCenter
         }
