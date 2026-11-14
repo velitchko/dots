@@ -91,10 +91,63 @@ local function arrange()
     end
 end
 
+-- Workspaces 1-10, assigned to specific monitors by position (not name), so
+-- SUPER+Tab and the scratch workspace (special:scratch) land on the monitor
+-- you'd expect instead of whichever one last had focus:
+--   1 monitor   1-10 on it
+--   2 monitors  1-5 on the leftmost, 6-10 on the rightmost (arrange() above
+--               always puts the external display left of the laptop, so in
+--               practice this is "external" / "laptop")
+--   3 monitors  1-3 on the middle, 4-6 on the left, 7-9 on the right
+--               (workspace 10 is left with Hyprland's default dynamic
+--               behavior, same as the original ask -- it only covers 1-9)
+-- Reads live positions via hl.get_monitors() rather than arrange()'s own
+-- `order`, so it still works under hyprmoncfg (which arrange() steps aside
+-- for, but which has nothing to do with workspace assignment).
+-- Known gap: going from 3 monitors straight to 2 re-binds 1-10 and
+-- overwrites everything, but going from 2 to 3 only re-declares 1-9 --
+-- workspace 10 keeps whatever monitor the 2-monitor scheme last gave it
+-- instead of reverting to unbound. Not fixed: this user's machines are
+-- either a laptop (1-2 monitors) or a desktop (always 3), never both, so
+-- the 2-to-3 transition doesn't actually happen in practice.
+local function bind_workspaces()
+    local ok, mons = pcall(hl.get_monitors)
+    if not ok or type(mons) ~= "table" then return end
+
+    local live = {}
+    for _, m in ipairs(mons) do
+        if m.enabled ~= false and not m.is_mirror then table.insert(live, m) end
+    end
+    table.sort(live, function(a, b) return (a.x or 0) < (b.x or 0) end)
+
+    local ranges
+    if #live == 1 then
+        ranges = { { 1, 10, live[1] } }
+    elseif #live == 2 then
+        ranges = { { 1, 5, live[1] }, { 6, 10, live[2] } }
+    elseif #live == 3 then
+        ranges = { { 1, 3, live[2] }, { 4, 6, live[1] }, { 7, 9, live[3] } }
+    else
+        return   -- not a layout this binds; workspaces keep the default dynamic behavior
+    end
+
+    for _, r in ipairs(ranges) do
+        local lo, hi, mon = r[1], r[2], r[3]
+        for ws = lo, hi do
+            hl.workspace_rule({ workspace = tostring(ws), monitor = mon.name })
+        end
+    end
+end
+
 arrange()
+bind_workspaces()
 hl.on("monitor.added", function()
     arrange()
+    bind_workspaces()
     -- the new display's auto scale is known only after it is configured; settle once more
-    hl.timer(arrange, { timeout = 600, type = "oneshot" })
+    hl.timer(function() arrange(); bind_workspaces() end, { timeout = 600, type = "oneshot" })
 end)
-hl.on("monitor.removed", arrange)
+hl.on("monitor.removed", function()
+    arrange()
+    bind_workspaces()
+end)
