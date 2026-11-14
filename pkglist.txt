@@ -50,6 +50,7 @@ noto-fonts-emoji
 wf-recorder
 hyprpicker
 brightnessctl
+ddcutil                # external-monitor brightness (DDC/CI); needs scripts/ddc-brightness.sh install once
 papirus-icon-theme
 # Launcher translation runtime (scripts/translate.sh uses uv for a private Python 3.10)
 uv
