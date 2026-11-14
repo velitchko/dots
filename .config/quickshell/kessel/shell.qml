@@ -36,6 +36,13 @@ ShellRoot {
         AiChatWindow {}
     }
 
+    // Launcher opened from focus mode (IslandState.open() while shown is
+    // false): a standalone window instead of un-hiding the island.
+    LazyLoader {
+        active: IslandState.detachedLauncher
+        DetachedLauncher {}
+    }
+
     // Graceful quit (island.sh stop): give the windows a moment to drop focus
     // and unload panels, then exit normally.
     Timer {

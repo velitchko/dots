@@ -22,6 +22,7 @@ Singleton {
 
     property bool shown: true
     property bool returnToFocusModeOnClose: false   // open() un-hid the island from focus mode; closePanel() re-hides it
+    property bool detachedLauncher: false           // launcher opened from focus mode: a standalone window, island stays hidden
     property string panel: ""
     property bool hovered: false
     property bool summary: false
@@ -59,6 +60,7 @@ Singleton {
         return true
     }
     function closePanel() {
+        detachedLauncher = false
         history = []
         panel = ""
         if (returnToFocusModeOnClose) { returnToFocusModeOnClose = false; shown = false }
@@ -119,8 +121,12 @@ Singleton {
 
         function open(name: string): string {
             // Opening a panel is a deliberate action: always surface it through the
-            // island, even in focus mode (root.shown = false), rather than letting
-            // the caller's fallback (a bare, unthemed command) run instead.
+            // island (or, for the launcher specifically, a standalone window),
+            // even in focus mode (root.shown = false), rather than letting the
+            // caller's fallback (a bare, unthemed command) run instead.
+            // The launcher gets its own detached window instead of un-hiding the
+            // whole island (with its side buttons) just to show one panel.
+            if (name === "launcher" && !root.shown) { root.detachedLauncher = true; return "ok" }
             // openPanel() itself sets shown = true, but only once name is valid —
             // don't force it here, or an unknown panel name would un-hide the
             // island for nothing. If focus mode was on, closePanel() returns to

@@ -53,3 +53,12 @@ hl.window_rule({
     match = { title = "^Kessel AI Chat$" },
     float = true, center = true,
 })
+
+-- Launcher opened while the island is in focus mode (DetachedLauncher.qml):
+-- same floating treatment as the AI chat window, so it lands on whichever
+-- monitor is focused without per-screen layer-shell wiring.
+hl.window_rule({
+    name  = "detached-launcher-float",
+    match = { title = "^Kessel Launcher$" },
+    float = true, center = true,
+})
