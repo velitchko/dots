@@ -113,7 +113,10 @@ Singleton {
         target: "island"
 
         function open(name: string): string {
-            if (!root.shown) return "hidden"
+            // Opening a panel is a deliberate action: always surface it through the
+            // island, even in focus mode (root.shown = false), rather than letting
+            // the caller's fallback (a bare, unthemed command) run instead.
+            root.shown = true
             return root.openPanel(name) ? "ok" : "unknown panel"
         }
         function close(): string { root.closePanel(); return "ok" }
