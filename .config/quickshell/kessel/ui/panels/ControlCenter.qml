@@ -77,9 +77,9 @@ PanelBase {
                 Column {
                     width: parent.width
                     spacing: 2
-                    Repeater {
+                    CappedList {
                         model: Net.networks.slice(0, 10)
-                        ListItem {
+                        delegate: ListItem {
                             required property var modelData
                             icon: Net.wifiIcon(modelData.signalStrength)
                             text: modelData.name
@@ -140,9 +140,10 @@ PanelBase {
                     width: parent.width
                     spacing: 2
                     Label { visible: Bt.paired.length > 0; text: "My devices"; color: Theme.subtext; size: Theme.fontSmall - 1; leftPadding: 10; height: 20 }
-                    Repeater {
+                    CappedList {
+                        maxVisible: 4
                         model: Bt.paired.slice(0, 8)
-                        ListItem {
+                        delegate: ListItem {
                             required property var modelData
                             icon: modelData.connected ? Icons.btOn : Icons.bluetooth
                             text: modelData.name || modelData.address
@@ -155,9 +156,10 @@ PanelBase {
                         }
                     }
                     Label { text: Bt.discovering ? "Nearby · searching…" : "Nearby"; color: Theme.subtext; size: Theme.fontSmall - 1; leftPadding: 10; height: 20 }
-                    Repeater {
+                    CappedList {
+                        maxVisible: 4
                         model: Bt.nearby.slice(0, 8)
-                        ListItem {
+                        delegate: ListItem {
                             required property var modelData
                             icon: Icons.bluetooth
                             text: modelData.name || modelData.address
@@ -189,9 +191,10 @@ PanelBase {
                 expandable: Audio.sinks.length > 0
                 onMoved: v => Audio.setVolume(v)
                 onIconClicked: Audio.toggleMute()
-                Repeater {
+                CappedList {
+                    maxVisible: 4
                     model: Audio.sinks
-                    ListItem {
+                    delegate: ListItem {
                         required property var modelData
                         icon: Icons.speaker
                         text: Audio.label(modelData, "Output")
@@ -213,9 +216,10 @@ PanelBase {
                 expandable: Audio.sources.length > 0
                 onMoved: v => Audio.setMicVolume(v)
                 onIconClicked: Audio.toggleMicMute()
-                Repeater {
+                CappedList {
+                    maxVisible: 4
                     model: Audio.sources
-                    ListItem {
+                    delegate: ListItem {
                         required property var modelData
                         icon: Icons.mic
                         text: Audio.label(modelData, "Input")
