@@ -47,10 +47,14 @@ end
 -- profiles. Once it has written its file, it owns the layout: arrange() steps
 -- aside so the two don't fight on every hot-plug (the defaults above still
 -- give new displays a mode and scale).
-local HYPRMONCFG = (function()
+local HYPRMONCFG, HYPRMONCFG_WORKSPACES = (function()
     local f = io.open(os.getenv("HOME") .. "/.config/hypr/hyprmoncfg-monitors.lua", "r")
-    if f then f:close(); return true end
-    return false
+    if not f then return false, false end
+    local text = f:read("*a") or ""
+    f:close()
+    -- A profile with a workspace plan writes hl.workspace_rule() lines; then it owns
+    -- workspaces too, and bind_workspaces() below must not override them.
+    return true, text:find("hl.workspace_rule(", 1, true) ~= nil
 end)()
 
 local function arrange()
@@ -98,12 +102,13 @@ end
 --   2 monitors  1-5 on the leftmost, 6-10 on the rightmost (arrange() above
 --               always puts the external display left of the laptop, so in
 --               practice this is "external" / "laptop")
---   3 monitors  1-3 on the middle, 4-6 on the left, 7-9 on the right
+--   3 monitors  1-3 on the left, 4-6 on the middle, 7-9 on the right
 --               (workspace 10 is left with Hyprland's default dynamic
---               behavior, same as the original ask -- it only covers 1-9)
+--               behavior -- it only covers 1-9)
 -- Reads live positions via hl.get_monitors() rather than arrange()'s own
--- `order`, so it still works under hyprmoncfg (which arrange() steps aside
--- for, but which has nothing to do with workspace assignment).
+-- `order`, so it still works under hyprmoncfg's monitor layout. If the
+-- active hyprmoncfg profile also has a workspace plan, that plan wins and
+-- this steps aside (HYPRMONCFG_WORKSPACES) so the two never fight.
 -- Known gap: going from 3 monitors straight to 2 re-binds 1-10 and
 -- overwrites everything, but going from 2 to 3 only re-declares 1-9 --
 -- workspace 10 keeps whatever monitor the 2-monitor scheme last gave it
@@ -111,6 +116,7 @@ end
 -- either a laptop (1-2 monitors) or a desktop (always 3), never both, so
 -- the 2-to-3 transition doesn't actually happen in practice.
 local function bind_workspaces()
+    if HYPRMONCFG_WORKSPACES then return end
     local ok, mons = pcall(hl.get_monitors)
     if not ok or type(mons) ~= "table" then return end
 
@@ -126,7 +132,7 @@ local function bind_workspaces()
     elseif #live == 2 then
         ranges = { { 1, 5, live[1] }, { 6, 10, live[2] } }
     elseif #live == 3 then
-        ranges = { { 1, 3, live[2] }, { 4, 6, live[1] }, { 7, 9, live[3] } }
+        ranges = { { 1, 3, live[1] }, { 4, 6, live[2] }, { 7, 9, live[3] } }
     else
         return   -- not a layout this binds; workspaces keep the default dynamic behavior
     end
