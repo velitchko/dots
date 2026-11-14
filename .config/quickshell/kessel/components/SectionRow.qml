@@ -64,7 +64,9 @@ Rectangle {
                 color: Theme.subtext
                 anchors.verticalCenter: parent.verticalCenter
                 Behavior on rotation { NumberAnimation { duration: 160 } }
-                MouseArea { anchors.fill: parent; anchors.margins: -8; cursorShape: Qt.PointingHandCursor; onClicked: root.expanded = !root.expanded }
+                // leftMargin stays inside the tail Row's 6px spacing so this never
+                // overlaps the Switch when showSwitch is also true.
+                MouseArea { anchors.fill: parent; anchors.margins: -8; anchors.leftMargin: -2; cursorShape: Qt.PointingHandCursor; onClicked: root.expanded = !root.expanded }
             }
         }
         MouseArea {
