@@ -95,6 +95,17 @@ hl.config({
     layers = {
         allow_new_top_layers_over_existing_fullscreen = true,
     },
+
+    -- Forced off instead of Hyprland's own default ("auto", 2): reported
+    -- symptom was the cursor randomly disappearing, a known failure mode of
+    -- hardware-cursor-plane auto-detection on some Intel iGPUs. Software
+    -- cursor compositing is cheap on anything made this decade -- this is a
+    -- live experiment (not a confirmed fix, the symptom was intermittent
+    -- and never reproduced on demand); revert to `no_hardware_cursors = 2`
+    -- if the cursor still vanishes with this set.
+    cursor = {
+        no_hardware_cursors = 1,
+    },
 })
 
 -- Animations: short, calm, no bounce.
