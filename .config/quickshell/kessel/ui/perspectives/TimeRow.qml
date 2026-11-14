@@ -12,6 +12,7 @@ Item {
         id: row
         anchors.verticalCenter: parent.verticalCenter
         spacing: 14
+        WorkspaceDots { anchors.verticalCenter: parent.verticalCenter }
 
         Label { text: Time.time; font.bold: true; size: Theme.fontUi + 3; anchors.verticalCenter: parent.verticalCenter }
         Label { text: Time.dateLong; color: Theme.subtext; anchors.verticalCenter: parent.verticalCenter }

@@ -22,6 +22,7 @@ Item {
         id: row
         anchors.verticalCenter: parent.verticalCenter
         spacing: 12
+        WorkspaceDots { anchors.verticalCenter: parent.verticalCenter }
 
         // A small vinyl record: dark disc with faint grooves, the album art as a
         // round centre label, a spindle hole. Only the record spins (the square

@@ -12,6 +12,7 @@ Item {
         id: row
         anchors.verticalCenter: parent.verticalCenter
         spacing: 16
+        WorkspaceDots { anchors.verticalCenter: parent.verticalCenter }
         Row { spacing: 6; anchors.verticalCenter: parent.verticalCenter
             Chip { icon: Icons.cpu; text: Stats.pct(Stats.cpu); reserve: "100%"; anchors.verticalCenter: parent.verticalCenter }
             Spark { values: Stats.cpuHist; max: 1; tint: Stats.cpu > 0.85 ? Theme.red : Theme.accent; anchors.verticalCenter: parent.verticalCenter } }

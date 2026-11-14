@@ -12,6 +12,7 @@ Item {
         id: row
         anchors.verticalCenter: parent.verticalCenter
         spacing: 10
+        WorkspaceDots { anchors.verticalCenter: parent.verticalCenter }
         Label { text: Time.time; font.bold: true; size: Theme.fontUi + 2; anchors.verticalCenter: parent.verticalCenter }
         Label { text: Time.dateShort; color: Theme.subtext; anchors.verticalCenter: parent.verticalCenter }
         BatteryChip { anchors.verticalCenter: parent.verticalCenter }
