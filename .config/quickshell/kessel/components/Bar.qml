@@ -46,6 +46,9 @@ Item {
         function emitAt(x) { root.moved(Math.max(0, Math.min(1, (x - 6) / track.width))) }
         onPressed: e => emitAt(e.x)
         onPositionChanged: e => { if (pressed) emitAt(e.x) }
-        onWheel: e => root.moved(Math.max(0, Math.min(1, root.value + (e.angleDelta.y > 0 ? 0.05 : -0.05))))
+        // Drag-only: scrolling over the bar used to nudge the value, which
+        // fought scrolling a device list sitting right below it. No onWheel
+        // handler here means the event isn't accepted and propagates to
+        // whatever's underneath (e.g. the panel's own Flickable).
     }
 }
