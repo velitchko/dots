@@ -10,6 +10,10 @@ View {
     implicitWidth: 520                 // matches NotificationView; fixed regardless of perspective
     implicitHeight: col.implicitHeight + 24
     readonly property bool isMusic: Perspectives.current === "music"
+    readonly property bool isTime: Perspectives.current === "time"
+
+    // timezone polling only while this section is actually visible
+    Binding { target: Timezones; property: "wanted"; value: root.shown && root.isTime }
 
     MouseArea {
         anchors.fill: parent
@@ -55,6 +59,37 @@ View {
             Chip { icon: Icons.memory; text: `RAM ${Stats.memUsedGiB.toFixed(1)}/${Stats.memTotalGiB.toFixed(1)} GiB` }
             Chip { icon: Icons.download; text: Stats.human(Stats.rxRate) }
             Chip { icon: Icons.upload; text: Stats.human(Stats.txRate) }
+        }
+
+        // Time perspective only: home/Vienna/Sofia clocks + full 7-day forecast
+        Column {
+            visible: root.isTime
+            width: parent.width
+            spacing: 8
+
+            Row {
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 16
+                Chip { icon: Icons.place; text: "Home " + Time.time }
+                Chip { icon: Icons.place; text: "Vienna " + (Timezones.vienna !== "" ? Timezones.vienna : "--:--") }
+                Chip { icon: Icons.place; text: "Sofia " + (Timezones.sofia !== "" ? Timezones.sofia : "--:--") }
+            }
+
+            Row {
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 4
+                Repeater {
+                    model: Weather.forecast.slice(0, 7)
+                    Column {
+                        required property var modelData
+                        width: 62
+                        spacing: 1
+                        Label { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.day; color: Theme.subtext; size: Theme.fontSmall - 1 }
+                        Glyph { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.icon; color: Theme.yellow; size: Theme.fontSmall + 1; optical: true }
+                        Label { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.max; size: Theme.fontSmall - 1 }
+                    }
+                }
+            }
         }
     }
 }
