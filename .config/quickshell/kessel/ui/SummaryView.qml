@@ -10,16 +10,12 @@ import "../components"
 
 View {
     id: root
-    // 520 matches NotificationView (700 for Metrics: its four charts read
-    // better side by side than stacked) -- but never narrower than the
-    // resting view already on screen. Shrinking on hover can pull the pill's
-    // edge out from under the cursor, which un-hovers it, which collapses
-    // it back to the (wider) resting view, which re-hovers it: an endless
-    // expand/collapse loop on any perspective whose resting row is wider
-    // than the glance's own base width (confirmed: Overview's chip row and
-    // others can exceed 520 easily).
-    property real minWidth: 0
-    implicitWidth: Math.max(root.isSystem ? 700 : 520, minWidth)
+    // 520 matches NotificationView, fixed everywhere except Metrics: its four
+    // charts read better side by side than stacked, which needs more room.
+    // Flat and consistent regardless of perspective -- Island.qml's
+    // hoverCatcher (not this view) is what keeps a wide resting perspective
+    // (Overview, Metrics) from un-hovering when this view is narrower than it.
+    implicitWidth: root.isSystem ? 700 : 520
     implicitHeight: col.implicitHeight + 24
     readonly property bool isMusic: Perspectives.current === "music"
     readonly property bool isTime: Perspectives.current === "time"

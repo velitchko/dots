@@ -71,6 +71,7 @@ PanelWindow {
         Region { item: bellBtn }
         Region { item: privacyPill }
         Region { item: updatesPill }
+        Region { item: hoverCatcher }
     }
 
     WlrLayershell.namespace: "kessel-island"
@@ -352,10 +353,6 @@ PanelWindow {
         Behavior on height { SpringAnimation { spring: Theme.springStiffness; damping: Theme.springDamping; mass: Theme.springMass; epsilon: 0.25 } }
         Behavior on radius { SpringAnimation { spring: Theme.springStiffness; damping: 0.5; mass: Theme.springMass; epsilon: 0.25 } }
 
-        HoverHandler {
-            id: hover
-            onHoveredChanged: IslandState.hovered = hovered
-        }
         // Scroll anywhere on the pill (rest or glance) → next / previous perspective.
         // Mouse wheels send 120 per notch; touchpads send small pixel deltas, in
         // either axis (two-finger swipe up/down or left/right).
@@ -384,7 +381,7 @@ PanelWindow {
         }
 
         RestView    { id: restView;    shown: win.current === restView }
-        SummaryView { id: summaryView; shown: win.current === summaryView; minWidth: restView.implicitWidth }
+        SummaryView { id: summaryView; shown: win.current === summaryView }
         OsdView     { id: osdView;     shown: win.current === osdView }
         AlarmView { id: alarmView; shown: win.current === alarmView }
         PolkitView { id: polkitView; shown: win.current === polkitView }
@@ -426,6 +423,28 @@ PanelWindow {
                     IslandState.back(); e.accepted = true
                 }
             }
+        }
+    }
+
+    // Invisible, and wider than the visible pill whenever the current
+    // perspective's resting row is wider than the glance's own flat width
+    // (Overview, Metrics): hovering here keeps the glance open even near the
+    // resting row's outer edge, so the glance itself can stay a flat,
+    // consistent width without the pointer falling outside it and
+    // triggering an unhover -> collapse -> rehover loop (confirmed live:
+    // Overview's resting row is ~883px, Metrics' ~975px, both far wider
+    // than the glance's 520/700). Included in `win`'s mask above so this
+    // wider area actually receives pointer input instead of passing
+    // through to whatever's behind it.
+    Item {
+        id: hoverCatcher
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: Math.max(pill.width, restView.implicitWidth)
+        height: pill.height
+        HoverHandler {
+            id: hover
+            onHoveredChanged: IslandState.hovered = hovered
         }
     }
 }
