@@ -21,6 +21,7 @@ Singleton {
     id: root
 
     property bool shown: true
+    property bool returnToFocusModeOnClose: false   // open() un-hid the island from focus mode; closePanel() re-hides it
     property string panel: ""
     property bool hovered: false
     property bool summary: false
@@ -57,7 +58,11 @@ Singleton {
         panel = name
         return true
     }
-    function closePanel() { history = []; panel = "" }
+    function closePanel() {
+        history = []
+        panel = ""
+        if (returnToFocusModeOnClose) { returnToFocusModeOnClose = false; shown = false }
+    }
     function back() {
         if (history.length === 0) { closePanel(); return }
         const prev = history[history.length - 1]
@@ -116,7 +121,11 @@ Singleton {
             // Opening a panel is a deliberate action: always surface it through the
             // island, even in focus mode (root.shown = false), rather than letting
             // the caller's fallback (a bare, unthemed command) run instead.
-            root.shown = true
+            // openPanel() itself sets shown = true, but only once name is valid —
+            // don't force it here, or an unknown panel name would un-hide the
+            // island for nothing. If focus mode was on, closePanel() returns to
+            // it once this panel (and any opened from it) is closed.
+            if (!root.shown) root.returnToFocusModeOnClose = true
             return root.openPanel(name) ? "ok" : "unknown panel"
         }
         function close(): string { root.closePanel(); return "ok" }
@@ -125,7 +134,7 @@ Singleton {
         function thaw(): string { root.thaw(); return "ok" }
         function back(): string { root.back(); return root.panel === "" ? "closed" : root.panel }
         function toggle(): string { root.shown = !root.shown; if (!root.shown) root.closePanel(); return root.shown ? "shown" : "hidden" }
-        function show(): string { root.shown = true; return "ok" }
+        function show(): string { root.shown = true; root.returnToFocusModeOnClose = false; return "ok" }
         function hide(): string { root.shown = false; root.closePanel(); return "ok" }
         function dnd(): string { Notifs.dnd = !Notifs.dnd; return Notifs.dnd ? "dnd on" : "dnd off" }
         function record(): string { Recorder.toggle(false); return "ok" }
