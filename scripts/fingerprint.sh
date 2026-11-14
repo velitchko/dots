@@ -16,6 +16,12 @@
 # system-login` (the Arch wiki setup): a typed password is checked as usual;
 # an EMPTY password (just Enter) goes to the fingerprint reader. Logging in by
 # fingerprint can't unlock a keyring (GNOME Keyring / KWallet need the password).
+# pam_fprintd.so's own defaults are max-tries=3, timeout=30s (`man 8
+# pam_fprintd`) -- too tight for a login screen you might not be looking
+# straight at yet, and failing out of it just falls through to a password
+# prompt that looks like "fingerprint didn't work". Same fix already applied
+# to the lock screen's own PAM stack (kessel-lock/pam/fingerprint): wait,
+# quietly, for as long as the greeter is up instead.
 # The original file is backed up to /etc/pam.d/sddm.kessel-bak-<ts>. Recovery,
 # e.g. over SSH:  sudo cp /etc/pam.d/sddm.kessel-bak-<ts> /etc/pam.d/sddm
 set -euo pipefail
@@ -68,7 +74,7 @@ case "${1:-status}" in
             !done && /^auth[ \t]+include[ \t]+system-login/ {
                 print m
                 print "auth        [success=1 new_authtok_reqd=1 default=ignore]  pam_unix.so try_first_pass likeauth nullok"
-                print "auth        sufficient  pam_fprintd.so"
+                print "auth        sufficient  pam_fprintd.so max-tries=100 timeout=86400"
                 done = 1
             }
             { print }' "$pam" > "$tmp"
