@@ -384,7 +384,7 @@ PanelWindow {
         }
 
         RestView    { id: restView;    shown: win.current === restView }
-        SummaryView { id: summaryView; shown: win.current === summaryView }
+        SummaryView { id: summaryView; shown: win.current === summaryView; minWidth: restView.implicitWidth }
         OsdView     { id: osdView;     shown: win.current === osdView }
         AlarmView { id: alarmView; shown: win.current === alarmView }
         PolkitView { id: polkitView; shown: win.current === polkitView }
