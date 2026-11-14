@@ -19,4 +19,7 @@
 .config/quickshell/kessel    .config/quickshell/kessel
 .config/quickshell/kessel-lock .config/quickshell/kessel-lock
 .config/omniglyph/config.toml .config/omniglyph/config.toml
+# Monitor profiles, one per machine, named after its hostname (deathstar = desktop).
+# hyprmoncfgd picks the one whose screens are connected; see README "Display manager".
+.config/hyprmoncfg/profiles  .config/hyprmoncfg/profiles
 scripts                      Scripts

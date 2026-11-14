@@ -94,7 +94,10 @@ systemctl --user restart wireplumber                  # once, so Bluetooth audio
   ~/Scripts/ddc-brightness.sh install    # udev rule + i2c group membership (sudo)
   ```
   Without that rule, external monitors are just skipped — the laptop panel keeps working as before. A monitor that doesn't support DDC/CI brightness control is skipped too, silently.
-- **Display manager (optional):** [hyprmoncfg](https://github.com/crmne/hyprmoncfg) (`hyprmoncfg-git`, installed with `--with-aur`) lets you drag displays into place and save profiles like `desk` or `home`. Run `hyprmoncfg`; once you apply a layout it takes over from `monitors.lua`. To switch profiles automatically on plug/unplug and lid close: `systemctl --user enable --now hyprmoncfgd`. Delete `~/.config/hypr/hyprmoncfg-monitors.lua` to go back to the automatic layout.
+- **Display manager (optional):** [hyprmoncfg](https://github.com/crmne/hyprmoncfg) (`hyprmoncfg-git`, installed with `--with-aur`) lets you drag displays into place and save profiles. Once you apply a layout it takes over from `monitors.lua`, including the workspace plan if the profile has one. Delete `~/.config/hypr/hyprmoncfg-monitors.lua` to go back to the automatic layout.
+  - **Profiles live in the repo**, one per machine, named after its hostname: `.config/hyprmoncfg/profiles/` (linked to `~/.config/hyprmoncfg/profiles`). `deathstar` is the desktop: left Dell · Razer (main) · right Dell (portrait), workspaces 1–3 left, 4–6 center, 7–9 right.
+  - **New machine (e.g. the laptop):** arrange the screens in `hyprmoncfg`, then `hyprmoncfg save "$(hostnamectl hostname)"` and commit the new files. Profiles match by each screen's make/model/serial, so every machine only ever picks its own.
+  - **Loading:** `systemctl --user enable --now hyprmoncfgd` (once per machine; the installer never enables services). It applies the matching profile at login and on plug/unplug and lid close.
 
 ### Fingerprint
 

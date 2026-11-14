@@ -1,0 +1,141 @@
+{
+  "name": "deathstar",
+  "created_at": "2026-11-14T16:13:05.292792591Z",
+  "updated_at": "2026-11-14T16:23:48.270421787Z",
+  "outputs": [
+    {
+      "key": "dell inc.|dell u2311h|hv8xp13h17dl",
+      "match_key": "dell inc.|dell u2311h|hv8xp13h17dl",
+      "name": "DP-2",
+      "description": "Dell Inc. DELL U2311H HV8XP13H17DL",
+      "make": "Dell Inc.",
+      "model": "DELL U2311H",
+      "serial": "HV8XP13H17DL",
+      "enabled": true,
+      "mode": "1920x1080@60.00Hz",
+      "width": 1920,
+      "height": 1080,
+      "refresh": 60,
+      "x": 4480,
+      "y": -274,
+      "scale": 1,
+      "transform": 1,
+      "bitdepth": 8,
+      "cm": "srgb",
+      "sdr_brightness": 1,
+      "sdr_saturation": 1,
+      "sdr_min_luminance": 0.2,
+      "sdr_max_luminance": 80,
+      "min_luminance": 0
+    },
+    {
+      "key": "dell inc.|dell u2414h|292k473t11el",
+      "match_key": "dell inc.|dell u2414h|292k473t11el",
+      "name": "HDMI-A-1",
+      "description": "Dell Inc. DELL U2414H 292K473T11EL",
+      "make": "Dell Inc.",
+      "model": "DELL U2414H",
+      "serial": "292K473T11EL",
+      "enabled": true,
+      "mode": "1920x1080@60.00Hz",
+      "width": 1920,
+      "height": 1080,
+      "refresh": 60,
+      "x": 0,
+      "y": 0,
+      "scale": 1,
+      "transform": 0,
+      "bitdepth": 8,
+      "cm": "srgb",
+      "sdr_brightness": 1,
+      "sdr_saturation": 1,
+      "sdr_min_luminance": 0.2,
+      "sdr_max_luminance": 80,
+      "min_luminance": 0
+    },
+    {
+      "key": "razer taiwan co. ltd.|rz39-0276|2030v04400631",
+      "match_key": "razer taiwan co. ltd.|rz39-0276|2030v04400631",
+      "name": "DP-1",
+      "description": "Razer Taiwan Co. Ltd. RZ39-0276 2030V04400631",
+      "make": "Razer Taiwan Co. Ltd.",
+      "model": "RZ39-0276",
+      "serial": "2030V04400631",
+      "enabled": true,
+      "mode": "2560x1440@144.00Hz",
+      "width": 2560,
+      "height": 1440,
+      "refresh": 144,
+      "x": 1920,
+      "y": 0,
+      "scale": 1,
+      "transform": 0,
+      "bitdepth": 8,
+      "cm": "srgb",
+      "sdr_brightness": 1,
+      "sdr_saturation": 1,
+      "sdr_min_luminance": 0.2,
+      "sdr_max_luminance": 80,
+      "min_luminance": 0
+    }
+  ],
+  "workspaces": {
+    "enabled": true,
+    "strategy": "manual",
+    "max_workspaces": 9,
+    "group_size": 3,
+    "monitor_order": [
+      "dell inc.|dell u2414h|292k473t11el",
+      "razer taiwan co. ltd.|rz39-0276|2030v04400631",
+      "dell inc.|dell u2311h|hv8xp13h17dl"
+    ],
+    "rules": [
+      {
+        "workspace": "1",
+        "output_key": "dell inc.|dell u2414h|292k473t11el",
+        "output_name": "HDMI-A-1"
+      },
+      {
+        "workspace": "2",
+        "output_key": "dell inc.|dell u2414h|292k473t11el",
+        "output_name": "HDMI-A-1"
+      },
+      {
+        "workspace": "3",
+        "output_key": "dell inc.|dell u2414h|292k473t11el",
+        "output_name": "HDMI-A-1"
+      },
+      {
+        "workspace": "4",
+        "output_key": "razer taiwan co. ltd.|rz39-0276|2030v04400631",
+        "output_name": "DP-1"
+      },
+      {
+        "workspace": "5",
+        "output_key": "razer taiwan co. ltd.|rz39-0276|2030v04400631",
+        "output_name": "DP-1"
+      },
+      {
+        "workspace": "6",
+        "output_key": "razer taiwan co. ltd.|rz39-0276|2030v04400631",
+        "output_name": "DP-1"
+      },
+      {
+        "workspace": "7",
+        "output_key": "dell inc.|dell u2311h|hv8xp13h17dl",
+        "output_name": "DP-2"
+      },
+      {
+        "workspace": "8",
+        "output_key": "dell inc.|dell u2311h|hv8xp13h17dl",
+        "output_name": "DP-2"
+      },
+      {
+        "workspace": "9",
+        "output_key": "dell inc.|dell u2311h|hv8xp13h17dl",
+        "output_name": "DP-2"
+      }
+    ]
+  },
+  "exec": ""
+}
