@@ -23,7 +23,19 @@ PanelBase {
     readonly property int count: Math.max(Hypr.maxId, 5)
     readonly property real cardW: 168
     readonly property real cardH: cardW * monH / monW
-    readonly property real k: cardW / monW            // logical px → preview px
+    readonly property real k: cardW / monW            // logical px → preview px (focused monitor)
+
+    // Window coordinates are global (all monitors side by side), so each card must
+    // be mapped through the monitor *its* workspace lives on, not the focused one --
+    // otherwise windows on the other monitors land outside their card and get clipped.
+    // Rotated outputs (transform 1/3/5/7) swap width and height.
+    function geomOf(m) {
+        if (!m) return { x: 0, y: 0, w: monW, h: monH }
+        const s = m.scale > 0 ? m.scale : 1
+        const rot = (m.lastIpcObject?.transform ?? 0) % 2 === 1
+        const w = (rot ? m.height : m.width) / s, h = (rot ? m.width : m.height) / s
+        return { x: m.x, y: m.y, w: w, h: h }
+    }
 
     contentWidth: cols * cardW + (cols - 1) * 10
     contentHeight: Math.ceil(count / cols) * (cardH + 26) + (Math.ceil(count / cols) - 1) * 10
@@ -50,6 +62,13 @@ PanelBase {
                 required property int index
                 readonly property int wsId: index + 1
                 readonly property var wins: Hypr.windowsOn(wsId)
+                // This workspace's own monitor (falls back to the focused one for
+                // workspaces that don't exist yet -- they have no windows anyway),
+                // fitted into the card without distortion and centred.
+                readonly property var g: root.geomOf(Hypr.workspaces.find(w => w.id === wsId)?.monitor ?? root.mon)
+                readonly property real wk: Math.min(root.cardW / g.w, root.cardH / g.h)
+                readonly property real ox: (root.cardW - g.w * wk) / 2
+                readonly property real oy: (root.cardH - g.h * wk) / 2
                 spacing: 4
 
                 Rectangle {
@@ -89,12 +108,10 @@ PanelBase {
                                 id: win
                                 required property var modelData
                                 readonly property var ipc: modelData.lastIpcObject
-                                readonly property real mx: mon ? mon.x : 0
-                                readonly property real my: mon ? mon.y : 0
-                                x: ((ipc?.at?.[0] ?? 0) - mx) * root.k
-                                y: ((ipc?.at?.[1] ?? 0) - my) * root.k
-                                width: Math.max(12, (ipc?.size?.[0] ?? 100) * root.k)
-                                height: Math.max(10, (ipc?.size?.[1] ?? 80) * root.k)
+                                x: ws.ox + ((ipc?.at?.[0] ?? 0) - ws.g.x) * ws.wk
+                                y: ws.oy + ((ipc?.at?.[1] ?? 0) - ws.g.y) * ws.wk
+                                width: Math.max(12, (ipc?.size?.[0] ?? 100) * ws.wk)
+                                height: Math.max(10, (ipc?.size?.[1] ?? 80) * ws.wk)
                                 radius: 4
                                 color: Theme.overlay
                                 border.width: wma.containsMouse ? Theme.borderWidth : 0
