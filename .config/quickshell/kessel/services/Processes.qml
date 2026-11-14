@@ -13,11 +13,23 @@ Singleton {
     property var topCpu: []
     property var topMem: []
 
+    // `ps`'s own %cpu is itself ~ (its own brief lifetime's CPU time) / (its own
+    // brief lifetime) -- close to 100%, an artifact of this command measuring
+    // itself, not a real hog. Filtered out so it doesn't crowd out real entries.
+    // Note: %cpu/%mem here are still lifetime averages (ps's own definition),
+    // not instantaneous -- same characteristic `ps --sort=-%cpu`/`top`'s default
+    // view has always had. A real delta-sampled "right now" metric was
+    // investigated and set aside: it needs either a longer-lived sampling
+    // process or more robust /proc-read error handling than three attempts
+    // produced a verified-correct version of, for what is a cosmetic feature.
     function parse(text) {
         const out = []
         for (const line of text.trim().split("\n")) {
             const m = line.match(/^(.*\S)\s+([\d.]+)$/)
-            if (m) out.push({ name: m[1].trim(), pct: parseFloat(m[2]) })
+            if (!m) continue
+            const name = m[1].trim()
+            if (name === "ps") continue
+            out.push({ name, pct: parseFloat(m[2]) })
             if (out.length >= 5) break
         }
         return out

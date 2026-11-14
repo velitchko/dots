@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Hover glance: the music controller if something plays, else today at a glance.
+// Hover glance: shared baseline (time, user, date, weather, now-playing,
+// brief metrics) on every perspective, plus a perspective-specific extra
+// section -- richer now-playing on Music, timezones + full forecast on
+// Time, bigger charts + top processes on Metrics.
 import QtQuick
 import ".."
 import "../services"

@@ -14,7 +14,8 @@ Singleton {
     property string sofia: ""
 
     function refresh() { viennaProc.running = true; sofiaProc.running = true }
-    Timer { interval: 30000; running: root.wanted; repeat: true; triggeredOnStart: true; onTriggered: root.refresh() }
+    onWantedChanged: if (wanted) refresh()
+    Connections { target: Time; function onTimeChanged() { if (root.wanted) root.refresh() } }
 
     Process {
         id: viennaProc
