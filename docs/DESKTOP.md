@@ -80,6 +80,7 @@ Every script lives in one place, `~/Scripts` (a symlink to this repo's `scripts/
 | `~/Scripts/gen-shortcuts.sh` | Rebuild `docs/SHORTCUTS.md` from `keybinds.lua` |
 | `~/Scripts/root-prompt.sh` | `install` / `remove` (sudo): the themed Starship prompt in root shells (`sudo -i`, `sudo -s`), root shown as a red pill. Copies the config (root must not read a file your user can edit); re-run after a theme change |
 | `~/Scripts/fingerprint.sh` | `status`, `enroll [finger]`, `sddm-on` / `sddm-off` (sudo; fingerprint login at SDDM) |
+| `~/Scripts/ddc-brightness.sh` | `test` (list DDC-capable displays), `install` / `uninstall` (sudo): udev rule so the brightness slider can also reach external monitors |
 
 ## How config deployment works
 

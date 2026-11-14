@@ -88,6 +88,12 @@ systemctl --user restart wireplumber                  # once, so Bluetooth audio
   printf 'blacklist pcspkr\nblacklist snd_pcsp\n' | sudo tee /etc/modprobe.d/nobeep.conf
   ```
 - **Displays:** `monitors.lua` arranges them automatically and re-applies on hot-plug: one external display goes to the **left** of the laptop; with three, the main one sits in the middle (set `MAIN_MONITOR`).
+- **External monitor brightness:** the brightness slider (`SUPER+A`) also reaches external monitors over DDC/CI, at the same percentage as the laptop panel — one slider, every screen together, not independent per-monitor control. Needs `ddcutil` (installed with the base profile) and a one-time udev rule, since `/dev/i2c-*` is root-only by default:
+  ```sh
+  ~/Scripts/ddc-brightness.sh test       # list what ddcutil can already see (no root)
+  ~/Scripts/ddc-brightness.sh install    # udev rule + i2c group membership (sudo)
+  ```
+  Without that rule, external monitors are just skipped — the laptop panel keeps working as before. A monitor that doesn't support DDC/CI brightness control is skipped too, silently.
 - **Display manager (optional):** [hyprmoncfg](https://github.com/crmne/hyprmoncfg) (`hyprmoncfg-git`, installed with `--with-aur`) lets you drag displays into place and save profiles like `desk` or `home`. Run `hyprmoncfg`; once you apply a layout it takes over from `monitors.lua`. To switch profiles automatically on plug/unplug and lid close: `systemctl --user enable --now hyprmoncfgd`. Delete `~/.config/hypr/hyprmoncfg-monitors.lua` to go back to the automatic layout.
 
 ### Fingerprint
@@ -160,7 +166,7 @@ Enter copies the result. More languages: `translate.sh available`, then e.g. `tr
 | `SUPER + Q` · `SUPER + F` · `SUPER + D` | Close · fullscreen · float/tile window |
 | `SUPER + 1…0` / `SUPER + ALT + 1…0` | Go to / send window to workspace |
 | `SUPER + S` | Scratchpad |
-| `SUPER + Space` | Focus mode (hide the island) |
+| `SUPER + Space` | Focus mode (hide the island) — the launcher (`SUPER+R`) still opens on its own while hidden, instead of un-hiding everything |
 | `SUPER + L` / `SUPER + SHIFT + L` | Lock / suspend |
 | `CTRL + ALT + Delete` | Session menu |
 | `CTRL + SUPER + R` | Reload Hyprland + restart the island |
@@ -215,6 +221,7 @@ After pulling changes that add files to the island: `~/.config/hypr/scripts/isla
 | OnlyOffice has transparent margins | `~/.config/hypr/scripts/theme.sh apply`, then restart OnlyOffice |
 | Fish broken | `SUPER+SHIFT+Return` opens plain bash; `chsh -s /usr/bin/bash` to switch back |
 | Fingerprint isn't offered on the lock | `~/Scripts/fingerprint.sh status` (needs fprintd + an enrolled finger); then lock again |
+| External monitor brightness doesn't change | `~/Scripts/ddc-brightness.sh test` (needs `ddcutil` installed and the udev rule set up first); if it finds nothing, the monitor likely doesn't support DDC/CI |
 | Mic halo doesn't pulse | It needs `cava` and runs only while an app uses the mic and it isn't muted |
 | Lock screen died | From SSH/TTY: `hyprctl --instance 0 eval 'hl.clear_crashed_lockscreen()'` |
 
