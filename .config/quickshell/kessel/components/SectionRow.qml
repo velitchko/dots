@@ -64,6 +64,7 @@ Rectangle {
                 color: Theme.subtext
                 anchors.verticalCenter: parent.verticalCenter
                 Behavior on rotation { NumberAnimation { duration: 160 } }
+                MouseArea { anchors.fill: parent; anchors.margins: -8; cursorShape: Qt.PointingHandCursor; onClicked: root.expanded = !root.expanded }
             }
         }
         MouseArea {
