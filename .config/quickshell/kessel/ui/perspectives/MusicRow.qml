@@ -95,9 +95,22 @@ Item {
                 size: Theme.fontSmall + 0.5
                 elide: Text.ElideNone
                 TextMetrics { id: tm; font: mtext.font; text: marquee.full }
+                // The loop has to travel exactly as far as the gap-plus-one-copy
+                // is wide, so the second copy lands precisely where the first
+                // one started when the animation snaps back to x=0 -- that snap
+                // isn't itself hideable (NumberAnimation.loops restarts at
+                // `from`, it doesn't ping-pong or wrap), so it only reads as
+                // seamless if the travel distance is exact. It previously
+                // approximated the gap as `pointSize * 6` instead of measuring
+                // the real rendered width of the actual gap text below, so any
+                // mismatch between that guess and the real glyph widths showed
+                // up as a small visible jump once per loop (reported: "jumps at
+                // various points" -- once per cycle, which varies in length by
+                // track, so it never lands on the same on-screen moment twice).
+                TextMetrics { id: tmLap; font: mtext.font; text: marquee.full + "        " }
                 NumberAnimation on x {
                     running: mtext.overflow && root.active
-                    from: 0; to: -(tm.advanceWidth + tm.font.pointSize * 6)
+                    from: 0; to: -tmLap.advanceWidth
                     duration: Math.max(6000, tm.advanceWidth * 28)
                     loops: Animation.Infinite
                 }
