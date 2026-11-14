@@ -11,9 +11,12 @@ View {
     implicitHeight: col.implicitHeight + 24
     readonly property bool isMusic: Perspectives.current === "music"
     readonly property bool isTime: Perspectives.current === "time"
+    readonly property bool isSystem: Perspectives.current === "system"
 
     // timezone polling only while this section is actually visible
     Binding { target: Timezones; property: "wanted"; value: root.shown && root.isTime }
+    // top-processes polling only while this section is actually visible
+    Binding { target: Processes; property: "wanted"; value: root.shown && root.isSystem }
 
     MouseArea {
         anchors.fill: parent
@@ -87,6 +90,67 @@ View {
                         Label { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.day; color: Theme.subtext; size: Theme.fontSmall - 1 }
                         Glyph { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.icon; color: Theme.yellow; size: Theme.fontSmall + 1; optical: true }
                         Label { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.max; size: Theme.fontSmall - 1 }
+                    }
+                }
+            }
+        }
+
+        // Metrics perspective only: enlarged sparklines + top-5 process lists
+        Column {
+            visible: root.isSystem
+            width: parent.width
+            spacing: 10
+
+            Column {
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 6
+                Row { spacing: 10
+                    Label { text: "CPU"; color: Theme.subtext; size: Theme.fontSmall; width: 32 }
+                    Spark { values: Stats.cpuHist; max: 1; tint: Stats.cpu > 0.85 ? Theme.red : Theme.accent; height: 40; barWidth: 3; count: 40 }
+                }
+                Row { spacing: 10
+                    Label { text: "RAM"; color: Theme.subtext; size: Theme.fontSmall; width: 32 }
+                    Spark { values: Stats.memHist; max: 1; tint: Theme.purple; height: 40; barWidth: 3; count: 40 }
+                }
+                Row { spacing: 10
+                    Label { text: "RX"; color: Theme.subtext; size: Theme.fontSmall; width: 32 }
+                    Spark { values: Stats.rxHist; tint: Theme.green; height: 40; barWidth: 3; count: 40 }
+                }
+                Row { spacing: 10
+                    Label { text: "TX"; color: Theme.subtext; size: Theme.fontSmall; width: 32 }
+                    Spark { values: Stats.txHist; tint: Theme.yellow; height: 40; barWidth: 3; count: 40 }
+                }
+            }
+
+            Row {
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 16
+                Column {
+                    width: 230
+                    spacing: 2
+                    Label { text: "Top CPU"; color: Theme.subtext; size: Theme.fontSmall; font.bold: true }
+                    Repeater {
+                        model: Processes.topCpu
+                        Row {
+                            required property var modelData
+                            width: 230
+                            Label { text: modelData.name; width: 160; elide: Text.ElideRight; size: Theme.fontSmall }
+                            Label { text: modelData.pct.toFixed(1) + "%"; width: 70; horizontalAlignment: Text.AlignRight; color: Theme.subtext; size: Theme.fontSmall }
+                        }
+                    }
+                }
+                Column {
+                    width: 230
+                    spacing: 2
+                    Label { text: "Top Memory"; color: Theme.subtext; size: Theme.fontSmall; font.bold: true }
+                    Repeater {
+                        model: Processes.topMem
+                        Row {
+                            required property var modelData
+                            width: 230
+                            Label { text: modelData.name; width: 160; elide: Text.ElideRight; size: Theme.fontSmall }
+                            Label { text: modelData.pct.toFixed(1) + "%"; width: 70; horizontalAlignment: Text.AlignRight; color: Theme.subtext; size: Theme.fontSmall }
+                        }
                     }
                 }
             }
