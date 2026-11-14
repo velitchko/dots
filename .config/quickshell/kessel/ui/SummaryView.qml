@@ -10,7 +10,9 @@ import "../components"
 
 View {
     id: root
-    implicitWidth: 520                 // matches NotificationView; fixed regardless of perspective
+    // 520 matches NotificationView, fixed everywhere except Metrics: its four
+    // charts read better side by side than stacked, which needs more room.
+    implicitWidth: root.isSystem ? 700 : 520
     implicitHeight: col.implicitHeight + 24
     readonly property bool isMusic: Perspectives.current === "music"
     readonly property bool isTime: Perspectives.current === "time"
@@ -104,54 +106,54 @@ View {
             width: parent.width
             spacing: 10
 
-            Column {
+            Row {
                 anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 6
-                Row { spacing: 10
-                    Label { text: "CPU"; color: Theme.subtext; size: Theme.fontSmall; width: 32 }
-                    Spark { values: Stats.cpuHist; max: 1; tint: Stats.cpu > 0.85 ? Theme.red : Theme.accent; height: 40; barWidth: 3; count: 40 }
+                spacing: 16
+                Column { spacing: 4
+                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: "CPU"; color: Theme.subtext; size: Theme.fontSmall }
+                    Spark { values: Stats.cpuHist; max: 1; tint: Stats.cpu > 0.85 ? Theme.red : Theme.accent; height: 40; barWidth: 3; count: 36 }
                 }
-                Row { spacing: 10
-                    Label { text: "RAM"; color: Theme.subtext; size: Theme.fontSmall; width: 32 }
-                    Spark { values: Stats.memHist; max: 1; tint: Theme.purple; height: 40; barWidth: 3; count: 40 }
+                Column { spacing: 4
+                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: "RAM"; color: Theme.subtext; size: Theme.fontSmall }
+                    Spark { values: Stats.memHist; max: 1; tint: Theme.purple; height: 40; barWidth: 3; count: 36 }
                 }
-                Row { spacing: 10
-                    Label { text: "RX"; color: Theme.subtext; size: Theme.fontSmall; width: 32 }
-                    Spark { values: Stats.rxHist; tint: Theme.green; height: 40; barWidth: 3; count: 40 }
+                Column { spacing: 4
+                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: "RX"; color: Theme.subtext; size: Theme.fontSmall }
+                    Spark { values: Stats.rxHist; tint: Theme.green; height: 40; barWidth: 3; count: 36 }
                 }
-                Row { spacing: 10
-                    Label { text: "TX"; color: Theme.subtext; size: Theme.fontSmall; width: 32 }
-                    Spark { values: Stats.txHist; tint: Theme.yellow; height: 40; barWidth: 3; count: 40 }
+                Column { spacing: 4
+                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: "TX"; color: Theme.subtext; size: Theme.fontSmall }
+                    Spark { values: Stats.txHist; tint: Theme.yellow; height: 40; barWidth: 3; count: 36 }
                 }
             }
 
             Row {
                 anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 16
+                spacing: 24
                 Column {
-                    width: 230
+                    width: 280
                     spacing: 2
                     Label { text: "Top CPU"; color: Theme.subtext; size: Theme.fontSmall; font.bold: true }
                     Repeater {
                         model: Processes.topCpu
                         Row {
                             required property var modelData
-                            width: 230
-                            Label { text: modelData.name; width: 160; elide: Text.ElideRight; size: Theme.fontSmall }
+                            width: 280
+                            Label { text: modelData.name; width: 200; elide: Text.ElideRight; size: Theme.fontSmall }
                             Label { text: modelData.pct.toFixed(1) + "%"; width: 70; horizontalAlignment: Text.AlignRight; color: Theme.subtext; size: Theme.fontSmall }
                         }
                     }
                 }
                 Column {
-                    width: 230
+                    width: 280
                     spacing: 2
                     Label { text: "Top Memory"; color: Theme.subtext; size: Theme.fontSmall; font.bold: true }
                     Repeater {
                         model: Processes.topMem
                         Row {
                             required property var modelData
-                            width: 230
-                            Label { text: modelData.name; width: 160; elide: Text.ElideRight; size: Theme.fontSmall }
+                            width: 280
+                            Label { text: modelData.name; width: 200; elide: Text.ElideRight; size: Theme.fontSmall }
                             Label { text: modelData.pct.toFixed(1) + "%"; width: 70; horizontalAlignment: Text.AlignRight; color: Theme.subtext; size: Theme.fontSmall }
                         }
                     }
