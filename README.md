@@ -87,7 +87,7 @@ systemctl --user restart wireplumber                  # once, so Bluetooth audio
   ```sh
   printf 'blacklist pcspkr\nblacklist snd_pcsp\n' | sudo tee /etc/modprobe.d/nobeep.conf
   ```
-- **Displays:** `monitors.lua` arranges them automatically and re-applies on hot-plug: one external display goes to the **left** of the laptop; with three, the main one sits in the middle (set `MAIN_MONITOR`).
+- **Displays:** `monitors.lua` arranges them automatically and re-applies on hot-plug: one external display goes to the **left** of the laptop; with three, the main one sits in the middle (set `MAIN_MONITOR`). Workspaces 1-10 are bound to specific monitors by that same left-to-right position, re-applied on hot-plug too: 1-10 on a single monitor, 1-5 / 6-10 with two, 1-3 (middle) / 4-6 (left) / 7-9 (right) with three.
 - **External monitor brightness:** the brightness slider (`SUPER+A`) also reaches external monitors over DDC/CI, at the same percentage as the laptop panel — one slider, every screen together, not independent per-monitor control. Needs `ddcutil` (installed with the base profile) and a one-time udev rule, since `/dev/i2c-*` is root-only by default:
   ```sh
   ~/Scripts/ddc-brightness.sh test       # list what ddcutil can already see (no root)
