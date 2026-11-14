@@ -301,6 +301,8 @@ MouseArea {
                         ? root.context.fingerprintMessage
                     : root.context.fingerprintReady ? "Password or fingerprint"
                     : "Enter password"
+                width: field.width
+                elide: Text.ElideRight
                 color: root.context.failed || (root.context.fingerprintReady && root.context.fingerprintFailed) ? Style.red : Style.faint
                 font.family: Style.mono
                 font.pixelSize: 15
