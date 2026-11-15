@@ -350,17 +350,6 @@ PanelBase {
                     }
                 }
             }
-
-            // Session
-            Row {
-                spacing: 8
-                anchors.horizontalCenter: parent.horizontalCenter
-                IconButton { icon: Icons.lock; size: 38; onClicked: { IslandState.closePanel(); Session.lock() } }
-                IconButton { icon: Icons.sleep; size: 38; onClicked: IslandState.openPanel("power") }
-                IconButton { icon: Icons.logout; size: 38; onClicked: IslandState.openPanel("power") }
-                IconButton { icon: Icons.restart; size: 38; onClicked: IslandState.openPanel("power") }
-                IconButton { icon: Icons.power; size: 38; tint: Theme.red; onClicked: IslandState.openPanel("power") }
-            }
         }
     }
 
