@@ -47,12 +47,15 @@ Rectangle {
         // appName is "Telegram Desktop" but appIcon is "org.telegram.desktop",
         // the actual window class) even when desktopEntry itself is unset.
         const names = [n.desktopEntry, n.appIcon, n.appName]
-        if (!Hypr.focusApp(names)) {
-            const app = Apps.findByNames(names)
-            if (app) Apps.launch(app)
-        }
         Notifs.activate(n)
-        IslandState.closePanel()
+        // Focus after the panel has closed: its focus grab makes Hyprland drop
+        // the workspace switch when the app lives on another workspace.
+        Hypr.afterPanel(() => {
+            if (!Hypr.focusApp(names)) {
+                const app = Apps.findByNames(names)
+                if (app) Apps.launch(app)
+            }
+        })
     }
 
     Rectangle {

@@ -149,8 +149,8 @@ add { group = "Workspaces", keys = "SUPER + Page_Up",      dsp = function() retu
 add { group = "Workspaces", keys = "SUPER + Page_Down",    dsp = function() return hl.dsp.focus({ workspace = "r+1" }) end, desc = "Next workspace", hidden = true }
 add { group = "Workspaces", keys = "SUPER + SHIFT + Page_Up",   dsp = function() return hl.dsp.window.move({ workspace = "r-1" }) end, desc = "Move window to previous workspace" }
 add { group = "Workspaces", keys = "SUPER + SHIFT + Page_Down", dsp = function() return hl.dsp.window.move({ workspace = "r+1" }) end, desc = "Move window to next workspace" }
-add { group = "Workspaces", keys = "SUPER + mouse_down", dsp = function() return hl.dsp.focus({ workspace = "e+1" }) end, desc = "Next workspace (scroll)" }
-add { group = "Workspaces", keys = "SUPER + mouse_up",   dsp = function() return hl.dsp.focus({ workspace = "e-1" }) end, desc = "Previous workspace (scroll)" }
+add { group = "Workspaces", keys = "SUPER + mouse_down", dsp = function() return hl.dsp.focus({ workspace = "r+1" }) end, desc = "Next workspace (scroll)" }
+add { group = "Workspaces", keys = "SUPER + mouse_up",   dsp = function() return hl.dsp.focus({ workspace = "r-1" }) end, desc = "Previous workspace (scroll)" }
 add { group = "Workspaces", keys = "SUPER + S",        dsp = function() return hl.dsp.workspace.toggle_special("scratch") end, desc = "Toggle scratchpad" }
 add { group = "Workspaces", keys = "CTRL + SUPER + S", dsp = function() return hl.dsp.workspace.toggle_special("scratch") end, desc = "Toggle scratchpad", hidden = true }
 add { group = "Workspaces", keys = "SUPER + ALT + S",  dsp = function() return hl.dsp.window.move({ workspace = "special:scratch", follow = false }) end, desc = "Send window to scratchpad" }

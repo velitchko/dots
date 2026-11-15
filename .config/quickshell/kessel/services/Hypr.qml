@@ -7,6 +7,10 @@ import Quickshell.Hyprland
 
 Singleton {
     id: root
+    // Quickshell only learns about windows from openwindow events after it
+    // starts; anything already open (Signal at login, say) is missing from
+    // toplevels until someone asks for the full list. Ask once up front.
+    Component.onCompleted: Hyprland.refreshToplevels()
     readonly property var workspaces: Hyprland.workspaces.values.filter(w => w.id > 0)
     readonly property int focusedId: Hyprland.focusedWorkspace?.id ?? 1
     // Workspaces the island shows (dots, SUPER+Tab grid): at least 5, growing with
@@ -39,7 +43,8 @@ Singleton {
     function focusApp(names) {
         const want = names.filter(n => n).map(normalize).filter(n => n !== "")
         const t = toplevels.find(t => {
-            const c = normalize(t.lastIpcObject?.class || "")
+            // wayland.appId is live; lastIpcObject is only filled by a refresh.
+            const c = normalize(t.wayland?.appId || t.lastIpcObject?.class || "")
             return c !== "" && want.some(w => c === w || c.indexOf(w) >= 0 || w.indexOf(c) >= 0)
         })
         if (t) focusWindow(t)
