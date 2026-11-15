@@ -57,5 +57,6 @@ ShellRoot {
         void Notifs.count
         void Audio.ready
         void Brightness.available
+        void NightLight.available
     }
 }
