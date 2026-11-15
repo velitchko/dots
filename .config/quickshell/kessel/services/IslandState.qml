@@ -63,6 +63,13 @@ Singleton {
         detachedLauncher = false
         history = []
         panel = ""
+        // hoverTimer keeps running while a panel is open (nothing gates it on
+        // panel !== ""), so it can silently set summary = true underneath the
+        // panel layer. Clear it here the same way scrollPerspective() already
+        // does, or that stale glance flashes visible the instant panel clears.
+        glanceSuppressed = true
+        hoverTimer.stop()
+        summary = false
         if (returnToFocusModeOnClose) { returnToFocusModeOnClose = false; shown = false }
     }
     function back() {
