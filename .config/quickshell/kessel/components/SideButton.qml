@@ -8,6 +8,7 @@ Rectangle {
     property string icon: ""
     property bool active: false
     property int badge: 0
+    readonly property alias hovered: ma.containsMouse
     property color tint: Theme.accent
     signal clicked()
 
