@@ -22,6 +22,21 @@ PanelBase {
         IconButton { icon: Icons.power; size: 26; iconSize: Theme.fontSmall + 2; tint: Theme.red; onClicked: IslandState.openPanel("power") }
     ]
 
+    // System-card meter: tinted glyph, bar (hidden when value < 0), value text
+    component MeterRow: Row {
+        property string icon: ""
+        property color tint: Theme.accent
+        property real value: -1
+        property bool hot: false
+        property string label: ""
+        width: parent ? parent.width : 0
+        spacing: 8
+        Glyph { text: parent.icon; width: 18; color: parent.tint; optical: true; anchors.verticalCenter: parent.verticalCenter }
+        Bar { visible: parent.value >= 0; width: parent.width - 18 - 96 - 16; value: Math.max(0, parent.value); fill: parent.hot ? Theme.red : parent.tint; anchors.verticalCenter: parent.verticalCenter }
+        Item { visible: parent.value < 0; width: parent.width - 18 - 96 - 16; height: 1 }
+        Label { text: parent.label; size: Theme.fontSmall; color: parent.hot ? Theme.red : Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
+    }
+
     property var pskTarget: null      // Wi-Fi network waiting for a password
 
     // ───────────────────────── left column ─────────────────────────
@@ -315,41 +330,25 @@ PanelBase {
                     x: 2
                     width: parent.width - 4
                     spacing: 8
-                    Row {
-                        width: parent.width; spacing: 8
-                        Glyph { text: Icons.cpu; width: 18; color: Theme.subtext; optical: true; anchors.verticalCenter: parent.verticalCenter }
-                        Bar { width: parent.width - 18 - 96 - 16; value: Stats.cpu; anchors.verticalCenter: parent.verticalCenter; fill: Stats.cpu > 0.85 ? Theme.red : Theme.accent }
-                        Label { text: Math.round(Stats.cpu * 100) + "%"; size: Theme.fontSmall; color: Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
+                    // Same order, colours and content as the Metrics perspective:
+                    // CPU (accent) · GPU (accent2) · RAM (purple), red when high;
+                    // temperatures ride on the CPU/GPU rows like the Metrics lines.
+                    MeterRow {
+                        icon: Icons.cpu; tint: Theme.accent
+                        value: Stats.cpu; hot: Stats.cpu > 0.85 || Stats.temp >= 85
+                        label: [Stats.pct(Stats.cpu), Stats.temp >= 0 ? Math.round(Stats.temp) + "°C" : ""].filter(x => x).join(" · ")
                     }
-                    Row {
-                        width: parent.width; spacing: 8
-                        Glyph { text: Icons.memory; width: 18; color: Theme.subtext; optical: true; anchors.verticalCenter: parent.verticalCenter }
-                        Bar { width: parent.width - 18 - 96 - 16; value: Stats.mem; anchors.verticalCenter: parent.verticalCenter; fill: Stats.mem > 0.85 ? Theme.red : Theme.purple }
-                        Label { text: Stats.memUsedGiB.toFixed(1) + "G"; size: Theme.fontSmall; color: Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
+                    // laptop dGPU asleep: dim "off" (never woken); Intel iGPU: temperature only
+                    MeterRow {
+                        visible: Gpu.present
+                        icon: Icons.gpu; tint: Gpu.on ? Theme.accent2 : Theme.subtext
+                        value: Gpu.on ? Gpu.busy : -1; hot: Gpu.busy > 0.85 || Gpu.temp >= 85
+                        label: !Gpu.on ? "off" : [Gpu.busy >= 0 ? Stats.pct(Gpu.busy) : "", Gpu.temp >= 0 ? Math.round(Gpu.temp) + "°C" : ""].filter(x => x).join(" · ")
                     }
-                    // Temperatures: CPU and GPU share one row (split in half when
-                    // both exist) -- this card is at the bottom of a 560px
-                    // scrolling column, so an extra row would land below the fold.
-                    // GPU is hidden without a sensor and while a laptop dGPU sleeps.
-                    Row {
-                        id: temps
-                        readonly property bool cpuT: Stats.temp >= 0
-                        readonly property bool gpuT: Gpu.on && Gpu.temp >= 0
-                        readonly property real segW: (width - 18 - 8 - (cpuT && gpuT ? 16 : 0)) / ((cpuT ? 1 : 0) + (gpuT ? 1 : 0) || 1)
-                        visible: cpuT || gpuT
-                        width: parent.width; spacing: 8
-                        Glyph { text: Icons.thermo; width: 18; color: Theme.subtext; optical: true; anchors.verticalCenter: parent.verticalCenter }
-                        Repeater {
-                            model: [temps.cpuT ? { label: "CPU", t: Stats.temp } : null,
-                                    temps.gpuT ? { label: "GPU", t: Gpu.temp } : null].filter(x => x)
-                            Row {
-                                required property var modelData
-                                width: temps.segW; spacing: 8
-                                anchors.verticalCenter: parent.verticalCenter
-                                Bar { width: parent.width - 72 - 8; value: Math.min(1, modelData.t / 100); anchors.verticalCenter: parent.verticalCenter; fill: modelData.t > 85 ? Theme.red : Theme.yellow }
-                                Label { text: modelData.label + " " + Math.round(modelData.t) + "°C"; size: Theme.fontSmall; color: Theme.subtext; width: 72; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
-                            }
-                        }
+                    MeterRow {
+                        icon: Icons.memory; tint: Theme.purple
+                        value: Stats.mem; hot: Stats.mem > 0.85
+                        label: `${Stats.memUsedGiB.toFixed(1)}/${Stats.memTotalGiB.toFixed(0)}G`
                     }
                     Repeater {
                         model: Stats.disks.slice(0, 3)
@@ -357,15 +356,15 @@ PanelBase {
                             required property var modelData
                             width: sys.width; spacing: 8
                             Glyph { text: Icons.disk; width: 18; color: Theme.subtext; optical: true; anchors.verticalCenter: parent.verticalCenter }
-                            Bar { width: parent.width - 18 - 96 - 16; value: modelData.frac; anchors.verticalCenter: parent.verticalCenter; fill: modelData.frac > 0.9 ? Theme.red : Theme.accent2 }
+                            Bar { width: parent.width - 18 - 96 - 16; value: modelData.frac; anchors.verticalCenter: parent.verticalCenter; fill: modelData.frac > 0.9 ? Theme.red : Theme.subtext }
                             Label { text: Stats.gib(modelData.size - modelData.used) + " free"; size: Theme.fontSmall; color: Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
                         }
                     }
                     Row {
                         spacing: 16
                         Chip { icon: Net.icon; text: Net.label }
-                        Chip { icon: Icons.download; text: Stats.human(Stats.rxRate) }
-                        Chip { icon: Icons.upload; text: Stats.human(Stats.txRate) }
+                        Chip { icon: Icons.download; tint: Theme.green; text: Stats.human(Stats.rxRate) }
+                        Chip { icon: Icons.upload; tint: Theme.yellow; text: Stats.human(Stats.txRate) }
                     }
                 }
             }
