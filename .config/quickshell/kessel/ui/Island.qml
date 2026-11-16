@@ -124,21 +124,12 @@ PanelWindow {
         icon: Icons.shieldLock
         tint: win.catGreen
         active: Vpn.fullTunnel
-        // The island window's overlay headroom below the main row is a
-        // fixed budget sized for the perspective tag (win.implicitHeight:
-        // Theme.islandHeight + 44) -- a 3-line Hint doesn't fit in it and
-        // gets clipped at the Wayland surface boundary, so tunnel + geo
-        // info share one line to stay within the 2 lines that do fit.
-        readonly property string tooltipText: [
-            Vpn.tailscaleAvailable ? "Tailscale: " + (Vpn.tailscaleUp ? "up" + (Vpn.tailscaleIp !== "" ? ` (${Vpn.tailscaleIp})` : "") : "down") : "",
-            Vpn.fullTunnel
-                ? "Tunnel: " + (Vpn.exitNodeActive ? "Tailscale exit node" : Vpn.wgInterface !== "" ? `WireGuard (${Vpn.wgInterface})` : "OpenConnect")
-                    + (Vpn.geoLabel !== "" ? ` — ${Vpn.geoIp}, ${Vpn.geoLabel}` : "")
-                : "No full-tunnel VPN"
-        ].filter(s => s).join("\n")
         Hint {
             visible: vpnBtn.hovered
-            text: vpnBtn.tooltipText
+            text: !Vpn.fullTunnel
+                ? "VPN Disconnected"
+                : (Vpn.exitNodeActive ? "Tailscale exit node" : Vpn.wgInterface !== "" ? `WireGuard (${Vpn.wgInterface})` : "OpenConnect")
+                    + (Vpn.geoLabel !== "" ? ` — ${Vpn.geoIp}, ${Vpn.geoLabel}` : "")
         }
     }
     SideButton {
