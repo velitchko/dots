@@ -76,11 +76,18 @@ View {
         }
         Row {
             anchors.horizontalCenter: parent.horizontalCenter
+            // One shape for all three processors ("CPU 31%", "GPU 99%",
+            // "RAM 50%"), glyphs tinted like their Metrics charts, each label
+            // reserving its widest form so the row doesn't shift as numbers change.
+            // Exact GiB/VRAM figures live in the Metrics glance's spec lines.
             spacing: 18
-            Chip { icon: Icons.cpu; text: "CPU " + Math.round(Stats.cpu * 100) + "%" }
-            Chip { icon: Icons.memory; text: `RAM ${Stats.memUsedGiB.toFixed(1)}/${Stats.memTotalGiB.toFixed(1)} GiB` }
-            Chip { icon: Icons.download; text: Stats.human(Stats.rxRate) }
-            Chip { icon: Icons.upload; text: Stats.human(Stats.txRate) }
+            Chip { icon: Icons.cpu; tint: Theme.accent; text: "CPU " + Stats.pct(Stats.cpu); reserve: "CPU 100%" }
+            Chip { visible: Gpu.present; icon: Icons.gpu; tint: Gpu.on ? Theme.accent2 : Theme.subtext
+                   text: !Gpu.on ? "GPU off" : Gpu.busy >= 0 ? "GPU " + Stats.pct(Gpu.busy) : "GPU " + Math.round(Gpu.temp) + "°"
+                   reserve: "GPU 100%" }
+            Chip { icon: Icons.memory; tint: Theme.purple; text: "RAM " + Stats.pct(Stats.mem); reserve: "RAM 100%" }
+            Chip { icon: Icons.download; tint: Theme.green; text: Stats.human(Stats.rxRate); reserve: "9.9 M/s" }
+            Chip { icon: Icons.upload; tint: Theme.yellow; text: Stats.human(Stats.txRate); reserve: "9.9 M/s" }
         }
 
         // Time perspective only: home/Vienna/Sofia clocks + full 7-day forecast

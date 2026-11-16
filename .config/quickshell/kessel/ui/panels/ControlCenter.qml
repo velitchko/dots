@@ -302,16 +302,18 @@ PanelBase {
                 }
             }
 
-            // System
-            Rectangle {
+            // System: same header as the other sections (always open, not
+            // collapsible); the subtitle names the hardware the bars describe
+            SectionRow {
                 width: parent.width
-                height: sys.height + 20
-                radius: Theme.radiusCard
-                color: Theme.card
+                icon: Icons.cpu
+                title: "System"
+                sub: [Stats.cpuName].concat(Gpu.all.map(g => g.name)).join(" · ")
+                expanded: true
                 Column {
                     id: sys
-                    x: 12; y: 10
-                    width: parent.width - 24
+                    x: 2
+                    width: parent.width - 4
                     spacing: 8
                     Row {
                         width: parent.width; spacing: 8
