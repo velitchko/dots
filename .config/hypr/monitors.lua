@@ -21,6 +21,12 @@ local MODES = { ["Virtual-1"] = "1920x1080" }
 -- fractional buffer scaling. Pinned to the nearest integer instead; size is
 -- tuned via font points (see docs/THEME.md), not surface scale.
 local SCALES = { ["eDP-1"] = "1" }
+-- ...except on a genuinely high-res laptop panel (e.g. 2880x1920 at ~13.5"),
+-- where 1x is unreadably small. There the pin above is replaced at load by
+-- integer 2x (crisp, unlike fractional; 2880x1920 -> 1440x960 logical). Keyed
+-- on the panel's pixel width, not the output name, because every laptop calls
+-- its panel eDP-1: the ~1920-wide laptop keeps 1x, externals are untouched.
+local HIDPI_MIN_WIDTH, HIDPI_SCALE = 2560, "2"
 for name, mode in pairs(MODES) do
     hl.monitor({ output = name, mode = mode, position = "0x0", scale = SCALES[name] or "auto" })
 end
@@ -37,8 +43,19 @@ local function is_internal(m)
     return n:match("^eDP") or n:match("^LVDS") or n:match("^DSI") or n:match("^Virtual")
 end
 
+local function is_panel(m)
+    local n = m.name or ""
+    return n:match("^eDP") or n:match("^LVDS") or n:match("^DSI")
+end
+
+local function scale_for(m)
+    if is_panel(m) and (m.width or 0) >= HIDPI_MIN_WIDTH then return HIDPI_SCALE end
+    return SCALES[m.name] or "auto"
+end
+
 local function logical_width(m)
-    local w, h, s = m.width or 0, m.height or 0, (m.scale and m.scale > 0) and m.scale or 1
+    local s = tonumber(scale_for(m)) or ((m.scale and m.scale > 0) and m.scale or 1)
+    local w, h = m.width or 0, m.height or 0
     if m.transform == 1 or m.transform == 3 or m.transform == 5 or m.transform == 7 then w = h end
     return math.floor(w / s + 0.5)
 end
@@ -56,6 +73,23 @@ local HYPRMONCFG, HYPRMONCFG_WORKSPACES = (function()
     -- workspaces too, and bind_workspaces() below must not override them.
     return true, text:find("hl.workspace_rule(", 1, true) ~= nil
 end)()
+
+-- High-res laptop panels: swap the 1x pin for HIDPI_SCALE (see SCALES above).
+-- Runs on every machine without hyprmoncfg, single display included, since
+-- arrange() below returns early when there is nothing to arrange.
+local function apply_panel_scales()
+    if HYPRMONCFG then return end
+    local ok, mons = pcall(hl.get_monitors)
+    if not ok or type(mons) ~= "table" then return end
+    for _, m in ipairs(mons) do
+        -- Always re-declare (not "only if the live scale differs"): on a config
+        -- reload the live scale is already 2x, but the static 1x rule above is
+        -- registered again and would win if this one were skipped.
+        if is_panel(m) and (m.width or 0) >= HIDPI_MIN_WIDTH then
+            hl.monitor({ output = m.name, mode = MODES[m.name] or "preferred", position = "auto-right", scale = HIDPI_SCALE })
+        end
+    end
+end
 
 local function arrange()
     if HYPRMONCFG then return end
@@ -90,7 +124,7 @@ local function arrange()
 
     local x = 0
     for _, m in ipairs(order) do
-        hl.monitor({ output = m.name, mode = MODES[m.name] or "preferred", position = x .. "x0", scale = SCALES[m.name] or "auto" })
+        hl.monitor({ output = m.name, mode = MODES[m.name] or "preferred", position = x .. "x0", scale = scale_for(m) })
         x = x + logical_width(m)
     end
 end
@@ -145,13 +179,15 @@ local function bind_workspaces()
     end
 end
 
+apply_panel_scales()
 arrange()
 bind_workspaces()
 hl.on("monitor.added", function()
+    apply_panel_scales()
     arrange()
     bind_workspaces()
     -- the new display's auto scale is known only after it is configured; settle once more
-    hl.timer(function() arrange(); bind_workspaces() end, { timeout = 600, type = "oneshot" })
+    hl.timer(function() apply_panel_scales(); arrange(); bind_workspaces() end, { timeout = 600, type = "oneshot" })
 end)
 hl.on("monitor.removed", function()
     arrange()
