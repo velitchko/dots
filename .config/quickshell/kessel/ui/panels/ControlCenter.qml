@@ -229,7 +229,7 @@ PanelBase {
                 }
             }
 
-            // Brightness (laptops / backlight only)
+            // Brightness (laptop backlight and/or DDC/CI external monitors)
             SliderRow {
                 width: parent.width
                 visible: Brightness.available

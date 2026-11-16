@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Backlight via brightnessctl. Hidden when there is no /sys/class/backlight device (VMs, desktops).
+// Backlight via brightnessctl, plus DDC/CI external monitors via ddcutil.
+// Available when there is a /sys/class/backlight device (laptops) OR at least
+// one DDC-capable monitor (desktops); hidden otherwise (VMs).
 // Mirrors Audio.qml's shape: the OSD reacts to the actual sysfs value changing,
 // not to who changed it -- so hardware brightness keys (which run brightnessctl
 // directly, never through this file) show the OSD exactly like our own slider
@@ -19,7 +21,7 @@ import ".."
 
 Singleton {
     id: root
-    property bool available: false
+    readonly property bool available: device !== "" || ddcBuses.length > 0
     property string device: ""
     property real value: 0      // 0..1
     property int _max: 1
@@ -28,10 +30,27 @@ Singleton {
     function set(v) {
         if (!available) return
         v = Math.max(0.01, Math.min(1, v))
-        Quickshell.execDetached(["brightnessctl", "-q", "-d", device, "set", Math.round(v * 100) + "%"])
-        const pct = String(Math.round(v * 100))
-        for (const bus of root.ddcBuses)
-            Quickshell.execDetached(["ddcutil", "--bus", String(bus), "setvcp", "10", pct, "--noverify"])
+        if (device !== "")
+            Quickshell.execDetached(["brightnessctl", "-q", "-d", device, "set", Math.round(v * 100) + "%"])
+        else
+            applyRaw(v * root._max)   // no sysfs file to echo the change back on desktops
+        root._ddcPending = Math.round(v * 100)
+        if (!ddcThrottle.running) ddcThrottle.start()
+    }
+
+    // ddcutil writes take ~100ms+ each; a slider drag would otherwise spawn
+    // dozens of overlapping writes per bus. Coalesce to the latest value.
+    property int _ddcPending: -1
+    Timer {
+        id: ddcThrottle
+        interval: 150
+        onTriggered: {
+            if (root._ddcPending < 0) return
+            const pct = String(root._ddcPending)
+            root._ddcPending = -1
+            for (const bus of root.ddcBuses)
+                Quickshell.execDetached(["ddcutil", "--bus", String(bus), "setvcp", "10", pct, "--noverify"])
+        }
     }
 
     property bool armed: false
@@ -62,7 +81,6 @@ Singleton {
             onStreamFinished: {
                 const f = text.trim().split(",")
                 if (f.length >= 5) {
-                    root.available = true
                     root._max = parseInt(f[4]) || 1
                     root.device = f[0]
                 }
@@ -84,6 +102,25 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 root.ddcBuses = text.trim().split("\n").filter(l => l !== "")
+                // Desktop: no backlight file to read, so seed the slider from the first monitor.
+                if (root.device === "" && root.ddcBuses.length > 0) {
+                    ddcRead.command = ["ddcutil", "--bus", String(root.ddcBuses[0]), "getvcp", "10", "--brief"]
+                    ddcRead.running = true
+                }
+            }
+        }
+    }
+
+    // `getvcp 10 --brief` → "VCP 10 C <current> <max>"
+    Process {
+        id: ddcRead
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const f = text.trim().split(/\s+/)
+                if (f.length >= 5 && f[0] === "VCP") {
+                    const cur = parseInt(f[3]), max = parseInt(f[4]) || 100
+                    root.value = Math.max(0, Math.min(1, cur / max))
+                }
             }
         }
     }
