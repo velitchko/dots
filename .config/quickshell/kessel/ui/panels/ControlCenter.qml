@@ -325,20 +325,29 @@ PanelBase {
                         Bar { width: parent.width - 18 - 96 - 16; value: Stats.mem; anchors.verticalCenter: parent.verticalCenter; fill: Stats.mem > 0.85 ? Theme.red : Theme.purple }
                         Label { text: Stats.memUsedGiB.toFixed(1) + "G"; size: Theme.fontSmall; color: Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
                     }
+                    // Temperatures: CPU and GPU share one row (split in half when
+                    // both exist) -- this card is at the bottom of a 560px
+                    // scrolling column, so an extra row would land below the fold.
+                    // GPU is hidden without a sensor and while a laptop dGPU sleeps.
                     Row {
-                        visible: Stats.temp >= 0
+                        id: temps
+                        readonly property bool cpuT: Stats.temp >= 0
+                        readonly property bool gpuT: Gpu.on && Gpu.temp >= 0
+                        readonly property real segW: (width - 18 - 8 - (cpuT && gpuT ? 16 : 0)) / ((cpuT ? 1 : 0) + (gpuT ? 1 : 0) || 1)
+                        visible: cpuT || gpuT
                         width: parent.width; spacing: 8
                         Glyph { text: Icons.thermo; width: 18; color: Theme.subtext; optical: true; anchors.verticalCenter: parent.verticalCenter }
-                        Bar { width: parent.width - 18 - 96 - 16; value: Math.min(1, Stats.temp / 100); anchors.verticalCenter: parent.verticalCenter; fill: Stats.temp > 85 ? Theme.red : Theme.yellow }
-                        Label { text: "CPU " + Math.round(Stats.temp) + "°C"; size: Theme.fontSmall; color: Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
-                    }
-                    // hidden without a sensor, and for a sleeping laptop dGPU (Gpu.temp is -1 then)
-                    Row {
-                        visible: Gpu.on && Gpu.temp >= 0
-                        width: parent.width; spacing: 8
-                        Glyph { text: Icons.thermo; width: 18; color: Theme.subtext; optical: true; anchors.verticalCenter: parent.verticalCenter }
-                        Bar { width: parent.width - 18 - 96 - 16; value: Math.min(1, Gpu.temp / 100); anchors.verticalCenter: parent.verticalCenter; fill: Gpu.temp > 85 ? Theme.red : Theme.yellow }
-                        Label { text: "GPU " + Math.round(Gpu.temp) + "°C"; size: Theme.fontSmall; color: Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
+                        Repeater {
+                            model: [temps.cpuT ? { label: "CPU", t: Stats.temp } : null,
+                                    temps.gpuT ? { label: "GPU", t: Gpu.temp } : null].filter(x => x)
+                            Row {
+                                required property var modelData
+                                width: temps.segW; spacing: 8
+                                anchors.verticalCenter: parent.verticalCenter
+                                Bar { width: parent.width - 72 - 8; value: Math.min(1, modelData.t / 100); anchors.verticalCenter: parent.verticalCenter; fill: modelData.t > 85 ? Theme.red : Theme.yellow }
+                                Label { text: modelData.label + " " + Math.round(modelData.t) + "°C"; size: Theme.fontSmall; color: Theme.subtext; width: 72; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
+                            }
+                        }
                     }
                     Repeater {
                         model: Stats.disks.slice(0, 3)
