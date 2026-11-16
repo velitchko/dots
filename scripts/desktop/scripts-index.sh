@@ -16,7 +16,7 @@ root = sys.argv[1]
 out = []
 PRIORITY = {
     "": ["install.sh", "update.sh", "backup.sh", "uninstall.sh", "sddm-theme.sh",
-         "fingerprint.sh", "root-prompt.sh", "ddc-brightness.sh", "gen-shortcuts.sh"],
+         "fingerprint.sh", "intelligence.sh", "root-prompt.sh", "ddc-brightness.sh", "gen-shortcuts.sh"],
     "desktop": ["island.sh", "island-or.sh", "theme.sh", "lock.sh", "translate.sh",
                 "bt-pair.sh", "screenshot.sh", "record-pick.sh", "clipboard.sh",
                 "colorpicker.sh", "shortcuts.sh", "browser.sh", "editor.sh",
