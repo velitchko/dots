@@ -110,8 +110,7 @@ python-markdown
 python-pygments
 python-matplotlib
 python-requests
-# Local model backend for the AI chat (provider "Ollama"). CPU build; on an
-# NVIDIA machine add ollama-cuda yourself. Ships a system service the installer
-# never enables. Once per machine:
-#   sudo systemctl enable --now ollama.service && ollama pull qwen2.5:3b
+# Local model backend for the AI chat (provider "Ollama"). Ships a system
+# service the installer never enables: run ~/Scripts/intelligence.sh setup once
+# per machine (also adds ollama-cuda on NVIDIA and pulls a model).
 ollama
