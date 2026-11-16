@@ -330,7 +330,15 @@ PanelBase {
                         width: parent.width; spacing: 8
                         Glyph { text: Icons.thermo; width: 18; color: Theme.subtext; optical: true; anchors.verticalCenter: parent.verticalCenter }
                         Bar { width: parent.width - 18 - 96 - 16; value: Math.min(1, Stats.temp / 100); anchors.verticalCenter: parent.verticalCenter; fill: Stats.temp > 85 ? Theme.red : Theme.yellow }
-                        Label { text: Math.round(Stats.temp) + "°C"; size: Theme.fontSmall; color: Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
+                        Label { text: "CPU " + Math.round(Stats.temp) + "°C"; size: Theme.fontSmall; color: Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
+                    }
+                    // hidden without a sensor, and for a sleeping laptop dGPU (Gpu.temp is -1 then)
+                    Row {
+                        visible: Gpu.on && Gpu.temp >= 0
+                        width: parent.width; spacing: 8
+                        Glyph { text: Icons.thermo; width: 18; color: Theme.subtext; optical: true; anchors.verticalCenter: parent.verticalCenter }
+                        Bar { width: parent.width - 18 - 96 - 16; value: Math.min(1, Gpu.temp / 100); anchors.verticalCenter: parent.verticalCenter; fill: Gpu.temp > 85 ? Theme.red : Theme.yellow }
+                        Label { text: "GPU " + Math.round(Gpu.temp) + "°C"; size: Theme.fontSmall; color: Theme.subtext; width: 96; horizontalAlignment: Text.AlignRight; anchors.verticalCenter: parent.verticalCenter }
                     }
                     Repeater {
                         model: Stats.disks.slice(0, 3)
