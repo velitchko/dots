@@ -42,6 +42,12 @@ qt6-wayland
 xdg-user-dirs
 xdg-utils
 nm-connection-editor    # quick settings → Wi-Fi "More…": hidden / enterprise networks, VPN (nmtui fallback)
+# VPN status indicator (services/Vpn.qml): Tailscale mesh/exit-node,
+# raw WireGuard tunnels (e.g. the user's ProtonVPN wg-quick setup), OpenConnect
+tailscale
+iproute2                # `ip -o link show type wireguard` detects a non-Tailscale tunnel
+wireguard-tools         # wg-quick config (ProtonVPN) — not called by the probe, but what it detects
+openconnect
 # OmniGlyph (AUR) needs this at runtime but its package does not declare it
 gtk4-layer-shell
 # colour emoji (OmniGlyph, notifications, browsers) — without it emojis render as boxes
