@@ -101,7 +101,10 @@ pgrep -x openconnect >/dev/null 2>&1 && echo "OCUP=1" || echo "OCUP=0"
                 const json = JSON.parse(tsBlock.slice(tsNl + 1))
                 tsUp = json.BackendState === "Running"
                 tsIp = (json.Self && json.Self.TailscaleIPs && json.Self.TailscaleIPs[0]) || ""
-                exitNode = json.ExitNodeStatus !== undefined && json.ExitNodeStatus !== null
+                // tailscale status --json keeps reporting the last-selected
+                // ExitNodeStatus even once Tailscale is fully Stopped, so
+                // this must also require the backend to actually be running.
+                exitNode = tsUp && json.ExitNodeStatus !== undefined && json.ExitNodeStatus !== null
             } catch (e) { /* daemon down / bad JSON: keep defaults */ }
         }
         root._tailscaleUp = tsUp
