@@ -25,6 +25,32 @@ Singleton {
     readonly property bool fullTunnel: exitNodeActive || wgInterface !== "" || openconnectUp
     readonly property bool anyBackendAvailable: tailscaleAvailable || wgAvailable || openconnectAvailable
 
+    // identifies which backend is driving fullTunnel, so a switch between
+    // backends (without an intervening "down") still re-triggers geolocation
+    readonly property string backendKey: !fullTunnel ? ""
+        : exitNodeActive ? "exit"
+        : wgInterface !== "" ? "wg:" + wgInterface
+        : "oc"
+    onBackendKeyChanged: {
+        if (backendKey === "") { geoIp = ""; geoLabel = ""; return }
+        if (!geoProc.running) geoProc.running = true
+    }
+    property string geoIp: ""
+    property string geoLabel: ""
+    Process {
+        id: geoProc
+        command: ["sh", "-c", "curl -s --max-time 3 https://ipinfo.io/json"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const j = JSON.parse(text)
+                    root.geoIp = j.ip ?? ""
+                    root.geoLabel = (j.city && j.country) ? `${j.city}, ${j.country}` : ""
+                } catch (e) { root.geoIp = ""; root.geoLabel = "" }
+            }
+        }
+    }
+
     property bool _tailscaleAvailable: false
     property bool _tailscaleUp: false
     property string _tailscaleIp: ""
