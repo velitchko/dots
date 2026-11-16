@@ -22,14 +22,21 @@ Singleton {
     // investigated and set aside: it needs either a longer-lived sampling
     // process or more robust /proc-read error handling than three attempts
     // produced a verified-correct version of, for what is a cosmetic feature.
+    // Columns are fixed-width (pct:6, comm:16, then args) because comm can
+    // contain spaces ("Web Content"). comm is what we show, except for Wine/
+    // Proton programs: Wine renames their main thread to "Main", so a game
+    // would read as "Main" -- for those the .exe name from args is used.
     function parse(text) {
         const out = []
-        for (const line of text.trim().split("\n")) {
-            const m = line.match(/^(.*\S)\s+([\d.]+)$/)
-            if (!m) continue
-            const name = m[1].trim()
-            if (name === "ps") continue
-            out.push({ name, pct: parseFloat(m[2]) })
+        for (const line of text.split("\n")) {
+            if (line.length < 8) continue
+            const pct = parseFloat(line.slice(0, 6))
+            let name = line.slice(7, 23).trim()
+            const args = line.slice(24)
+            if (!isFinite(pct) || name === "ps") continue
+            const exe = args.match(/^"?(?:[A-Za-z]:\\|\/)[^"]*?([^\\\/"]+)\.exe\b/i)
+            if (exe) name = exe[1]
+            out.push({ name, pct })
             if (out.length >= 5) break
         }
         return out
@@ -39,12 +46,12 @@ Singleton {
 
     Process {
         id: cpuProc
-        command: ["ps", "-e", "-o", "comm,%cpu", "--sort=-%cpu", "--no-headers"]
+        command: ["ps", "-e", "-o", "%cpu:6=,comm:16=,args=", "--sort=-%cpu", "--no-headers"]
         stdout: StdioCollector { onStreamFinished: root.topCpu = root.parse(text) }
     }
     Process {
         id: memProc
-        command: ["ps", "-e", "-o", "comm,%mem", "--sort=-%mem", "--no-headers"]
+        command: ["ps", "-e", "-o", "%mem:6=,comm:16=,args=", "--sort=-%mem", "--no-headers"]
         stdout: StdioCollector { onStreamFinished: root.topMem = root.parse(text) }
     }
 }

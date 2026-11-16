@@ -19,6 +19,21 @@ Singleton {
     property var tempHist: []
     // real filesystems (deduplicated by device): [{ mount, size, used, frac }]
     property var disks: []
+    // CPU model, shortened like Gpu.shortName ("Ryzen 7 3800X", "Core i7-1165G7");
+    // read once -- it doesn't change while running
+    property string cpuName: "CPU"
+    Process {
+        running: true
+        command: ["sh", "-c", "grep -m1 -E '^(model name|Model|Hardware)' /proc/cpuinfo | cut -d: -f2-"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const n = text.trim().replace(/\((TM|R)\)/gi, "").replace(/\s+@.*$/, "")
+                    .replace(/\s+\d+-Core Processor|\s+(CPU|Processor)$|\s+with Radeon.*$/gi, "")
+                    .replace(/^(AMD|Intel)\s+/, "").replace(/\s+/g, " ").trim()
+                if (n) root.cpuName = n
+            }
+        }
+    }
 
     Process {
         id: tempProc

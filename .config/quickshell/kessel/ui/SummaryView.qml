@@ -2,7 +2,7 @@
 // Hover glance: shared baseline (time, user, date, weather, now-playing,
 // brief metrics) on every perspective, plus a perspective-specific extra
 // section -- richer now-playing on Music, timezones + full forecast on
-// Time, bigger charts (CPU/GPU/RAM/net, temps) + GPU line + top processes
+// Time, bigger charts (CPU/GPU/RAM/net, temps) + CPU/GPU spec lines + top processes
 // on Metrics.
 import QtQuick
 import ".."
@@ -21,6 +21,16 @@ View {
     readonly property bool isMusic: Perspectives.current === "music"
     readonly property bool isTime: Perspectives.current === "time"
     readonly property bool isSystem: Perspectives.current === "system"
+
+    // "Name · 31% · RAM 15.7/31.3 GiB · 47°C"; unknown parts (load < 0,
+    // no memory total, temp < 0) are left out rather than shown as dashes
+    function specLine(name, load, memLabel, used, total, temp) {
+        const gib = b => (b / 1073741824).toFixed(1)
+        return [name,
+                load >= 0 ? Math.round(load * 100) + "%" : "",
+                total > 0 ? `${memLabel} ${gib(used)}/${gib(total)} GiB` : "",
+                temp >= 0 ? Math.round(temp) + "°C" : ""].filter(x => x).join(" · ")
+    }
 
     // timezone polling only while this section is actually visible
     Binding { target: Timezones; property: "wanted"; value: root.shown && root.isTime }
@@ -142,24 +152,28 @@ View {
                 }
             }
 
-            // One line per GPU: name, load, VRAM, temperature -- or "asleep"
-            // for a runtime-suspended laptop dGPU (deliberately not woken).
-            Row {
-                visible: Gpu.present
+            // One line per processor, same shape for each: name · load ·
+            // memory · temperature, glyph tinted like its chart above. A
+            // runtime-suspended laptop dGPU reads "asleep" (deliberately not woken).
+            Column {
                 anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 18
+                spacing: 4
+                Chip {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    icon: Icons.cpu
+                    tint: Theme.accent
+                    text: root.specLine(Stats.cpuName, Stats.cpu, "RAM", Stats.memUsedGiB * 1073741824, Stats.memTotalGiB * 1073741824, Stats.temp)
+                }
                 Repeater {
                     model: Gpu.all
                     Chip {
                         required property var modelData
+                        anchors.horizontalCenter: parent.horizontalCenter
                         icon: Icons.gpu
                         tint: modelData.on ? Theme.accent2 : Theme.subtext
                         textColor: modelData.on ? Theme.text : Theme.subtext
                         text: !modelData.on ? modelData.name + " · asleep"
-                            : [modelData.name,
-                               modelData.busy >= 0 ? Math.round(modelData.busy * 100) + "%" : "",
-                               modelData.vramTotal > 0 ? `VRAM ${(modelData.vramUsed / 1073741824).toFixed(1)}/${(modelData.vramTotal / 1073741824).toFixed(1)} GiB` : "",
-                               modelData.temp >= 0 ? Math.round(modelData.temp) + "°C" : ""].filter(x => x).join(" · ")
+                            : root.specLine(modelData.name, modelData.busy, "VRAM", modelData.vramUsed, modelData.vramTotal, modelData.temp)
                     }
                 }
             }
