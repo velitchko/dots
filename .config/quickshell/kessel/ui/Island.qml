@@ -66,6 +66,7 @@ PanelWindow {
     color: "transparent"
     mask: Region {
         item: pill
+        Region { item: vpnBtn }
         Region { item: gearBtn }
         Region { item: timerPill }
         Region { item: bellBtn }
@@ -116,9 +117,34 @@ PanelWindow {
     // Floating side buttons: gear → quick settings, bell → notifications.
     // They ride the pill's edges, so they glide outward as it morphs.
     SideButton {
-        id: gearBtn
+        id: vpnBtn
         y: 0
         x: pill.x - width - 8
+        visible: Vpn.anyBackendAvailable
+        icon: Icons.shieldLock
+        tint: win.catGreen
+        active: Vpn.fullTunnel
+        // The island window's overlay headroom below the main row is a
+        // fixed budget sized for the perspective tag (win.implicitHeight:
+        // Theme.islandHeight + 44) -- a 3-line Hint doesn't fit in it and
+        // gets clipped at the Wayland surface boundary, so tunnel + geo
+        // info share one line to stay within the 2 lines that do fit.
+        readonly property string tooltipText: [
+            Vpn.tailscaleAvailable ? "Tailscale: " + (Vpn.tailscaleUp ? "up" + (Vpn.tailscaleIp !== "" ? ` (${Vpn.tailscaleIp})` : "") : "down") : "",
+            Vpn.fullTunnel
+                ? "Tunnel: " + (Vpn.exitNodeActive ? "Tailscale exit node" : Vpn.wgInterface !== "" ? `WireGuard (${Vpn.wgInterface})` : "OpenConnect")
+                    + (Vpn.geoLabel !== "" ? ` — ${Vpn.geoIp}, ${Vpn.geoLabel}` : "")
+                : "No full-tunnel VPN"
+        ].filter(s => s).join("\n")
+        Hint {
+            visible: vpnBtn.hovered
+            text: vpnBtn.tooltipText
+        }
+    }
+    SideButton {
+        id: gearBtn
+        y: 0
+        x: vpnBtn.x - width - 8
         // Becomes a back arrow while a panel was opened from another panel.
         icon: IslandState.canGoBack ? Icons.back : Icons.settings
         active: IslandState.panel === "control" || IslandState.canGoBack
