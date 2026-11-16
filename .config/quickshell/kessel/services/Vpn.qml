@@ -32,21 +32,36 @@ Singleton {
         : wgInterface !== "" ? "wg:" + wgInterface
         : "oc"
     onBackendKeyChanged: {
-        if (backendKey === "") { geoIp = ""; geoLabel = ""; return }
-        if (!geoProc.running) geoProc.running = true
+        if (backendKey === "") { geoIp = ""; geoLabel = ""; geoRetryNeeded = false; return }
+        startGeoLookup()
     }
     property string geoIp: ""
     property string geoLabel: ""
+    // which backendKey the in-flight (or just-finished) lookup was for, so a
+    // result that arrives after a backend switch is never shown under the
+    // wrong name; geoRetryNeeded covers the switch-during-lookup case, where
+    // the request for the new backend is deferred rather than dropped
+    property string geoFor: ""
+    property bool geoRetryNeeded: false
+    function startGeoLookup() {
+        if (geoProc.running) { geoRetryNeeded = true; return }
+        geoFor = backendKey
+        geoRetryNeeded = false
+        geoProc.running = true
+    }
     Process {
         id: geoProc
         command: ["sh", "-c", "curl -s --max-time 3 https://ipinfo.io/json"]
         stdout: StdioCollector {
             onStreamFinished: {
-                try {
-                    const j = JSON.parse(text)
-                    root.geoIp = j.ip ?? ""
-                    root.geoLabel = (j.city && j.country) ? `${j.city}, ${j.country}` : ""
-                } catch (e) { root.geoIp = ""; root.geoLabel = "" }
+                if (root.geoFor === root.backendKey) {
+                    try {
+                        const j = JSON.parse(text)
+                        root.geoIp = j.ip ?? ""
+                        root.geoLabel = (j.city && j.country) ? `${j.city}, ${j.country}` : ""
+                    } catch (e) { root.geoIp = ""; root.geoLabel = "" }
+                }
+                if (root.geoRetryNeeded && root.backendKey !== "") root.startGeoLookup()
             }
         }
     }
@@ -65,7 +80,7 @@ Singleton {
         command: ["sh", "-c", `
 if command -v tailscale >/dev/null 2>&1; then
   echo "TSAVAIL=1"
-  tailscale status --json 2>/dev/null
+  timeout 3 tailscale status --json 2>/dev/null
 else
   echo "TSAVAIL=0"
 fi
@@ -82,7 +97,8 @@ if command -v openconnect >/dev/null 2>&1; then
 else
   echo "OCAVAIL=0"
 fi
-pgrep -x openconnect >/dev/null 2>&1 && echo "OCUP=1" || echo "OCUP=0"
+pgrep -x openconnect >/dev/null 2>&1 && echo "OCPROC=1" || echo "OCPROC=0"
+ip -o link show type tun 2>/dev/null | grep -v ' tailscale0:' | grep -q 'UP' && echo "OCTUN=1" || echo "OCTUN=0"
 `]
         stdout: StdioCollector { onStreamFinished: root.parse(text) }
     }
@@ -90,7 +106,9 @@ pgrep -x openconnect >/dev/null 2>&1 && echo "OCUP=1" || echo "OCUP=0"
 
     function parse(t) {
         const [tsBlock, afterTs] = t.split("==END_TS==\n")
+        if (afterTs === undefined) return // truncated probe output: skip this tick, retry next
         const [wgBlock, ocBlock] = afterTs.split("==END_WG==\n")
+        if (ocBlock === undefined) return
 
         const tsNl = tsBlock.indexOf("\n")
         const tsFirst = tsNl === -1 ? tsBlock : tsBlock.slice(0, tsNl)
@@ -122,6 +140,10 @@ pgrep -x openconnect >/dev/null 2>&1 && echo "OCUP=1" || echo "OCUP=0"
 
         const ocLines = ocBlock.split("\n")
         root._openconnectAvailable = ocLines[0] === "OCAVAIL=1"
-        root._openconnectUp = ocLines[1] === "OCUP=1"
+        // both the process and its tunnel interface must be up: pgrep alone
+        // is true for the whole auth/handshake window before any tunnel
+        // exists, which would light the icon and cache the real, non-VPN
+        // egress IP under the OpenConnect label
+        root._openconnectUp = ocLines[1] === "OCPROC=1" && ocLines[2] === "OCTUN=1"
     }
 }
