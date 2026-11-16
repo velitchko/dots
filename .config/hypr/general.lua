@@ -84,6 +84,9 @@ hl.config({
         -- mode change is a ~1 s black screen. VRR "only for fullscreen" (2) and
         -- auto-HDR switch modes the moment a window goes fullscreen.
         vrr = 0,
+        -- Honour activation requests, so a link clicked in Thunderbird (or any
+        -- app) switches to the Firefox window that opens it.
+        focus_on_activate = true,
     },
 
     render = {
