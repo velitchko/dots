@@ -17,3 +17,5 @@ sddm-theme/kessel/background.*
 __pycache__/
 *.pyc
 .pytest_cache/
+# Scratch workspace for superpowers plan execution (ledgers, briefs, review packages)
+/.superpowers/
