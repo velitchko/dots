@@ -2,7 +2,8 @@
 // Hover glance: shared baseline (time, user, date, weather, now-playing,
 // brief metrics) on every perspective, plus a perspective-specific extra
 // section -- richer now-playing on Music, timezones + full forecast on
-// Time, bigger charts + top processes on Metrics.
+// Time, bigger charts (CPU/GPU/RAM/net, temps) + GPU line + top processes
+// on Metrics.
 import QtQuick
 import ".."
 import "../services"
@@ -109,24 +110,57 @@ View {
             width: parent.width
             spacing: 10
 
+            // Charts side by side. A readable GPU adds a fifth chart; the
+            // charts then get a shorter window instead of the view getting wider.
             Row {
+                id: charts
+                readonly property bool gpuChart: Gpu.on && Gpu.busy >= 0
+                readonly property int n: gpuChart ? 28 : 36
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 16
                 Column { spacing: 4
-                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: "CPU"; color: Theme.subtext; size: Theme.fontSmall }
-                    Spark { values: Stats.cpuHist; max: 1; tint: Stats.cpu > 0.85 ? Theme.red : Theme.accent; height: 40; barWidth: 3; count: 36 }
+                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: "CPU" + (Stats.temp >= 0 ? " · " + Math.round(Stats.temp) + "°" : "")
+                            color: Stats.temp >= 85 ? Theme.red : Theme.subtext; size: Theme.fontSmall }
+                    Spark { values: Stats.cpuHist; max: 1; tint: Stats.cpu > 0.85 ? Theme.red : Theme.accent; height: 40; barWidth: 3; count: charts.n }
+                }
+                Column { spacing: 4; visible: charts.gpuChart
+                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: "GPU" + (Gpu.temp >= 0 ? " · " + Math.round(Gpu.temp) + "°" : "")
+                            color: Gpu.temp >= 85 ? Theme.red : Theme.subtext; size: Theme.fontSmall }
+                    Spark { values: Gpu.busyHist; max: 1; tint: Gpu.busy > 0.85 ? Theme.red : Theme.accent2; height: 40; barWidth: 3; count: charts.n }
                 }
                 Column { spacing: 4
                     Label { anchors.horizontalCenter: parent.horizontalCenter; text: "RAM"; color: Theme.subtext; size: Theme.fontSmall }
-                    Spark { values: Stats.memHist; max: 1; tint: Theme.purple; height: 40; barWidth: 3; count: 36 }
+                    Spark { values: Stats.memHist; max: 1; tint: Theme.purple; height: 40; barWidth: 3; count: charts.n }
                 }
                 Column { spacing: 4
                     Label { anchors.horizontalCenter: parent.horizontalCenter; text: "RX"; color: Theme.subtext; size: Theme.fontSmall }
-                    Spark { values: Stats.rxHist; tint: Theme.green; height: 40; barWidth: 3; count: 36 }
+                    Spark { values: Stats.rxHist; tint: Theme.green; height: 40; barWidth: 3; count: charts.n }
                 }
                 Column { spacing: 4
                     Label { anchors.horizontalCenter: parent.horizontalCenter; text: "TX"; color: Theme.subtext; size: Theme.fontSmall }
-                    Spark { values: Stats.txHist; tint: Theme.yellow; height: 40; barWidth: 3; count: 36 }
+                    Spark { values: Stats.txHist; tint: Theme.yellow; height: 40; barWidth: 3; count: charts.n }
+                }
+            }
+
+            // One line per GPU: name, load, VRAM, temperature -- or "asleep"
+            // for a runtime-suspended laptop dGPU (deliberately not woken).
+            Row {
+                visible: Gpu.present
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 18
+                Repeater {
+                    model: Gpu.all
+                    Chip {
+                        required property var modelData
+                        icon: Icons.gpu
+                        tint: modelData.on ? Theme.accent2 : Theme.subtext
+                        textColor: modelData.on ? Theme.text : Theme.subtext
+                        text: !modelData.on ? modelData.name + " · asleep"
+                            : [modelData.name,
+                               modelData.busy >= 0 ? Math.round(modelData.busy * 100) + "%" : "",
+                               modelData.vramTotal > 0 ? `VRAM ${(modelData.vramUsed / 1073741824).toFixed(1)}/${(modelData.vramTotal / 1073741824).toFixed(1)} GiB` : "",
+                               modelData.temp >= 0 ? Math.round(modelData.temp) + "°C" : ""].filter(x => x).join(" · ")
+                    }
                 }
             }
 

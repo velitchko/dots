@@ -11,6 +11,7 @@ Singletons without UI: state, D-Bus, PipeWire, processes. Views in `../ui/` only
 | `Audio`, `Privacy` | PipeWire sinks/sources/per-app streams (classified by `PwNodeType`); mic/camera/screen-share in use |
 | `Notifs` | Notification server (dunst takes over via D-Bus when the island is down) |
 | `Net`, `Bt`, `Power`, `Brightness`, `NightLight` | NetworkManager, BlueZ, UPower + power profiles, backlight, hyprsunset; hidden when absent |
+| `Gpu` | GPU load/VRAM/temp (nvidia-smi, amdgpu sysfs, Intel temp only); suspended laptop dGPUs are never woken |
 | `Apps`, `Calc`, `Translator`, `Clipboard` | Launcher sources: desktop entries, qalc/built-in maths, offline translation, cliphist |
 | `Notes`, `Board` | `~/Notes/*.md` editor, kanban board in `~/Notes/Board.md` |
 | `Timers`, `Alarm`, `Recorder`, `Session`, `Utils`, `Themes`, `Hypr`, `Stats` | Timer/stopwatch, alarm, wf-recorder, power actions + idle inhibit, one-shot tools, wallpaper/theme, Hyprland workspaces/windows, CPU/RAM/net |

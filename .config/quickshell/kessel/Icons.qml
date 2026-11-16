@@ -38,6 +38,7 @@ Singleton {
     readonly property string lock:       g(0xF033E)
     readonly property string cpu:        g(0xF035B)
     readonly property string memory:     g(0xF061A)
+    readonly property string gpu:        g(0xF08AE)   // md-expansion_card
     readonly property string check:      g(0xF012C)
     readonly property string plus:       g(0xF0415)
     readonly property string minus:      g(0xF0374)
