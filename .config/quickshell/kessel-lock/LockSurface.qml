@@ -20,6 +20,9 @@ MouseArea {
     readonly property string user: Quickshell.env("USER") || "user"
     // set by shell.qml: which output this surface covers (for its screenshot)
     property string screenName: ""
+    // false on secondary outputs: no card or toolbars, just the wallpaper. The
+    // password field stays (transparent) so keys typed here still reach ctx.
+    property bool isMain: true
 
     function forceFieldFocus() { passwordBox.forceActiveFocus() }
     Connections {
@@ -113,6 +116,7 @@ MouseArea {
 
     Rectangle {
         id: centerCard
+        visible: root.isMain
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: -40
@@ -224,6 +228,7 @@ MouseArea {
     // "Locked" pill (the clock widget's locked state), kept below the card
     Rectangle {
         id: lockedPill
+        visible: root.isMain
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: centerCard.bottom
         anchors.topMargin: 16
@@ -248,7 +253,9 @@ MouseArea {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 20
         scale: root.toolbarScale
-        opacity: root.toolbarOpacity
+        // opacity, not visible, off the main output: a hidden item can't hold
+        // the keyboard focus the compositor may give this surface
+        opacity: root.isMain ? root.toolbarOpacity : 0
 
         Item {
             id: field
@@ -348,6 +355,7 @@ MouseArea {
 
         ToolbarButton {
             id: confirmButton
+            visible: root.isMain
             toggled: true
             enabled: !root.context.unlockInProgress
             icon: root.context.targetAction === LockContext.Action.Poweroff ? Style.iPower
@@ -360,6 +368,7 @@ MouseArea {
     // ── left toolbar: keyboard layout ────────────────────────────────────────
     Toolbar {
         id: leftIsland
+        visible: root.isMain
         anchors.right: mainIsland.left
         anchors.rightMargin: 10
         anchors.verticalCenter: mainIsland.verticalCenter
@@ -387,6 +396,7 @@ MouseArea {
     // ── right toolbar: battery, sleep, power, reboot ─────────────────────────
     Toolbar {
         id: rightIsland
+        visible: root.isMain
         anchors.left: mainIsland.right
         anchors.leftMargin: 10
         anchors.verticalCenter: mainIsland.verticalCenter

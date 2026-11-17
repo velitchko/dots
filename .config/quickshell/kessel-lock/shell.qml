@@ -28,6 +28,19 @@ ShellRoot {
     // that could briefly read wrong and engage a real lock.
     readonly property bool preview: Quickshell.env("KESSEL_LOCK_PREVIEW") === "1"
 
+    // One login prompt across displays, as on the SDDM login screen: the largest
+    // output (same rule as sddm-theme.sh) gets the card and toolbars; the others
+    // show only the frosted wallpaper. Typing still works from any output, since
+    // the compositor picks which lock surface has the keyboard and they all
+    // share ctx's text.
+    readonly property string mainScreen: {
+        let best = null
+        for (const s of Quickshell.screens)
+            if (!best || s.width * s.height > best.width * best.height) best = s
+        return best?.name ?? ""
+    }
+    function isMain(name) { return shell.mainScreen === "" || name === shell.mainScreen }
+
     // ── the real lock (not even created in preview) ──────────────────────────
     LazyLoader {
         id: lockLoader
@@ -37,7 +50,7 @@ ShellRoot {
             WlSessionLockSurface {
                 id: lockSurf
                 color: "black"
-                LockSurface { anchors.fill: parent; context: ctx; screenName: lockSurf.screen?.name ?? "" }
+                LockSurface { anchors.fill: parent; context: ctx; screenName: lockSurf.screen?.name ?? ""; isMain: shell.isMain(screenName) }
             }
         }
     }
@@ -66,6 +79,7 @@ ShellRoot {
                 anchors.fill: parent
                 context: ctx
                 screenName: modelData.name
+                isMain: shell.isMain(modelData.name)
                 Keys.onEscapePressed: ctx.exiting = true
             }
         }
