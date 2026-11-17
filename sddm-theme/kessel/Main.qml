@@ -22,6 +22,9 @@ Item {
     // /etc/pam.d/sddm tries the password first, then the fingerprint reader:
     // an empty password (just Enter) goes straight to the scan
     readonly property bool fingerprint: config.stringValue("fingerprint") === "true"
+    // background already blurred, darkened and dithered by sddm-theme.sh sync:
+    // shown as-is (re-blurring it here would bring the banding back)
+    readonly property bool prerendered: config.stringValue("prerendered") === "true"
     readonly property color subtext: a(fg, 0.68)
     readonly property color faint: a(fg, 0.45)
     readonly property color toolbarColor: a(base, dark ? 0.82 : 0.86)
@@ -30,6 +33,15 @@ Item {
     readonly property string mono: "JetBrainsMono Nerd Font Mono"
     readonly property string nf: "JetBrainsMono Nerd Font Propo"   // icons: real widths, so they centre (regular build spills right)
     function g(cp) { return String.fromCodePoint(cp) }
+
+    // Which display gets the login UI; the others show only the blurred wallpaper.
+    // theme.conf screen= is an output name (as the greeter's X server calls it) or
+    // a WxH size, e.g. 2560x1440. Empty, or matching no connected display, falls
+    // back to SDDM's primary screen — so a stale value never hides the prompt.
+    readonly property string mainScreen: config.stringValue("screen") || ""
+    function screenMatches(s) { return s.name === mainScreen || (s.width + "x" + s.height) === mainScreen }
+    readonly property bool isMain: mainScreen !== "" && Qt.application.screens.some(screenMatches)
+        ? screenMatches(Screen) : (typeof primaryScreen === "undefined" || primaryScreen)
 
     // ── state ────────────────────────────────────────────────────────────────
     property int userIndex: Math.max(0, userModel.lastIndex)
@@ -71,7 +83,7 @@ Item {
         source: config.stringValue("background")
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
-        visible: false
+        visible: root.prerendered
     }
     MultiEffect {
         anchors.fill: parent
@@ -80,22 +92,30 @@ Item {
         blurMax: 64
         blur: 1.0
         saturation: -0.1
-        visible: wall.status === Image.Ready
+        visible: !root.prerendered && wall.status === Image.Ready
     }
-    Rectangle { anchors.fill: parent; color: root.a(root.base, root.dark ? 0.62 : 0.58) }
+    Rectangle { visible: !root.prerendered; anchors.fill: parent; color: root.a(root.base, root.dark ? 0.62 : 0.58) }
 
     MouseArea { anchors.fill: parent; onPressed: password.forceActiveFocus() }
 
     // entrance
     property real enter: 0
     Behavior on enter { NumberAnimation { duration: 420; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
-    Component.onCompleted: { enter = 1; password.forceActiveFocus() }
+    Component.onCompleted: {
+        enter = 1
+        if (!isMain) return
+        // X focus without a window manager follows the pointer; claim it so typing
+        // reaches the password field wherever the cursor starts
+        Window.window.requestActivate()
+        password.forceActiveFocus()
+    }
 
     // ── centre card ──────────────────────────────────────────────────────────
     Timer { id: tick; interval: 1000; running: true; repeat: true; property date now: new Date(); onTriggered: now = new Date() }
 
     Rectangle {
         id: centerCard
+        visible: root.isMain
         anchors.centerIn: parent
         anchors.verticalCenterOffset: -40
         width: info.implicitWidth + 80
@@ -197,6 +217,7 @@ Item {
 
     // "Welcome" pill (the lock screen's "Locked" pill)
     Rectangle {
+        visible: root.isMain
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: centerCard.bottom
         anchors.topMargin: 16
@@ -243,6 +264,7 @@ Item {
 
     Toolbar {
         id: mainBar
+        visible: root.isMain
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 20
@@ -329,7 +351,7 @@ Item {
 
     // left: keyboard layout (hidden when SDDM reports none)
     Toolbar {
-        visible: keyboard.layouts.length > 0
+        visible: root.isMain && keyboard.layouts.length > 0
         anchors.right: mainBar.left
         anchors.rightMargin: 10
         anchors.verticalCenter: mainBar.verticalCenter
@@ -354,6 +376,7 @@ Item {
     // ── session switcher: a small icon top-left; click to expand ─────────────
     Rectangle {
         id: sessionSwitcher
+        visible: root.isMain
         property bool open: false
         anchors.left: parent.left
         anchors.top: parent.top
@@ -442,7 +465,7 @@ Item {
 
     // right: sleep, power, reboot (hidden if SDDM offers none)
     Toolbar {
-        visible: sddm.canSuspend || sddm.canPowerOff || sddm.canReboot
+        visible: root.isMain && (sddm.canSuspend || sddm.canPowerOff || sddm.canReboot)
         anchors.left: mainBar.right
         anchors.leftMargin: 10
         anchors.verticalCenter: mainBar.verticalCenter

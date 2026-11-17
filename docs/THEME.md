@@ -24,7 +24,7 @@ A wallpaper switch starts the new picture's grow-in transition at once, works ou
 | Consumer | Output | Reload |
 | --- | --- | --- |
 | Island (Quickshell) | `~/.local/state/kessel/theme/colors.json` | live (IPC) |
-| Lock screen, SDDM | same `colors.json` (SDDM copies it on `sddm-theme.sh install`) | next lock / install |
+| Lock screen, SDDM | same `colors.json` (SDDM: copied to `/var/lib/kessel-sddm/` by `sddm-theme.sh sync`, which `theme.sh` runs) | next lock / next login screen |
 | Hyprland borders | `…/theme/hyprland.lua` | `hyprctl reload` |
 | kitty (16 colors) → fish, Starship | `…/theme/kitty.conf` (included by `kitty.conf`) | live (`kitten @ set-colors` over a private socket in `$XDG_RUNTIME_DIR`) |
 | Starship pills | `…/theme/starship.toml` (palette `kessel`; fish sets `STARSHIP_CONFIG`) | next prompt |

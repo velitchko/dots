@@ -576,6 +576,10 @@ EOG
 
     # Quickshell island: reload its colours (no-op if it is not running).
     qs -c kessel ipc call island reloadTheme >/dev/null 2>&1 || true
+    # login screen (SDDM): copy the wallpaper + colours where the greeter can read
+    # them; only once sddm-theme.sh install has set that place up (no sudo here).
+    # Detached: pre-rendering the blurred background takes a few seconds.
+    [[ -w /var/lib/kessel-sddm ]] && setsid -f "$(dirname "$(readlink -f "$0")")/../sddm-theme.sh" sync >/dev/null 2>&1 </dev/null || true
     echo "theme: $mode · accent $A · $(basename "$wall")"
 }
 
