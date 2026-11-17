@@ -46,6 +46,13 @@ Singleton {
         : summary ? "summary"
         : "rest"
 
+    // A notification stays on the monitor that was focused when it arrived:
+    // following focus made it jump (and restart its animation) whenever the
+    // cursor crossed screens. Back-to-back popups keep the same monitor.
+    property string notifMonitor: ""
+    onLayerChanged: notifMonitor = layer === "notification"
+        ? (notifMonitor || (Hyprland.focusedMonitor?.name ?? "")) : ""
+
     // Panels opened from inside another panel remember where they came from,
     // so back() (← button, Alt+Left, mouse back button) returns there.
     property var history: []

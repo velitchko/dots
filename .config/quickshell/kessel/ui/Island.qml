@@ -12,8 +12,11 @@ import "../components"
 PanelWindow {
     id: win
 
-    // Only the island on the focused monitor shows panels / notifications.
-    readonly property bool live: !Hyprland.focusedMonitor || Hyprland.focusedMonitor.name === screen?.name
+    // Only the island on the focused monitor shows panels / notifications
+    // (a notification: the monitor focused when it arrived, see IslandState).
+    readonly property bool live: IslandState.layer === "notification" && IslandState.notifMonitor !== ""
+        ? IslandState.notifMonitor === screen?.name
+        : !Hyprland.focusedMonitor || Hyprland.focusedMonitor.name === screen?.name
     readonly property string layer: live ? IslandState.layer : "rest"
     readonly property bool panelOpen: layer === "panel" && !IslandState.quitting
 
