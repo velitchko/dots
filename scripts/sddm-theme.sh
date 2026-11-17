@@ -127,7 +127,7 @@ case $cmd in
             scr="$(hyprctl monitors -j 2>/dev/null | jq -r 'if length > 1 then max_by(.width * .height) | "\(.width)x\(.height)" else empty end' 2>/dev/null || true)"
         fi
         sed -i "s|^screen=.*|screen=$scr|" "$tmp/theme.conf"
-        info "login UI on: ${scr:-SDDM's primary display} (others show the wallpaper; override: SDDM_SCREEN=WxH)"
+        info "login UI on: ${scr:-the primary display} (others show the wallpaper; override: SDDM_SCREEN=WxH)"
         # fingerprint login: on when /etc/pam.d/sddm uses pam_fprintd (scripts/fingerprint.sh sddm-on)
         if grep -q '^[^#]*pam_fprintd' /etc/pam.d/sddm 2>/dev/null; then
             sed -i "s|^fingerprint=.*|fingerprint=true|" "$tmp/theme.conf"; ok "fingerprint login: on"
