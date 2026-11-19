@@ -36,12 +36,28 @@ Item {
 
     // Which display gets the login UI; the others show only the blurred wallpaper.
     // theme.conf screen= is an output name (as the greeter's X server calls it) or
-    // a WxH size, e.g. 2560x1440. Empty, or matching no connected display, falls
-    // back to SDDM's primary screen — so a stale value never hides the prompt.
+    // a WxH size, e.g. 2560x1440, baked in once by sddm-theme.sh install from
+    // whatever machine last ran it — so on a different machine (or just a
+    // different monitor set on the same one) it can match no connected display.
+    // The fallback used to test a `primaryScreen` context property, but SDDM's
+    // Qt greeter never defines one (confirmed against sddm-greeter-qt6's own
+    // symbols — only QGuiApplication's internal, C++-only primaryScreen()
+    // exists), so `typeof primaryScreen === "undefined"` was always true and
+    // the prompt showed on every screen instead of just one. Fall back to the
+    // largest connected screen instead — the same rule sddm-theme.sh itself
+    // uses to pick screen=, and kessel-lock/shell.qml uses for its own
+    // mainScreen — so a stale value never hides the prompt, and never
+    // duplicates it either.
     readonly property string mainScreen: config.stringValue("screen") || ""
     function screenMatches(s) { return s.name === mainScreen || (s.width + "x" + s.height) === mainScreen }
+    readonly property string largestScreenName: {
+        let best = null
+        for (const s of Qt.application.screens)
+            if (!best || s.width * s.height > best.width * best.height) best = s
+        return best ? best.name : ""
+    }
     readonly property bool isMain: mainScreen !== "" && Qt.application.screens.some(screenMatches)
-        ? screenMatches(Screen) : (typeof primaryScreen === "undefined" || primaryScreen)
+        ? screenMatches(Screen) : Screen.name === largestScreenName
 
     // ── state ────────────────────────────────────────────────────────────────
     property int userIndex: Math.max(0, userModel.lastIndex)

@@ -177,6 +177,28 @@ local function bind_workspaces()
             hl.workspace_rule({ workspace = tostring(ws), monitor = mon.name })
         end
     end
+
+    -- workspace_rule only binds a workspace to a monitor at CREATION time; it
+    -- never relocates one that already exists. Hyprland auto-creates workspace
+    -- 1 (and a monitor's own default, monitorID*10+1) at startup, before these
+    -- rules above get a chance to apply -- on a laptop that boots solo and then
+    -- gets docked (or just wins the connector enumeration race against an
+    -- external display already plugged in), that leaves it stuck on the wrong
+    -- monitor even though the rule above now says otherwise. Sweep already-live
+    -- workspaces that fall in our ranges and nudge the stragglers over.
+    local wok, workspaces = pcall(hl.get_workspaces)
+    if wok and type(workspaces) == "table" then
+        for _, ws in ipairs(workspaces) do
+            if ws.id and not ws.special then
+                for _, r in ipairs(ranges) do
+                    local lo, hi, mon = r[1], r[2], r[3]
+                    if ws.id >= lo and ws.id <= hi and (not ws.monitor or ws.monitor.name ~= mon.name) then
+                        hl.dispatch(hl.dsp.workspace.move({ workspace = tostring(ws.id), monitor = mon.name }))
+                    end
+                end
+            end
+        end
+    end
 end
 
 apply_panel_scales()
