@@ -35,21 +35,29 @@ Singleton {
         else
             applyRaw(v * root._max)   // no sysfs file to echo the change back on desktops
         root._ddcPending = Math.round(v * 100)
-        if (!ddcThrottle.running) ddcThrottle.start()
+        if (!root._ddcBusy) root._ddcDispatch()
     }
 
-    // ddcutil writes take ~100ms+ each; a slider drag would otherwise spawn
-    // dozens of overlapping writes per bus. Coalesce to the latest value.
+    // DDC/CI writes measured at ~0.5-0.7s each on real hardware -- much longer than a
+    // drag's event rate. Firing one write per event (or per fixed interval) overlaps
+    // writes on the same I2C bus, which visibly desyncs/stalls the monitor mid-drag.
+    // So: at most one write in flight; a new value just replaces _ddcPending, and
+    // whichever write is already running picks up the latest value the moment it exits.
     property int _ddcPending: -1
-    Timer {
-        id: ddcThrottle
-        interval: 150
-        onTriggered: {
-            if (root._ddcPending < 0) return
-            const pct = String(root._ddcPending)
-            root._ddcPending = -1
-            for (const bus of root.ddcBuses)
-                Quickshell.execDetached(["ddcutil", "--bus", String(bus), "setvcp", "10", pct, "--noverify"])
+    property bool _ddcBusy: false
+    function _ddcDispatch() {
+        if (root._ddcPending < 0 || root.ddcBuses.length === 0) return
+        const pct = String(root._ddcPending)
+        root._ddcPending = -1
+        root._ddcBusy = true
+        ddcWriter.command = ["sh", "-c", root.ddcBuses.map(b => "ddcutil --bus " + b + " setvcp 10 " + pct + " --noverify").join("; ")]
+        ddcWriter.running = true
+    }
+    Process {
+        id: ddcWriter
+        onExited: {
+            root._ddcBusy = false
+            root._ddcDispatch()
         }
     }
 
@@ -98,7 +106,11 @@ Singleton {
 
     Process {
         id: ddcProbe
-        command: ["sh", "-c", "command -v ddcutil >/dev/null 2>&1 && ddcutil detect --brief 2>/dev/null | grep -oE 'i2c-[0-9]+' | grep -oE '[0-9]+' || true"]
+        // "Display N" blocks are DDC-capable monitors; "Invalid display" blocks (e.g.
+        // the laptop panel's own i2c bus) are skipped -- probing them wastes several
+        // seconds per change on EREMOTEIO retries. Anchoring the second grep to the
+        // line end also avoids matching the stray digit inside the literal "i2c".
+        command: ["sh", "-c", "command -v ddcutil >/dev/null 2>&1 && ddcutil detect --brief 2>/dev/null | grep -A1 '^Display [0-9]\\+' | grep -oE 'i2c-[0-9]+' | grep -oE '[0-9]+$' || true"]
         stdout: StdioCollector {
             onStreamFinished: {
                 root.ddcBuses = text.trim().split("\n").filter(l => l !== "")
