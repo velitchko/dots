@@ -578,8 +578,13 @@ EOG
     qs -c kessel ipc call island reloadTheme >/dev/null 2>&1 || true
     # login screen (SDDM): copy the wallpaper + colours where the greeter can read
     # them; only once sddm-theme.sh install has set that place up (no sudo here).
-    # Detached: pre-rendering the blurred background takes a few seconds.
-    [[ -w /var/lib/kessel-sddm ]] && setsid -f "$(dirname "$(readlink -f "$0")")/../sddm-theme.sh" sync >/dev/null 2>&1 </dev/null || true
+    # Detached: pre-rendering the blurred background takes 20-30s. 9>&- closes
+    # our copy of the flock fd below in this child before it execs -- without
+    # it, the lock (held by fd 9 for the whole script) stays inherited by this
+    # detached process until ITS slow render finishes, so the next wallpaper
+    # pick in the island blocks on this one's leftover sync instead of just
+    # on the ~3s this script itself actually takes.
+    [[ -w /var/lib/kessel-sddm ]] && setsid -f "$(dirname "$(readlink -f "$0")")/../sddm-theme.sh" sync >/dev/null 2>&1 </dev/null 9>&- || true
     echo "theme: $mode · accent $A · $(basename "$wall")"
 }
 
