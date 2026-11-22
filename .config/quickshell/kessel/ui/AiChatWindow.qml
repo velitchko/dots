@@ -310,10 +310,10 @@ Window {
                     onAccepted: { AiChat.send(text); text = "" }
                 }
                 IconButton {
-                    icon: AiChat.streaming ? Icons.stop : Icons.send
+                    icon: AiChat.cancellable ? Icons.stop : Icons.send
                     size: 36
                     tint: Theme.accent
-                    onClicked: AiChat.streaming ? AiChat.stop() : input.accepted()
+                    onClicked: AiChat.cancellable ? AiChat.stop() : input.accepted()
                 }
             }
 

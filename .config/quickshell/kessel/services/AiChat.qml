@@ -157,16 +157,30 @@ Singleton {
         sendProcess.running = true
     }
 
+    // True only while sendProcess is still the thing producing output --
+    // `streaming` alone stays true through the render pass too (see
+    // _finishStreaming's comment), and stop() must not be reachable then:
+    // a click there would find streamingText already cleared and run the
+    // empty-placeholder branch against the just-committed reply, deleting
+    // it (and the render pass still in flight would then write its html
+    // onto what's left -- the user's message). gotFinalChunk is already
+    // the one flag that means "sendProcess's output is over" (set by a
+    // clean done, an error, or stop() itself), so reusing it here needs no
+    // new state.
+    readonly property bool cancellable: root.streaming && !sendProcess.gotFinalChunk
+
     // Cancels the in-flight reply. Marks the process's final chunk as
     // already handled *before* killing it, so sendProcess.onExited takes
     // its "expected" branch instead of reporting the kill itself as "the
-    // response process exited unexpectedly". A reply with no text yet
-    // (stopped before the first delta) drops its empty placeholder rather
-    // than leaving a permanent blank bubble; otherwise the partial text
-    // goes through the normal clean-finish path so it renders exactly
-    // like a completed reply.
+    // response process exited unexpectedly", and so a second call (or one
+    // that lands after a done/error already arrived) is a no-op instead of
+    // re-running this logic against a reply that's already committed. A
+    // reply with no text yet (stopped before the first delta) drops its
+    // empty placeholder rather than leaving a permanent blank bubble;
+    // otherwise the partial text goes through the normal clean-finish path
+    // so it renders exactly like a completed reply.
     function stop() {
-        if (!root.streaming) return
+        if (!root.cancellable) return
         sendProcess.gotFinalChunk = true
         sendProcess.running = false
         if (root.streamingText.trim() === "") {
@@ -250,6 +264,16 @@ Singleton {
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: data => {
+                // A chunk already queued (buffered by QProcess, or still in
+                // the pipe) when stop()/an error/done sets gotFinalChunk can
+                // still reach here on a later event-loop turn. Past that
+                // point streamingText is gone and the trailing message slot
+                // may already belong to something else (stop()'s render
+                // pass is still writing into it) -- a late delta would
+                // resurrect a cleared streamingText, and a late done/error
+                // would re-run _finishStreaming against whatever's there
+                // now, which is exactly the corruption this guards against.
+                if (sendProcess.gotFinalChunk) return
                 if (data.trim() === "") return
                 let chunk
                 try { chunk = JSON.parse(data) } catch (e) { return }
