@@ -157,6 +157,28 @@ Singleton {
         sendProcess.running = true
     }
 
+    // Cancels the in-flight reply. Marks the process's final chunk as
+    // already handled *before* killing it, so sendProcess.onExited takes
+    // its "expected" branch instead of reporting the kill itself as "the
+    // response process exited unexpectedly". A reply with no text yet
+    // (stopped before the first delta) drops its empty placeholder rather
+    // than leaving a permanent blank bubble; otherwise the partial text
+    // goes through the normal clean-finish path so it renders exactly
+    // like a completed reply.
+    function stop() {
+        if (!root.streaming) return
+        sendProcess.gotFinalChunk = true
+        sendProcess.running = false
+        if (root.streamingText.trim() === "") {
+            root._setMessages(root.messages.slice(0, -1))
+            root.streamingText = ""
+            root.streaming = false
+            root.saveHistory()
+        } else {
+            root._finishStreaming(undefined)
+        }
+    }
+
     function _appendDelta(delta) {
         root.streamingText += delta
     }
