@@ -163,7 +163,6 @@ PanelWindow {
         scale: on ? 1 : 0.6
         Behavior on opacity { NumberAnimation { duration: 200 } }
         Behavior on scale { SpringAnimation { spring: Theme.springStiffness; damping: 0.4; epsilon: 0.01 } }
-        Behavior on x { SpringAnimation { spring: Theme.springStiffness; damping: Theme.springDamping; epsilon: 0.25 } }
         Row {
             id: timerRow
             anchors.centerIn: parent
@@ -281,7 +280,6 @@ PanelWindow {
         scale: Updates.count > 0 ? 1 : 0.6
         Behavior on opacity { NumberAnimation { duration: 200 } }
         Behavior on scale { SpringAnimation { spring: Theme.springStiffness; damping: 0.4; epsilon: 0.01 } }
-        Behavior on x { SpringAnimation { spring: Theme.springStiffness; damping: Theme.springDamping; epsilon: 0.25 } }
         Row {
             id: updRow
             anchors.centerIn: parent
