@@ -140,7 +140,11 @@ Singleton {
             // caller's fallback (a bare, unthemed command) run instead.
             // The launcher gets its own detached window instead of un-hiding the
             // whole island (with its side buttons) just to show one panel.
-            if (name === "launcher" && !root.shown) { root.detachedLauncher = true; return "ok" }
+            if (name === "launcher" && !root.shown) {
+                if (root.detachedLauncher) { root.closePanel(); return "ok" }
+                root.detachedLauncher = true
+                return "ok"
+            }
             // openPanel() itself sets shown = true, but only once name is valid —
             // don't force it here, or an unknown panel name would un-hide the
             // island for nothing. If focus mode was on, closePanel() returns to
