@@ -12,5 +12,9 @@ Item {
     transformOrigin: Item.Top
     visible: opacity > 0.01
     Behavior on opacity { NumberAnimation { duration: Theme.fadeMs; easing.type: Easing.OutCubic } }
-    Behavior on scale { SpringAnimation { spring: Theme.springStiffness * 1.2; damping: 0.45; epsilon: 0.002 } }
+    // Same spring as the pill's own width/height (Island.qml): content used to grow
+    // into shape faster and with less bounce than the capsule resizing around it, so
+    // it looked like the new view popped in and the capsule caught up afterward,
+    // rather than one morph. Matching the constants makes the two arrive together.
+    Behavior on scale { SpringAnimation { spring: Theme.springStiffness; damping: Theme.springDamping; mass: Theme.springMass; epsilon: 0.002 } }
 }

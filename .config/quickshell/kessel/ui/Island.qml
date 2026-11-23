@@ -50,15 +50,15 @@ PanelWindow {
     // surface sized to the full screen costs nothing extra to composite:
     // just use all of it instead of re-deriving how much is "enough".
     implicitWidth: screen ? screen.width : 1100
-    // Keep the surface a small strip while resting (the compositor blurs behind the
-    // whole surface every frame — expensive without a GPU). Grow at once when
-    // something tall opens; shrink only after the closing spring has settled.
-    readonly property real tallHeight: Math.min(screen ? screen.height - 40 : 700, 700)
-    readonly property bool needsTall: layer === "panel" || layer === "notification" || layer === "summary" || layer === "alarm" || layer === "polkit"
-    property bool tall: false
-    onNeedsTallChanged: { if (needsTall) { shrinkTimer.stop(); tall = true } else shrinkTimer.restart() }
-    Timer { id: shrinkTimer; interval: 900; onTriggered: win.tall = win.needsTall }
-    implicitHeight: tall ? tallHeight : Theme.islandHeight + 44   // room for the perspective tag
+    // Same reasoning as implicitWidth above: never resize this surface, just size
+    // it for the tallest content up front. It used to grow/shrink (a `tall` flag on
+    // a 900ms timer) to save compositing cost while resting, but Hyprland doesn't
+    // animate an in-place layer-surface resize at all (layersIn/layersOut only cover
+    // map/unmap) and there's no blur behind this layer to save (workspaces.lua's
+    // blur-fuzzel rule is explicit that it skips the island), so the shrink only
+    // bought a hard, unanimatable snap in exchange for a saving that mattered on a
+    // no-GPU-render-node fallback, not this desktop.
+    implicitHeight: Math.min(screen ? screen.height - 40 : 700, 700)
     // Not + Theme.islandMargin: that coupled the screen-top gap and the
     // island-to-window gap together (changing margin shifted both by the same
     // amount, so they could never be made equal -- confirmed empirically,
@@ -415,7 +415,11 @@ PanelWindow {
             scale: status === Loader.Ready ? 1 : 0.94
             transformOrigin: Item.Top
             Behavior on opacity { NumberAnimation { duration: Theme.fadeMs; easing.type: Easing.OutCubic } }
-            Behavior on scale { SpringAnimation { spring: Theme.springStiffness * 1.2; damping: 0.45; epsilon: 0.002 } }
+            // Matches the pill's own width/height spring (below) for the same reason
+            // as View.qml's scale Behavior: a faster, less bouncy content spring made
+            // the panel pop to full size well before the capsule finished resizing
+            // around it.
+            Behavior on scale { SpringAnimation { spring: Theme.springStiffness; damping: Theme.springDamping; mass: Theme.springMass; epsilon: 0.002 } }
             source: {
                 switch (IslandState.panel) {
                 case "launcher":  return "panels/Launcher.qml"
