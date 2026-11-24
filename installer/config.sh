@@ -61,6 +61,7 @@ step_config() {
     done < <(read_links "$links")
 
     step_gsettings "$bdir" && changed=1 || true
+    step_mimedefaults "$bdir" && changed=1 || true
     step_theme
 
     if (( changed )) && (( ! DRY_RUN )); then
@@ -117,6 +118,38 @@ step_gsettings() { # returns 0 if something changed
     return $changed
 }
 
+# Default app for text/code/config files (double-click in Dolphin, xdg-open):
+# nvim.desktop (.config/applications/nvim.desktop, linked above) runs kitty -e nvim.
+# text/plain already resolves to it via the desktop file's own MimeType list;
+# these mime types have no such fallback and need an explicit default.
+MIME_DEFAULTS_WANT=(
+    text/markdown
+    application/json
+    text/x-shellscript
+    text/x-python
+    text/x-yaml
+    application/x-yaml
+    application/toml
+    text/x-ini
+)
+
+step_mimedefaults() { # returns 0 if something changed
+    command -v xdg-mime >/dev/null 2>&1 || return 1
+    local bdir=$1 mime cur changed=1
+    for mime in "${MIME_DEFAULTS_WANT[@]}"; do
+        cur="$(xdg-mime query default "$mime" 2>/dev/null)" || true
+        if [[ $cur == nvim.desktop ]]; then
+            ok "xdg-mime default $mime = nvim.desktop"
+        else
+            info "xdg-mime default $mime: ${cur:-(none)} → nvim.desktop"
+            run xdg-mime default nvim.desktop "$mime"
+            record "$bdir" "MIME $mime ${cur:-}"
+            changed=0
+        fi
+    done
+    return $changed
+}
+
 step_rollback() {
     local ts=${1:-}
     if [[ -z $ts ]]; then
@@ -146,6 +179,13 @@ step_rollback() {
             GSETTINGS)
                 run gsettings set "$a" "$b" "$(sed "s/^'//; s/'$//" <<<"$c")"
                 ok "$( (( DRY_RUN )) && echo "would set " )gsettings $b ← $c" ;;
+            MIME)
+                if [[ -n $b ]]; then
+                    run xdg-mime default "$b" "$a"
+                    ok "$( (( DRY_RUN )) && echo "would set " )xdg-mime default $a ← $b"
+                else
+                    warn "xdg-mime default $a had no previous default — leaving nvim.desktop set (edit ~/.config/mimeapps.list to clear it)"
+                fi ;;
         esac
     done < <(tac "$bdir/MANIFEST")
     (( DRY_RUN )) || mv "$bdir/MANIFEST" "$bdir/MANIFEST.rolled-back"
