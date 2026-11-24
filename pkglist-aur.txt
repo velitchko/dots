@@ -3,6 +3,27 @@
 omniglyph
 # end-4's cursor (Bibata-Modern-Classic)
 bibata-cursor-theme-bin
+# Password manager
+enpass-bin
+# Office suite
+onlyoffice-bin
+# Apps
+deezer
+freetube-bin
+fluffychat
+projecteur
+witr
+wiki-tui
+# Protonmail Bridge: local IMAP/SMTP bridge for Proton Mail. Ships its own
+# autostart unit (systemctl --user enable --now protonmail-bridge, or let its
+# own autostart .desktop entry start it at login — check `systemctl --user
+# status` after first launch); the installer does not enable anything.
+protonmail-bridge-bin
+# Colour emoji: .config/fontconfig/fonts.conf asks for Noto Color Emoji by
+# name (noto-fonts-emoji in pkglist.txt); this AUR package supplies the
+# fontconfig priority fix so it actually renders in colour, not a monochrome
+# outline.
+noto-color-emoji-fontconfig
 # Display layouts: drag displays into place, save profiles, auto-switch on hot-plug
 # (TUI; the daemon is opt-in: systemctl --user enable --now hyprmoncfgd).
 # The -git package: built by yay from the repository (needs git + go, pulled in

@@ -7,6 +7,7 @@ hyprland
 uwsm
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
+sddm                    # display manager (sddm-theme/kessel is installed separately, see scripts/sddm-theme.sh)
 # Shell UI (optional at runtime — desktop works without it)
 quickshell
 # Terminal + launcher (fixed choices)
@@ -48,6 +49,7 @@ tailscale
 iproute2                # `ip -o link show type wireguard` detects a non-Tailscale tunnel
 wireguard-tools         # wg-quick config (ProtonVPN) — not called by the probe, but what it detects
 openconnect
+openvpn
 # OmniGlyph (AUR) needs this at runtime but its package does not declare it
 gtk4-layer-shell
 # colour emoji (OmniGlyph, notifications, browsers) — without it emojis render as boxes
@@ -70,6 +72,19 @@ cava
 ffmpeg                  # wallpaper thumbnails for the island (fast previews of huge images)
 # Wallpaper-derived theme accents (scripts/theme.sh)
 matugen
+# Desktop apps
+blender
+chromium
+gimp                    # PhotoGIMP preset: run ~/Scripts/photogimp-setup.sh once GIMP has started and closed once
+obs-studio
+qbittorrent
+thunderbird
+vlc
+vlc-plugin-ffmpeg
+vlc-plugins-all
+vlc-plugin-x264
+vlc-plugin-x265
+timeshift
 # Apps bound in keybinds.lua (SUPER+C editor, CTRL+SHIFT+Esc task manager, SUPER+E files, SUPER+O notes)
 dolphin
 kio-extras
@@ -83,6 +98,8 @@ adw-gtk-theme           # GTK3 theme that takes the wallpaper colours (Firefox f
 yazi
 mpv
 mpv-mpris
+# Video editor
+kdenlive
 # Qt theming (palette from scripts/theme.sh)
 qt6ct
 neovim
@@ -110,6 +127,22 @@ htop
 jq
 git
 curl
+man-db
+man-pages
+# General CLI tools
+docker
+docker-buildx
+docker-compose
+fastfetch
+bat
+duf
+just
+tldr
+thefuck
+nmap
+borg
+rclone
+nvm
 # AI chat panel (scripts/desktop/ai_chat.py): markdown/syntax-highlight/math rendering
 python
 python-markdown
