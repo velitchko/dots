@@ -273,6 +273,7 @@ EOF
             echo "[ColorEffects:Inactive]"; echo "ChangeSelectionColor=true"; echo "Color=112,111,110"; echo "ColorAmount=0.025"
             echo "ColorEffect=2"; echo "ContrastAmount=0.1"; echo "ContrastEffect=2"; echo "Enable=false"; echo "IntensityAmount=0"; echo "IntensityEffect=0"; echo
             echo "[WM]"; echo "activeBackground=$(rgb "$BG")"; echo "activeForeground=$(rgb "$TEXT")"
+            echo "activeBlend=$(rgb "$BG")"; echo "inactiveBlend=$(rgb "$BG")"
             echo "inactiveBackground=$(rgb "$BG")"; echo "inactiveForeground=$(rgb "$SUBTEXT")"
         } | write "$cs/Kessel.colors"
         local icons; [[ $mode == dark ]] && icons="Papirus-Dark" || icons="Papirus-Light"
@@ -284,8 +285,11 @@ EOF
             printf 'General\tTerminalService\tkitty.desktop\n'
             printf 'Icons\tTheme\t%s\n' "$icons"
             printf 'KDE\twidgetStyle\tBreeze\n'
-            # the scheme's colours, into the [Colors:*] groups KDE apps read from kdeglobals
-            awk '/^\[Colors:.*\]$/ { g = substr($0, 2, length($0) - 2); next }
+            # the scheme's colours, into the [Colors:*] and [WM] groups KDE apps read from
+            # kdeglobals. [WM] (titlebar/taskbar colours, incl. activeBlend/inactiveBlend)
+            # was previously never copied out of the .colors file, so it stayed stuck on
+            # whatever the system's original default was instead of following the theme.
+            awk '/^\[(Colors:.*|WM)\]$/ { g = substr($0, 2, length($0) - 2); next }
                  /^\[/ { g = ""; next }
                  g != "" && index($0, "=") { i = index($0, "="); printf "%s\t%s\t%s\n", g, substr($0, 1, i - 1), substr($0, i + 1) }' "$cs/Kessel.colors"
         } | kset "$cfg/kdeglobals"

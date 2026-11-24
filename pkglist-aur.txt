@@ -14,6 +14,11 @@ fluffychat
 projecteur
 witr
 wiki-tui
+# Image viewer: gwenview's browse-mode toolbar stays light regardless of
+# theme or Qt style (a gwenview-specific limitation outside full Plasma).
+# nomacs has its own theme setting instead — set it to "System" in its
+# settings (Ctrl+Shift+P) to follow the desktop palette.
+nomacs
 # Protonmail Bridge: local IMAP/SMTP bridge for Proton Mail. Ships its own
 # autostart unit (systemctl --user enable --now protonmail-bridge, or let its
 # own autostart .desktop entry start it at login — check `systemctl --user
