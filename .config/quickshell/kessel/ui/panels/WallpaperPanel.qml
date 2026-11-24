@@ -31,11 +31,11 @@ PanelBase {
         id: modeRow
         spacing: 8
         Repeater {
-            model: [{ m: "dark", label: "Dark · pitch black", icon: Icons.night }, { m: "light", label: "Light · eggshell", icon: Icons.sunny }]
+            model: [{ m: "dark", label: "Dark", icon: Icons.night }, { m: "light", label: "Light", icon: Icons.sunny }]
             Rectangle {
                 required property var modelData
                 readonly property bool on: (modelData.m === "dark") === Themes.dark
-                width: 190; height: 36; radius: 18
+                width: 110; height: 36; radius: 18
                 color: on ? Theme.a(Theme.accent, 0.22) : (mm.containsMouse ? Theme.cardHi : Theme.card)
                 border.width: on ? Theme.borderWidth : 0
                 border.color: Theme.accent
